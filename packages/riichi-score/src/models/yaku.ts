@@ -32,6 +32,7 @@ export type YakuName =
   | "honroutou"
   | "sanshoku"
   | "sanshoku-doukou"
+  | "ittsuu"
   | YakuhaiName;
 
 export interface YakuListing {

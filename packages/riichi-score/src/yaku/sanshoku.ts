@@ -1,7 +1,7 @@
 import { HandInterpretation } from "../models/hand-interpretation.js";
 import { MahjongTile } from "../models/mahjong-tile.js";
-import { StandardGroup } from "../models/standard-group.js";
 import { YakuListing } from "../models/yaku.js";
+import { runStart } from "../utils/run-start.js";
 
 const SUITS = ["m", "p", "s"] as const;
 
@@ -11,15 +11,6 @@ export function createSanshokuListing(closed: boolean): YakuListing {
 
 export function createSanshokuDoukouListing(): YakuListing {
   return { name: "sanshoku-doukou", han: 2 };
-}
-
-/**
- * A meld's tiles arrive in whatever order the caller supplied, so a run's
- * lowest tile cannot be assumed to be first.
- */
-function runStart(group: StandardGroup): MahjongTile {
-  const ranks = group.tiles.map((tile) => Number(tile[0]));
-  return `${Math.min(...ranks)}${group.tiles[0][1]}` as MahjongTile;
 }
 
 function isMenzen(handInterpretation: HandInterpretation): boolean {

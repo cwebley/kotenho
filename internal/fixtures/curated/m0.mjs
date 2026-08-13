@@ -471,4 +471,39 @@ export const m0Fixtures = [
       yaku: ["sanankou", "sanshoku-doukou"],
     },
   },
+
+  // ---- ittsuu ----
+  {
+    name: "1-9 of one suit as three runs is ittsuu, 2 han closed",
+    handInput: {
+      closedTiles: [
+        "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "2m", "3m", "5p", "5p",
+      ],
+      winningTile: { tile: "4m", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 30,
+      fu: 30,
+      han: 3,
+      basicPoints: 960,
+      yaku: ["pinfu", "ittsuu"],
+    },
+  },
+  {
+    name: "ittsuu is 1 han once the hand is opened",
+    handInput: {
+      closedTiles: ["4s", "5s", "6s", "7s", "8s", "9s", "2m", "3m", "5p", "5p"],
+      openMelds: [{ type: "run", tiles: ["1s", "2s", "3s"], from: "east" }],
+      winningTile: { tile: "4m", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 20,
+      fu: 30,
+      han: 1,
+      basicPoints: 240,
+      yaku: ["ittsuu"],
+    },
+  },
 ];
