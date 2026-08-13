@@ -33,6 +33,18 @@ export type YakuName =
   | "sanshoku"
   | "sanshoku-doukou"
   | "ittsuu"
+  | "shousangen"
+  | "sankantsu"
+  | "daisangen"
+  | "shousuushii"
+  | "daisuushii"
+  | "tsuuiisou"
+  | "chinroutou"
+  | "ryuuiisou"
+  | "chuuren-poutou"
+  | "suukantsu"
+  | "tenhou"
+  | "chiihou"
   | YakuhaiName;
 
 export interface YakuListing {

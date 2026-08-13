@@ -45,5 +45,24 @@ export function detectDeclaredYaku(
     addYaku(handInterpretation, "chankan", 1);
   }
 
+  // Winning on the very first draw: tenhou for the dealer, chiihou for anyone
+  // else. Both are yakuman and both require a concealed self-draw.
+  if (menzen && winningTile.isTsumo) {
+    const dealer = gameState.seatWind === "east";
+    if (dealer && gameState.isTenhou) {
+      handInterpretation.yaku.push({
+        name: "tenhou",
+        han: 0,
+        limit: "yakuman",
+      });
+    } else if (!dealer && gameState.isChiihou) {
+      handInterpretation.yaku.push({
+        name: "chiihou",
+        han: 0,
+        limit: "yakuman",
+      });
+    }
+  }
+
   return handInterpretation;
 }

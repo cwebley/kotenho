@@ -13,6 +13,8 @@ export interface GameState {
   isHoutei?: boolean;
   isRinshan?: boolean;
   isChankan?: boolean;
+  isTenhou?: boolean;
+  isChiihou?: boolean;
   honbaCount: number;
 }
 
@@ -32,6 +34,8 @@ export interface GameStateOptions {
   isHoutei?: boolean;
   isRinshan?: boolean;
   isChankan?: boolean;
+  isTenhou?: boolean;
+  isChiihou?: boolean;
   honbaCount?: number;
 }
 
@@ -50,6 +54,8 @@ export function createGameState({
   isHoutei = false,
   isRinshan = false,
   isChankan = false,
+  isTenhou = false,
+  isChiihou = false,
   honbaCount = 0,
 }: GameStateOptions = {}): GameState {
   return {
@@ -64,6 +70,8 @@ export function createGameState({
     isHoutei,
     isRinshan,
     isChankan,
+    isTenhou,
+    isChiihou,
     honbaCount,
   };
 }

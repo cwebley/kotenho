@@ -528,4 +528,80 @@ export const m0Fixtures = [
       yaku: ["chiitoitsu", "honitsu"],
     },
   },
+
+  // ---- yakuman and the rare hands ----
+  {
+    name: "three dragon triplets is daisangen, and suppresses the yakuhai",
+    handInput: {
+      closedTiles: [
+        "5z", "5z", "5z", "6z", "6z", "6z", "7z", "7z", "2m", "3m", "4m", "9p", "9p",
+      ],
+      winningTile: { tile: "7z", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 50,
+      fu: 50,
+      han: 0,
+      basicPoints: 8000,
+      yaku: ["daisangen"],
+    },
+  },
+  {
+    // Two dragon triplets and a dragon pair. Only 2 han by itself, but it never
+    // arrives alone — the two triplets are yakuhai in their own right.
+    name: "two dragon triplets plus the pair is shousangen",
+    handInput: {
+      closedTiles: [
+        "5z", "5z", "5z", "6z", "6z", "6z", "7z", "2m", "3m", "4m", "9p", "9p", "9p",
+      ],
+      winningTile: { tile: "7z", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 58,
+      fu: 60,
+      han: 6,
+      basicPoints: 3000,
+      yaku: ["haku", "hatsu", "sanankou", "shousangen"],
+    },
+  },
+  {
+    name: "an all-honors hand of concealed triplets is two yakuman",
+    handInput: {
+      closedTiles: [
+        "1z", "1z", "1z", "2z", "2z", "2z", "3z", "3z", "3z", "5z", "5z", "7z", "7z",
+      ],
+      winningTile: { tile: "5z", isTsumo: true },
+      gameState: {},
+    },
+    // 20 base + 2 tsumo + four concealed honor triplets (8 each) + 2 for the
+    // chun pair, which is a yakuhai pair like any other.
+    expected: {
+      rawFu: 56,
+      fu: 60,
+      han: 0,
+      basicPoints: 16000,
+      yaku: ["suuankou", "tsuuiisou"],
+    },
+  },
+  {
+    name: "nine gates is chuuren poutou",
+    handInput: {
+      closedTiles: [
+        "1s", "1s", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "9s", "9s",
+      ],
+      winningTile: { tile: "5s", from: "north" },
+      gameState: {},
+    },
+    // Reads as 111s 999s 234s 678s + 5s5s, so the winning 5s completes the
+    // pair: a tanki, not a run. 20 + 10 menzen ron + 8 + 8 + 2 tanki = 48.
+    expected: {
+      rawFu: 48,
+      fu: 50,
+      han: 0,
+      basicPoints: 8000,
+      yaku: ["chuuren-poutou"],
+    },
+  },
 ];

@@ -231,12 +231,42 @@ function yakuOf(p, ctx) {
   if (kans >= 4) add("suukantsu", 13);
   else if (kans === 3) add("sankantsu", 2);
 
+  const isWind = (t) => isHonor(t) && num(t) <= 4;
+  const dragonTrips = trips.filter((g) => isDragon(g.tiles[0])).length;
+  if (dragonTrips >= 3) add("daisangen", 13);
+  else if (dragonTrips === 2 && isDragon(p.pair)) add("shousangen", 2);
+
+  const windTrips = trips.filter((g) => isWind(g.tiles[0])).length;
+  if (windTrips >= 4) add("daisuushii", 13);
+  else if (windTrips === 3 && isWind(p.pair)) add("shousuushii", 13);
+
+  // 1112345678999 of one suit plus any duplicate, fully concealed.
+  if (closed && all.length === 14 && !all.some(isHonor) &&
+      new Set(all.map(suit)).size === 1) {
+    const base = [3, 1, 1, 1, 1, 1, 1, 1, 3];
+    const counts = new Array(9).fill(0);
+    for (const t of all) counts[num(t) - 1]++;
+    let surplus = 0;
+    let ok = true;
+    for (let i = 0; i < 9; i++) {
+      const extra = counts[i] - base[i];
+      if (extra < 0) ok = false;
+      surplus += extra;
+    }
+    if (ok && surplus === 1) add("chuuren-poutou", 13);
+  }
+
   const sets = [{ tiles: [p.pair] }, ...p.groups];
   if (sets.every((g) => g.tiles.some(isTH))) {
     if (all.every(isTH)) add("honroutou", 2);
     else if (all.every((t) => !isHonor(t))) add("junchan", closed ? 3 : 2);
     else add("chanta", closed ? 2 : 1);
   }
+
+  const GREEN = ["2s", "3s", "4s", "6s", "8s", "6z"];
+  if (all.every(isHonor)) add("tsuuiisou", 13);
+  else if (all.every(isTerminal)) add("chinroutou", 13);
+  else if (all.every((t) => GREEN.includes(t))) add("ryuuiisou", 13);
 
   const nonHonorSuits = new Set(all.filter((t) => !isHonor(t)).map(suit));
   const anyHonor = all.some(isHonor);
@@ -255,11 +285,20 @@ function basicPoints(han, fu) {
   return Math.min(fu * 2 ** (2 + han), 2000);
 }
 
+// Every yakuman in this file is registered at 13 han; no ordinary yaku is.
+const YAKUMAN_HAN = 13;
+
 function score(p, ctx) {
   const { fu } = fuOf(p, ctx);
   const yaku = yakuOf(p, ctx);
   const han = yaku.reduce((a, y) => a + y.han, 0) + ctx.dora;
-  return { fu, yaku, han, points: yaku.length ? basicPoints(han, fu) : -1 };
+  // Yakuman stack: an all-honors hand of concealed triplets is both suuankou
+  // and tsuuiisou, and is worth two.
+  const yakumanCount = yaku.filter((y) => y.han === YAKUMAN_HAN).length;
+  const points = yakumanCount
+    ? 8000 * yakumanCount
+    : basicPoints(han, fu);
+  return { fu, yaku, han, points: yaku.length ? points : -1 };
 }
 
 

@@ -200,7 +200,13 @@ export function calculate(handInput: HandInput): HandAnalysis {
       hi.uradora +
       hi.akadora +
       hi.yaku.reduce((acc, yaku) => (acc += yaku.han), hi.han);
-    hi.limit = hi.yaku.find((yaku) => yaku.limit)?.limit;
+    // Yakuman stack: suuankou of all honors is both suuankou and tsuuiisou, and
+    // is worth two. Three or more is currently still reported as double —
+    // representing higher multiples needs the open decision on how limits are
+    // expressed.
+    const limits = hi.yaku.filter((yaku) => yaku.limit);
+    hi.limit =
+      limits.length >= 2 ? "double-yakuman" : limits[0]?.limit;
 
     hi.basicPoints = calculateBasicPoints(hi.han, hi.fu, hi.limit);
     hi.seatPayments = calcaulateSeatPayments(hi);
