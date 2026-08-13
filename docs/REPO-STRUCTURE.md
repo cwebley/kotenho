@@ -155,9 +155,13 @@ the whole design is built to prevent.
   new tooling. pnpm is a reasonable upgrade later, not a prerequisite.
 - **Independent versions.** The two packages version separately. They are
   released together only when a change genuinely spans both.
-- **Internal dependency uses `workspace:*`**, resolved to a real semver range at
-  publish, so development needs no version-bump dance while consumers still get
-  a normal dependency.
+- **Internal dependency uses an ordinary semver range** (`"riichi-score":
+  "^1.0.6"`). npm workspaces link the local package automatically whenever its
+  version satisfies the range, so development uses the working copy while
+  published consumers get a normal registry dependency. Note npm does **not**
+  support the `workspace:*` protocol — that is pnpm/yarn-berry only, and npm
+  10 fails with `EUNSUPPORTEDPROTOCOL`. A major version bump in `riichi-score`
+  therefore requires widening this range by hand.
 - **`riichi-score`'s existing dual cjs/esm build** (`tsconfig.cjs.json` /
   `tsconfig.esm.json`) carries over untouched.
 - **CI runs both packages plus the differential suite on every PR** — this is the

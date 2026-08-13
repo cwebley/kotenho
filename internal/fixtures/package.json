@@ -1,0 +1,8 @@
+{
+  "name": "@kotenho/fixtures",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared test corpus: curated scoring tables and generated regression hands. Never published.",
+  "license": "MIT"
+}

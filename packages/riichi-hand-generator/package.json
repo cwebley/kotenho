@@ -1,0 +1,32 @@
+{
+  "name": "riichi-hand-generator",
+  "version": "0.0.0",
+  "description": "Generate randomized valid Riichi Mahjong winning hands satisfying scoring constraints",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "riichi-score": "^1.0.6"
+  },
+  "keywords": [
+    "riichi",
+    "mahjong",
+    "generator",
+    "scoring"
+  ],
+  "author": "Cameron Webley <cameron.webley@gmail.com>",
+  "license": "MIT"
+}
