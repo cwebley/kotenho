@@ -1,4 +1,5 @@
 import { HandInterpretation } from "../models/hand-interpretation.js";
+import { detectIipeiko } from "./iipeiko.js";
 import { detectPinfu } from "./pinfu.js";
 import { detectTanyao } from "./tanyao.js";
 import { detectMenzenTsumo } from "./tsumo.js";
@@ -26,6 +27,7 @@ export function detectStandardYaku(
   detectMenzenTsumo(handInterpretation);
   detectPinfu(handInterpretation);
   detectTanyao(handInterpretation);
+  detectIipeiko(handInterpretation);
 
   return handInterpretation;
 }

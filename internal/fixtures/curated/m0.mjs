@@ -201,4 +201,44 @@ export const m0Fixtures = [
     },
     expected: { rawFu: 32, fu: 40, han: 1, basicPoints: 320, yaku: ["riichi"] },
   },
+
+  // ---- iipeiko / ryanpeikou ----
+  {
+    name: "two identical runs are iipeiko",
+    handInput: {
+      closedTiles: [
+        "2m", "3m", "4m", "2m", "3m", "4m", "5p", "6p", "7p", "7s", "8s", "8s", "8s",
+      ],
+      winningTile: { tile: "9s", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 30,
+      fu: 30,
+      han: 2,
+      basicPoints: 480,
+      yaku: ["pinfu", "iipeiko"],
+    },
+  },
+  {
+    // Also a legal chiitoitsu (seven distinct pairs). Chiitoi reads as
+    // 3 han 25 fu = 800; ryanpeikou reads as 5 han = mangan. Kotenho requires
+    // the higher, so this fixture pins the interpretation ordering as well as
+    // ryanpeikou itself.
+    name: "ryanpeikou outscores the chiitoitsu reading of the same tiles",
+    handInput: {
+      closedTiles: [
+        "2m", "3m", "4m", "2m", "3m", "4m", "6p", "7p", "8p", "6p", "7p", "5s", "5s",
+      ],
+      winningTile: { tile: "8p", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 30,
+      fu: 30,
+      han: 5,
+      basicPoints: 2000,
+      yaku: ["pinfu", "tanyao", "ryanpeikou"],
+    },
+  },
 ];

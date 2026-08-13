@@ -20,6 +20,8 @@ export type YakuName =
   | "rinshan-kaihou"
   | "chankan"
   | "tanyao"
+  | "iipeiko"
+  | "ryanpeikou"
   | YakuhaiName;
 
 export interface YakuListing {
