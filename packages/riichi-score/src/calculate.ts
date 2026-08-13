@@ -20,6 +20,7 @@ import { countDora } from "./utils/count-dora.js";
 import { countRedFives } from "./utils/count-red-fives.js";
 import { roundFu } from "./utils/round-fu.js";
 import { calculateBasicPoints } from "./utils/calculate-basic-points.js";
+import { LIMIT_BY_COUNT } from "./models/yaku.js";
 import { calcaulateSeatPayments } from "./utils/calculate-seat-payments.js";
 
 export function calculate(handInput: HandInput): HandAnalysis {
@@ -200,15 +201,16 @@ export function calculate(handInput: HandInput): HandAnalysis {
       hi.uradora +
       hi.akadora +
       hi.yaku.reduce((acc, yaku) => (acc += yaku.han), hi.han);
-    // Yakuman stack: suuankou of all honors is both suuankou and tsuuiisou, and
-    // is worth two. Three or more is currently still reported as double —
-    // representing higher multiples needs the open decision on how limits are
-    // expressed.
-    const limits = hi.yaku.filter((yaku) => yaku.limit);
+    // Composite yakuman stack, and this is standard rather than a local rule:
+    // an all-honors hand of concealed triplets is both suuankou and tsuuiisou
+    // and pays double. The label caps at quadruple; the payout does not.
+    const yakumanCount = hi.yaku.filter((yaku) => yaku.limit).length;
     hi.limit =
-      limits.length >= 2 ? "double-yakuman" : limits[0]?.limit;
+      yakumanCount > 0
+        ? LIMIT_BY_COUNT[Math.min(yakumanCount, LIMIT_BY_COUNT.length) - 1]
+        : undefined;
 
-    hi.basicPoints = calculateBasicPoints(hi.han, hi.fu, hi.limit);
+    hi.basicPoints = calculateBasicPoints(hi.han, hi.fu, yakumanCount);
     hi.seatPayments = calcaulateSeatPayments(hi);
     hi.totalWinnings = hi.seatPayments.reduce(
       (acc, seat) => (acc += seat.value),

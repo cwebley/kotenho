@@ -7,13 +7,12 @@ import { Limit } from "../models/yaku.js";
 export function calculateBasicPoints(
   han: number,
   fu: TotalFuValue,
-  limit?: Limit,
+  yakumanCount = 0,
 ): number {
-  if (limit === "double-yakuman") {
-    return 16000;
-  }
-  if (limit === "yakuman") {
-    return 8000;
+  // N yakuman is worth N times the base. The label caps at quadruple; the
+  // payout does not.
+  if (yakumanCount > 0) {
+    return 8000 * yakumanCount;
   }
   if (han >= 13) {
     // yakuman

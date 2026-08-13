@@ -5,7 +5,24 @@ export type YakuhaiName =
   | "hatsu"
   | "chun";
 
-export type Limit = "yakuman" | "double-yakuman";
+/**
+ * Composite yakuman stack: two *different* yakuman in one hand is a genuine
+ * double, and this is standard rather than a local rule. Distinct from the
+ * local variation where a single hand (kokushi 13-wait, suuankou tanki) counts
+ * double on its own — that is not applied here.
+ */
+export type Limit =
+  | "yakuman"
+  | "double-yakuman"
+  | "triple-yakuman"
+  | "quadruple-yakuman";
+
+export const LIMIT_BY_COUNT: Limit[] = [
+  "yakuman",
+  "double-yakuman",
+  "triple-yakuman",
+  "quadruple-yakuman",
+];
 
 export type YakuName =
   | "chiitoitsu"
