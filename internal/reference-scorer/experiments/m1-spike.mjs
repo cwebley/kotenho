@@ -92,6 +92,16 @@ for (const [label, spec, extra = {}] of SPECS) {
     const reference = referenceBest(handInput);
     if (!reference) continue;
 
+    // riichi-score suppresses ordinary yaku under a yakuman and reports
+    // han: 0 + limit; the reference scorer has no suppression and reports raw
+    // han. Both agree on the payout, so compare points there rather than han.
+    const isLimit = Boolean(canonical.limit) || reference.han >= 13;
+    if (isLimit) {
+      if (reference.points === canonical.basicPoints) hanAgree++;
+      compared++;
+      continue;
+    }
+
     compared++;
     if (reference.han === canonical.han) hanAgree++;
     else {

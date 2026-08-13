@@ -241,4 +241,60 @@ export const m0Fixtures = [
       yaku: ["pinfu", "tanyao", "ryanpeikou"],
     },
   },
+
+  // ---- sanankou / suuankou ----
+  {
+    name: "three concealed triplets are sanankou",
+    handInput: {
+      closedTiles: [
+        "2m", "2m", "2m", "5p", "5p", "5p", "8s", "8s", "8s", "4s", "5s", "9m", "9m",
+      ],
+      winningTile: { tile: "3s", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 42,
+      fu: 50,
+      han: 2,
+      basicPoints: 800,
+      yaku: ["sanankou"],
+    },
+  },
+  {
+    // The same three triplets, but the last one is claimed off a discard via a
+    // shanpon. It is then a minko, leaving only two concealed triplets — so no
+    // sanankou, and the triplet takes open-triplet fu (2 rather than 4).
+    name: "a ron-completed triplet does not count toward sanankou",
+    handInput: {
+      closedTiles: [
+        "2m", "2m", "2m", "5p", "5p", "5p", "8s", "8s", "3s", "4s", "5s", "9m", "9m",
+      ],
+      winningTile: { tile: "8s", from: "north" },
+      gameState: { isRiichi: true },
+    },
+    expected: {
+      rawFu: 40,
+      fu: 40,
+      han: 1,
+      basicPoints: 320,
+      yaku: ["riichi"],
+    },
+  },
+  {
+    name: "four concealed triplets are suuankou, and it suppresses lesser yaku",
+    handInput: {
+      closedTiles: [
+        "2m", "2m", "5p", "5p", "5p", "8s", "8s", "8s", "3p", "3p", "3p", "9m", "9m",
+      ],
+      winningTile: { tile: "2m", isTsumo: true },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 38,
+      fu: 40,
+      han: 0,
+      basicPoints: 8000,
+      yaku: ["suuankou"],
+    },
+  },
 ];
