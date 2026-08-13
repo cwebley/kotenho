@@ -417,4 +417,58 @@ export const m0Fixtures = [
       yaku: ["haku", "sanankou", "toitoi", "honroutou"],
     },
   },
+
+  // ---- sanshoku ----
+  {
+    name: "the same run in all three suits is sanshoku, 2 han closed",
+    handInput: {
+      closedTiles: [
+        "2m", "3m", "4m", "2p", "3p", "4p", "2s", "3s", "4s", "6m", "7m", "9s", "9s",
+      ],
+      winningTile: { tile: "8m", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 30,
+      fu: 30,
+      han: 3,
+      basicPoints: 960,
+      yaku: ["pinfu", "sanshoku"],
+    },
+  },
+  {
+    // Opening the hand halves sanshoku and destroys pinfu, leaving 20 raw fu
+    // that the kuipinfu floor lifts to 30.
+    name: "sanshoku is 1 han once the hand is opened",
+    handInput: {
+      closedTiles: ["2p", "3p", "4p", "2s", "3s", "4s", "6m", "7m", "9s", "9s"],
+      openMelds: [{ type: "run", tiles: ["2m", "3m", "4m"], from: "east" }],
+      winningTile: { tile: "8m", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 20,
+      fu: 30,
+      han: 1,
+      basicPoints: 240,
+      yaku: ["sanshoku"],
+    },
+  },
+  {
+    name: "the same triplet in all three suits is sanshoku doukou",
+    handInput: {
+      closedTiles: [
+        "2m", "2m", "2m", "2p", "2p", "2p", "2s", "2s", "2s", "4m", "5m", "9s", "9s",
+      ],
+      winningTile: { tile: "6m", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 42,
+      fu: 50,
+      han: 4,
+      basicPoints: 2000,
+      yaku: ["sanankou", "sanshoku-doukou"],
+    },
+  },
 ];

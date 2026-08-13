@@ -30,6 +30,8 @@ export type YakuName =
   | "chanta"
   | "junchan"
   | "honroutou"
+  | "sanshoku"
+  | "sanshoku-doukou"
   | YakuhaiName;
 
 export interface YakuListing {
