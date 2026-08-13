@@ -61,14 +61,16 @@ function decompose(counts) {
   return out;
 }
 
-function parseStandard(tiles) {
+// groupCount is 4 minus the number of declared melds: melds are fixed and must
+// not be re-parsed, so only the concealed portion is decomposed.
+function parseStandard(tiles, groupCount = 4) {
   const counts = toCounts(tiles);
   const out = [];
   for (const t of ALL_TILES) {
     if ((counts[t] || 0) < 2) continue;
     counts[t] -= 2;
     for (const groups of decompose(counts))
-      if (groups.length === 4) out.push({ pair: t, groups });
+      if (groups.length === groupCount) out.push({ pair: t, groups });
     counts[t] += 2;
   }
   return out;
@@ -117,9 +119,13 @@ function allInterpretations(tiles, winTile) {
 
 // ─────────────────────────── scoring ───────────────────────────
 
+// Openness is read off the groups (a called meld sets `called`), never passed
+// in — an ankan is a declared meld that leaves the hand concealed.
+const isMenzen = (p) => p.groups.every((g) => !g.called);
+
 function fuOf(p, ctx) {
   if (p.chiitoi) return { raw: 25, fu: 25 };
-  const menzen = !ctx.open;
+  const menzen = isMenzen(p);
   const allRuns = p.groups.every((g) => g.type === "run");
   const pairYaku = isDragon(p.pair) || p.pair === ctx.roundWind || p.pair === ctx.seatWind;
   const pinfuShape = allRuns && !pairYaku && p.wait === "ryanmen";
@@ -130,11 +136,17 @@ function fuOf(p, ctx) {
   if (!ctx.tsumo && menzen) f += 10;
   if (ctx.tsumo) f += 2;
   p.groups.forEach((g, i) => {
-    if (g.type !== "trip") return;
-    // a triplet completed by RON scores as an open triplet
-    const openTrip = !ctx.tsumo && p.wait === "shanpon" && i === p.hostIdx;
+    if (g.type === "run") return;
     const th = isTH(g.tiles[0]);
-    f += openTrip ? (th ? 4 : 2) : th ? 8 : 4;
+    if (g.type === "kan") {
+      f += g.called ? (th ? 16 : 8) : th ? 32 : 16;
+      return;
+    }
+    // A called triplet is open; so is one completed by RON, even though the
+    // hand itself stays concealed.
+    const open =
+      g.called || (!ctx.tsumo && p.wait === "shanpon" && i === p.hostIdx);
+    f += open ? (th ? 4 : 2) : th ? 8 : 4;
   });
   if (p.pair === ctx.roundWind && p.pair === ctx.seatWind) f += 4;
   else if (pairYaku) f += 2;
@@ -142,13 +154,29 @@ function fuOf(p, ctx) {
   return { raw: f, fu: Math.ceil(f / 10) * 10 };
 }
 
+// Yaku declared by game state rather than hand shape. They never appear by
+// accident, but a hand whose only yaku is riichi is invalid without them.
+function addDeclaredYaku(add, p, ctx) {
+  const menzen = p.chiitoi || isMenzen(p);
+  if (menzen && ctx.doubleRiichi) add("double-riichi", 2);
+  else if (menzen && ctx.riichi) add("riichi", 1);
+  if (menzen && (ctx.riichi || ctx.doubleRiichi) && ctx.ippatsu) {
+    add("ippatsu", 1);
+  }
+  if (ctx.tsumo && ctx.haitei) add("haitei", 1);
+  if (!ctx.tsumo && ctx.houtei) add("houtei", 1);
+  if (ctx.tsumo && ctx.rinshan) add("rinshan-kaihou", 1);
+  if (!ctx.tsumo && ctx.chankan) add("chankan", 1);
+}
+
 function yakuOf(p, ctx) {
   const y = [];
   const add = (n, h) => y.push({ name: n, han: h });
+  addDeclaredYaku(add, p, ctx);
   if (p.chiitoi) {
     add("chiitoi", 2);
     if (p.tiles.every(isSimple)) add("tanyao", 1);
-    if (ctx.tsumo && !ctx.open) add("menzen-tsumo", 1);
+    if (ctx.tsumo) add("menzen-tsumo", 1); // chiitoi is always concealed
     const suits = new Set(p.tiles.filter((t) => !isHonor(t)).map(suit));
     if (suits.size === 1 && p.tiles.every((t) => !isHonor(t))) add("chinitsu", 6);
     else if (suits.size === 1) add("honitsu", 3);
@@ -157,8 +185,9 @@ function yakuOf(p, ctx) {
 
   const all = [p.pair, p.pair, ...p.groups.flatMap((g) => g.tiles)];
   const runs = p.groups.filter((g) => g.type === "run");
-  const trips = p.groups.filter((g) => g.type === "trip");
-  const closed = !ctx.open;
+  // Kans behave as triplets for every yaku that counts them.
+  const trips = p.groups.filter((g) => g.type === "trip" || g.type === "kan");
+  const closed = isMenzen(p);
 
   if (ctx.tsumo && closed) add("menzen-tsumo", 1);
 
@@ -191,11 +220,16 @@ function yakuOf(p, ctx) {
 
   if (trips.length === 4) add("toitoi", 2);
   const concealedTrips = trips.filter((g) => {
+    if (g.called) return false;
     const i = p.groups.indexOf(g);
     return !(!ctx.tsumo && p.wait === "shanpon" && i === p.hostIdx);
   }).length;
   if (concealedTrips >= 4) add("suuankou", 13);
   else if (concealedTrips === 3) add("sanankou", 2);
+
+  const kans = p.groups.filter((g) => g.type === "kan").length;
+  if (kans >= 4) add("suukantsu", 13);
+  else if (kans === 3) add("sankantsu", 2);
 
   const sets = [{ tiles: [p.pair] }, ...p.groups];
   if (sets.every((g) => g.tiles.some(isTH))) {
@@ -229,8 +263,93 @@ function score(p, ctx) {
 }
 
 
+// ─────────────────────── meld-aware entry point ───────────────────────
+
+const AKA = { "0m": "5m", "0p": "5p", "0s": "5s" };
+const norm = (t) => AKA[t] ?? t;
+
+const MELD_KIND = {
+  run: { type: "run", called: true },
+  set: { type: "trip", called: true },
+  daiminkan: { type: "kan", called: true },
+  shouminkan: { type: "kan", called: true },
+  ankan: { type: "kan", called: false }, // concealed: does not open the hand
+};
+
+/**
+ * Score a riichi-score HandInput independently. Taking the same input shape is
+ * deliberate — it removes a translation layer from the differential harness
+ * that could itself introduce the bugs we are hunting. No scoring code is
+ * shared; only the input format.
+ *
+ * Returns every valid reading, highest score first (kotenho).
+ */
+function scoreHand(handInput) {
+  const melds = (handInput.openMelds ?? []).map((meld) => {
+    const kind = MELD_KIND[meld.type];
+    if (!kind) throw new Error(`unknown meld type: ${meld.type}`);
+    return { ...kind, tiles: meld.tiles.map(norm) };
+  });
+
+  const winTile = norm(handInput.winningTile.tile);
+  const concealed = [...handInput.closedTiles.map(norm), winTile];
+  const ctx = {
+    tsumo: Boolean(handInput.winningTile.isTsumo),
+    roundWind: { east: "1z", south: "2z", west: "3z", north: "4z" }[
+      handInput.gameState?.roundWind ?? "east"
+    ],
+    seatWind: { east: "1z", south: "2z", west: "3z", north: "4z" }[
+      handInput.gameState?.seatWind ?? "south"
+    ],
+    riichi: Boolean(handInput.gameState?.isRiichi),
+    doubleRiichi: Boolean(handInput.gameState?.isDoubleRiichi),
+    ippatsu: Boolean(handInput.gameState?.isIppatsu),
+    haitei: Boolean(handInput.gameState?.isHaitei),
+    houtei: Boolean(handInput.gameState?.isHoutei),
+    rinshan: Boolean(handInput.gameState?.isRinshan),
+    chankan: Boolean(handInput.gameState?.isChankan),
+    dora: 0,
+  };
+
+  const readings = [];
+  for (const parse of parseStandard(concealed, 4 - melds.length)) {
+    // The winning tile can only land in the concealed portion; melds are
+    // appended afterwards so they are never treated as the wait.
+    for (const reading of waitReadings(parse, winTile)) {
+      readings.push({ ...reading, groups: [...reading.groups, ...melds] });
+    }
+  }
+
+  if (!melds.length) {
+    const counts = toCounts(concealed);
+    const keys = Object.keys(counts);
+    if (keys.length === 7 && keys.every((k) => counts[k] === 2)) {
+      readings.push({
+        chiitoi: true,
+        tiles: concealed,
+        wait: "tanki",
+        groups: [],
+        pair: winTile,
+        hostIdx: -1,
+      });
+    }
+  }
+
+  const seen = new Map();
+  for (const reading of readings) {
+    const key = reading.chiitoi ? "chiitoi" : interpKey(reading);
+    if (!seen.has(key)) seen.set(key, { ...reading, ...score(reading, ctx) });
+  }
+
+  const scored = [...seen.values()]
+    .filter((entry) => entry.yaku.length > 0)
+    .sort((a, b) => b.points - a.points);
+
+  return { valid: scored.length > 0, readings: scored };
+}
+
 export {
   ALL_TILES, SUITS, num, suit, isHonor, isDragon, isTerminal, isTH, isSimple,
   toCounts, decompose, parseStandard, waitReadings, groupKey, interpKey,
-  allInterpretations, fuOf, yakuOf, basicPoints, score,
+  allInterpretations, fuOf, yakuOf, basicPoints, score, scoreHand,
 };

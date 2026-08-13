@@ -11,7 +11,7 @@
 // rates are reported for every spec; han agreement only where comparable.
 
 import { generate } from "riichi-hand-generator";
-import { allInterpretations, score } from "../src/index.mjs";
+import { scoreHand } from "../src/index.mjs";
 
 const WIND = { east: "1z", south: "2z", west: "3z", north: "4z" };
 
@@ -25,25 +25,7 @@ const CANONICAL = {
 };
 const canonicalName = (name) => CANONICAL[name] ?? name;
 
-function referenceBest(handInput) {
-  const tiles = [...handInput.closedTiles, handInput.winningTile.tile];
-  const readings = allInterpretations(tiles, handInput.winningTile.tile)
-    .map((reading) =>
-      score(reading, {
-        open: false,
-        tsumo: Boolean(handInput.winningTile.isTsumo),
-        roundWind: WIND[handInput.gameState.roundWind],
-        seatWind: WIND[handInput.gameState.seatWind],
-        dora: 0,
-      }),
-    )
-    .filter((entry) => entry.points > 0);
-  if (!readings.length) return null;
-  return readings.sort((a, b) => b.points - a.points)[0];
-}
-
-const comparable = (handInput) =>
-  !handInput.openMelds?.length && handInput.closedTiles.length === 13;
+const referenceBest = (handInput) => scoreHand(handInput).readings[0] ?? null;
 
 const SPECS = [
   ["30 fu closed ron (pinfu)", { fu: 30, closed: true, winMethod: "ron" }],
@@ -88,7 +70,6 @@ for (const [label, spec, extra = {}] of SPECS) {
     accepted++;
 
     const { handInput, canonical } = result.hand;
-    if (!comparable(handInput)) continue;
     const reference = referenceBest(handInput);
     if (!reference) continue;
 
