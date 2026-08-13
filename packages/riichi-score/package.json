@@ -20,7 +20,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/cwebley/riichi-score.git"
+    "url": "https://github.com/cwebley/kotenho.git",
+    "directory": "packages/riichi-score"
   },
   "author": "Cameron Webley cameron.webley@gmail.com",
   "license": "MIT",

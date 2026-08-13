@@ -6,11 +6,11 @@
         "patterns": [
           {
             "group": ["riichi-score/*", "**/packages/riichi-score/src/**"],
-            "message": "Import only from riichi-score's public entry point. The generator must never reach into scoring internals — it proposes hands, riichi-score decides what they are worth (docs/DESIGN.md §8.3)."
+            "message": "Import only from riichi-score's public entry point. The generator must never reach into scoring internals — it proposes hands, riichi-score decides what they are worth."
           },
           {
             "group": ["**/internal/reference-scorer/**", "@kotenho/reference-scorer"],
-            "message": "The reference scorer is test-only. Importing it at runtime would give the library two scoring authorities, which is the drift this design exists to prevent (docs/REPO-STRUCTURE.md)."
+            "message": "The reference scorer is test-only. Importing it at runtime would give the library two scoring authorities, which is the drift this design exists to prevent."
           }
         ]
       }

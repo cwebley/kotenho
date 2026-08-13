@@ -18,20 +18,17 @@ component that can decide what a generated hand is actually worth.
 | [`internal/reference-scorer`](internal/reference-scorer) | **no** | An independent scoring implementation used only for differential testing and measurement. Never a runtime dependency. |
 | [`internal/fixtures`](internal/fixtures) | **no** | Shared curated and generated test corpus. |
 
-## Docs
-
-- [`docs/SPEC.md`](docs/SPEC.md) — problem specification and mahjong domain reference
-- [`docs/DESIGN.md`](docs/DESIGN.md) — generator design and implementation plan
-- [`docs/DESIGN-REVIEW.md`](docs/DESIGN-REVIEW.md) — review of that plan, with measurements
-- [`docs/REPO-STRUCTURE.md`](docs/REPO-STRUCTURE.md) — why this is one repository
-- [`docs/PLANNING-PROMPT.md`](docs/PLANNING-PROMPT.md) — the brief that produced the design
-
 ## The one rule
 
 The generator never computes a score itself. It proposes hands; `riichi-score`
-decides what they are worth, and its output *is* the answer key. This is
-enforced by lint (`packages/riichi-hand-generator/.eslintrc.json`), not by
-convention alone — see [`docs/REPO-STRUCTURE.md`](docs/REPO-STRUCTURE.md).
+decides what they are worth, and its output *is* the answer key. One source of
+truth, no drift.
+
+Because a package boundary inside a monorepo cannot enforce that on its own, it
+is enforced by lint — see
+[`packages/riichi-hand-generator/.eslintrc.json`](packages/riichi-hand-generator/.eslintrc.json),
+which blocks imports of `riichi-score` internals and of the test-only reference
+scorer.
 
 ## Development
 

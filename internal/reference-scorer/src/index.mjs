@@ -1,6 +1,6 @@
 // Reference scorer — an INDEPENDENT riichi scoring implementation.
 //
-// Purpose (see docs/DESIGN.md §10 M1, §11.1):
+// Purpose:
 //   1. the measurement verifier for the convergence spike, where riichi-score's
 //      partial yaku coverage would inflate acceptance rates;
 //   2. the differential-testing counterpart for riichi-score itself.
