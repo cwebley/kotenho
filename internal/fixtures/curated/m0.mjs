@@ -297,4 +297,68 @@ export const m0Fixtures = [
       yaku: ["suuankou"],
     },
   },
+
+  // ---- toitoi / honitsu / chinitsu ----
+  {
+    name: "all triplets is toitoi",
+    handInput: {
+      closedTiles: ["2m", "2m", "2m", "5p", "5p", "5p", "8s", "8s", "3s", "3s"],
+      openMelds: [{ type: "set", tiles: ["9m", "9m", "9m"], from: "east" }],
+      winningTile: { tile: "8s", from: "north" },
+      gameState: {},
+    },
+    expected: { rawFu: 34, fu: 40, han: 2, basicPoints: 640, yaku: ["toitoi"] },
+  },
+  {
+    name: "one suit plus honors is honitsu, 3 han closed",
+    handInput: {
+      closedTiles: [
+        "2s", "3s", "6s", "7s", "8s", "5z", "5z", "5z", "1z", "1z", "1z", "9s", "9s",
+      ],
+      winningTile: { tile: "4s", from: "north" },
+      gameState: { roundWind: "south", seatWind: "west" },
+    },
+    expected: {
+      rawFu: 46,
+      fu: 50,
+      han: 4,
+      basicPoints: 2000,
+      yaku: ["haku", "honitsu"],
+    },
+  },
+  {
+    name: "honitsu is 2 han once the hand is opened",
+    handInput: {
+      closedTiles: [
+        "6s", "7s", "5z", "5z", "5z", "1z", "1z", "1z", "9s", "9s",
+      ],
+      openMelds: [{ type: "run", tiles: ["2s", "3s", "4s"], from: "east" }],
+      winningTile: { tile: "8s", from: "north" },
+      gameState: { roundWind: "south", seatWind: "west" },
+    },
+    expected: {
+      rawFu: 36,
+      fu: 40,
+      han: 3,
+      basicPoints: 1280,
+      yaku: ["haku", "honitsu"],
+    },
+  },
+  {
+    name: "one suit with no honors is chinitsu, and replaces honitsu",
+    handInput: {
+      closedTiles: [
+        "3s", "4s", "4s", "5s", "6s", "6s", "7s", "8s", "9s", "9s", "9s", "1s", "1s",
+      ],
+      winningTile: { tile: "2s", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 38,
+      fu: 40,
+      han: 6,
+      basicPoints: 3000,
+      yaku: ["chinitsu"],
+    },
+  },
 ];

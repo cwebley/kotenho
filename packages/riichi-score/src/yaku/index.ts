@@ -1,7 +1,9 @@
 import { HandInterpretation } from "../models/hand-interpretation.js";
+import { detectHonitsu } from "./honitsu.js";
 import { detectIipeiko } from "./iipeiko.js";
 import { detectPinfu } from "./pinfu.js";
 import { detectSanankou } from "./sanankou.js";
+import { detectToitoi } from "./toitoi.js";
 import { detectTanyao } from "./tanyao.js";
 import { detectMenzenTsumo } from "./tsumo.js";
 import { detectYakuhai } from "./yakuhai.js";
@@ -20,6 +22,7 @@ export function detectStandardYaku(
     if (handInterpretation.yaku.some((y) => y.name === "chiitoitsu")) {
       detectMenzenTsumo(handInterpretation);
       detectTanyao(handInterpretation);
+      detectHonitsu(handInterpretation);
     }
     return handInterpretation;
   }
@@ -30,6 +33,8 @@ export function detectStandardYaku(
   detectTanyao(handInterpretation);
   detectIipeiko(handInterpretation);
   detectSanankou(handInterpretation);
+  detectToitoi(handInterpretation);
+  detectHonitsu(handInterpretation);
 
   // A yakuman suppresses ordinary yaku rather than stacking with them.
   if (handInterpretation.yaku.some((yaku) => yaku.limit)) {
