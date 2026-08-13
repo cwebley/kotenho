@@ -158,6 +158,10 @@ export function calculate(handInput: HandInput): HandAnalysis {
   // add the standard hand interpretations to the kokushi/chiitoi interpretations
   handAnalysis.handInterpretations.push(...standardHandInterpretations);
   if (!handAnalysis.handInterpretations.length) {
+    handAnalysis.valid = false;
+    handAnalysis.errors.push(
+      "Tiles do not form a winning hand: no valid grouping completes with the winning tile.",
+    );
     return handAnalysis;
   }
 
@@ -210,8 +214,11 @@ export function calculate(handInput: HandInput): HandAnalysis {
   handAnalysis.handInterpretations = handAnalysis.handInterpretations.filter(
     (hi) => hi.yaku.length > 0,
   );
-  if (handAnalysis.handInterpretations.length) {
-    handAnalysis.valid = true;
+  handAnalysis.valid = handAnalysis.handInterpretations.length > 0;
+  if (!handAnalysis.valid) {
+    handAnalysis.errors.push(
+      "Hand has no yaku, so it is not a winning hand. Dora alone cannot win.",
+    );
   }
 
   handAnalysis.handInterpretations.sort(

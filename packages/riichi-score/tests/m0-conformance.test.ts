@@ -74,4 +74,30 @@ describe("M0 curated scorer conformance", () => {
     expect(interpretation.han).toBe(0);
     expect(interpretation.basicPoints).toBe(8000);
   });
+
+  it("reports a yaku-less hand as invalid rather than valid-with-no-readings", () => {
+    const result = calculate({
+      closedTiles: ["2m", "3m", "4m", "5p", "6p", "7p", "7s", "8s", "8s", "8s"],
+      openMelds: [{ type: "run", tiles: ["2m", "3m", "4m"], from: "east" }],
+      winningTile: { tile: "9s", from: "north" },
+      gameState: createGameState(),
+    });
+
+    expect(result.handInterpretations).toHaveLength(0);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain("no yaku");
+  });
+
+  it("reports tiles that form no winning shape as invalid", () => {
+    const result = calculate({
+      closedTiles: [
+        "1m", "3m", "5m", "7m", "9m", "1p", "3p", "5p", "7p", "9p", "1s", "3s", "5s",
+      ],
+      winningTile: { tile: "7s", from: "north" },
+      gameState: createGameState(),
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain("do not form a winning hand");
+  });
 });
