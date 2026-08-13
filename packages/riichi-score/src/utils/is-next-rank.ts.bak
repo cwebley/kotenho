@@ -1,0 +1,31 @@
+import { MahjongTile } from "../models/mahjong-tile.js";
+import { isSuitTile } from "./is-suit-tile.js";
+import { nextRank } from "./next-rank.js";
+
+/**
+ */
+export function isNextRank(tile: MahjongTile, nextTile: MahjongTile): boolean {
+  const tileRank = parseInt(tile);
+  const nextTileRank = parseInt(nextTile);
+  const tileSuit = tile[tile.length - 1];
+  const nextTileSuit = nextTile[nextTile.length - 1];
+  if (tileSuit !== nextTileSuit) {
+    return false;
+  }
+  if (!isSuitTile(tile)) {
+    return false;
+  }
+
+  if (nextRank(tile) === nextTile) {
+    return true;
+  }
+  // handle red 5s
+  if (tileRank === 4 && nextTileRank === 0) {
+    return true;
+  }
+
+  if (tileRank === 0 && nextTileRank === 6) {
+    return true;
+  }
+  return false;
+}

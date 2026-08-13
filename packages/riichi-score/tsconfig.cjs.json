@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist/cjs",
+    "strict": true,
+    "module": "CommonJS",
+    "target": "ESNext",
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src"]
+}
