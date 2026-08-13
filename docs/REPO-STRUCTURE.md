@@ -156,12 +156,24 @@ the whole design is built to prevent.
 - **Independent versions.** The two packages version separately. They are
   released together only when a change genuinely spans both.
 - **Internal dependency uses an ordinary semver range** (`"riichi-score":
-  "^1.0.6"`). npm workspaces link the local package automatically whenever its
-  version satisfies the range, so development uses the working copy while
-  published consumers get a normal registry dependency. Note npm does **not**
-  support the `workspace:*` protocol — that is pnpm/yarn-berry only, and npm
-  10 fails with `EUNSUPPORTEDPROTOCOL`. A major version bump in `riichi-score`
-  therefore requires widening this range by hand.
+  "^1.0.6"`). npm does **not** support the `workspace:*` protocol — that is
+  pnpm/yarn-berry only, and npm 10 fails with `EUNSUPPORTEDPROTOCOL`.
+
+  npm workspaces link a workspace package **by name, regardless of whether the
+  local version satisfies the declared range** (verified on npm 10.9.2: a
+  clean-slate install with a deliberately non-satisfying range still symlinked
+  the local package). So during development the range is inert — there is no
+  risk of silently building against a stale registry copy.
+
+  It matters at **publish** time, because it is what consumers resolve. If
+  `riichi-score` moves to 2.0.0 while the generator still publishes
+  `^1.0.6`, published consumers get a version we never developed against.
+  Bumping the range is a release-checklist item, not an install concern.
+
+- **A workspace package's own lockfile is ignored.** npm consolidates to a
+  single root `package-lock.json`, so moving a package into `packages/`
+  discards its pinned dependency tree and re-resolves everything. This bit us
+  during the migration — see the note below.
 - **`riichi-score`'s existing dual cjs/esm build** (`tsconfig.cjs.json` /
   `tsconfig.esm.json`) carries over untouched.
 - **CI runs both packages plus the differential suite on every PR** — this is the
