@@ -1,0 +1,17 @@
+{
+  "name": "kotenho",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Riichi mahjong scoring and constrained hand generation",
+  "workspaces": [
+    "packages/*",
+    "internal/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "author": "Cameron Webley <cameron.webley@gmail.com>",
+  "license": "MIT"
+}
