@@ -6,7 +6,8 @@ import { YakuListing } from "../models/yaku.js";
 export function createKokushiListing(): YakuListing {
   return {
     name: "kokushi-musou",
-    han: 13,
+    han: 0,
+    limit: "yakuman",
   };
 }
 

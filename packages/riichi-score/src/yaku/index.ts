@@ -11,6 +11,14 @@ export function detectStandardYaku(
   handInterpretation: HandInterpretation,
 ): HandInterpretation {
   if (handInterpretation.isStandardHand !== true) {
+    // Chiitoitsu is not a standard shape but still qualifies for the
+    // shape-agnostic yaku — a chiitoi of all simples is also tanyao. Kokushi
+    // is deliberately excluded: it is a yakuman and does not stack with
+    // ordinary yaku. Honitsu/chinitsu belong here too once implemented.
+    if (handInterpretation.yaku.some((y) => y.name === "chiitoitsu")) {
+      detectMenzenTsumo(handInterpretation);
+      detectTanyao(handInterpretation);
+    }
     return handInterpretation;
   }
 

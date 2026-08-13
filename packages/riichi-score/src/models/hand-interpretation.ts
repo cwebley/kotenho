@@ -2,7 +2,7 @@ import { MahjongTile } from "./mahjong-tile.js";
 import { WaitType } from "./wait-type.js";
 import { GameState } from "./game-state.js";
 import { WinningTile } from "./winning-tile.js";
-import { YakuListing } from "./yaku.js";
+import { Limit, YakuListing } from "./yaku.js";
 import { FuListing, TotalFuValue } from "../parsing/parse-fu.js";
 import { StandardPair } from "./standard-pair.js";
 import { StandardGroup } from "./standard-group.js";
@@ -18,6 +18,7 @@ export interface BaseHandInterpretation {
   fu: TotalFuValue;
   basicPoints: number;
   han: number;
+  limit?: Limit;
   seatPayments: SeatPayment[];
   totalWinnings: number;
   isTsumo?: boolean;
@@ -63,6 +64,7 @@ export interface HandInterpretationOptions {
   rawFu?: number;
   fu?: TotalFuValue;
   han?: number;
+  limit?: Limit;
   seatPayments?: SeatPayment[];
   totalWinnings?: number;
   dora?: number;
@@ -89,6 +91,7 @@ export function createHandInterpretation(
       rawFu: hio.rawFu ?? 0,
       fu: hio.fu ?? 0,
       han: hio.han ?? 0,
+      limit: hio.limit,
       dora: hio.dora ?? 0,
       akadora: hio.akadora ?? 0,
       uradora: hio.uradora ?? 0,
@@ -108,6 +111,7 @@ export function createHandInterpretation(
       rawFu: hio.rawFu ?? 0,
       fu: hio.fu ?? 0,
       han: hio.han ?? 0,
+      limit: hio.limit,
       dora: hio.dora ?? 0,
       akadora: hio.akadora ?? 0,
       uradora: hio.uradora ?? 0,

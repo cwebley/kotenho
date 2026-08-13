@@ -14,13 +14,13 @@ export function createTsumoListing(): YakuListing {
 export function detectMenzenTsumo(
   handInterpretation: HandInterpretation,
 ): HandInterpretation {
-  if (handInterpretation.isStandardHand !== true) {
-    return handInterpretation;
-  }
   if (!handInterpretation.winningTile.isTsumo) {
     return handInterpretation;
   }
-  if (handInterpretation.groups.some((g) => !!g.open)) {
+  if (
+    handInterpretation.isStandardHand &&
+    handInterpretation.groups.some((group) => group.open)
+  ) {
     return handInterpretation;
   }
 

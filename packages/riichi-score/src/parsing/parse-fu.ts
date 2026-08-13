@@ -5,6 +5,7 @@ import { isTerminalTile } from "../utils/is-terminal-tile.js";
 import { MahjongTile } from "../models/mahjong-tile.js";
 import { isDragonTile } from "../utils/is-dragon-tile.js";
 import { isHonorTile } from "../utils/is-honor-tile.js";
+import { roundFu } from "../utils/round-fu.js";
 
 export type FuReason =
   | "base"
@@ -28,6 +29,7 @@ export type FuReason =
 export type TotalFuValue =
   | 0 // 0 is only for when the fu hasn't been calcualted yet
   | 20
+  | 25
   | 30
   | 40
   | 50
@@ -41,6 +43,27 @@ export type TotalFuValue =
 export interface FuListing {
   value: number;
   reason: FuReason;
+}
+
+function finalizeFu(handInterpretation: HandInterpretation): HandInterpretation {
+  handInterpretation.rawFu = handInterpretation.fuList.reduce(
+    (total, listing) => total + listing.value,
+    0,
+  );
+  // Chiitoitsu is a flat 25 fu and is never rounded.
+  if (handInterpretation.yaku.some((yaku) => yaku.name === "chiitoitsu")) {
+    handInterpretation.fu = 25;
+  } else if (
+    handInterpretation.rawFu === 20 &&
+    handInterpretation.isStandardHand &&
+    handInterpretation.groups.some((group) => group.open)
+  ) {
+    // An open all-run ron hand has no extra fu, but is scored as 30 fu.
+    handInterpretation.fu = 30;
+  } else {
+    handInterpretation.fu = roundFu(handInterpretation.rawFu);
+  }
+  return handInterpretation;
 }
 
 function findKokushiPairTile(tiles: MahjongTile[]) {
@@ -68,7 +91,7 @@ export function parseFu(
       reason: "chiitoitsu",
       value: 25,
     });
-    return handInterpretation;
+    return finalizeFu(handInterpretation);
   }
 
   handInterpretation.fuList.push({
@@ -92,7 +115,7 @@ export function parseFu(
         console.error(
           `invalid kokushi hand found. tiles: ${handInterpretation.tiles}`,
         );
-        return handInterpretation;
+        return finalizeFu(handInterpretation);
       }
 
       if (roundWindTile === seatWindTile && roundWindTile === pairTile) {
@@ -150,7 +173,7 @@ export function parseFu(
 
   if (handInterpretation.isStandardHand !== true) {
     // nothing else to do for kokushi hands
-    return handInterpretation;
+    return finalizeFu(handInterpretation);
   }
   const groups = handInterpretation.groups || [];
 
@@ -240,5 +263,5 @@ export function parseFu(
     handInterpretation.fuList.push({ reason: "tsumo", value: 2 });
   }
 
-  return handInterpretation;
+  return finalizeFu(handInterpretation);
 }

@@ -884,9 +884,40 @@ plus honest yield reporting in `analyze`.
    wind 4 fu — matching what `parse-fu` already does, kiriage off), as the
    de-facto online standard; expressed via the config object from day one even
    while it's the only option.
-3. **Yakuman representation:** a distinct value (`limit: "yakuman" |
-   "double-yakuman"`), never `han: 13` — kazoe is a ruleset flag, and
-   overloading han conflates two different facts.
+3. **Yakuman representation — PARTLY DECIDED, reopened.** A distinct
+   `limit: "yakuman" | "double-yakuman"` value rather than `han: 13`. Landed in
+   `riichi-score` during M0 and the payouts are verified correct:
+
+   ```
+   non-dealer ron    32000     dealer ron    48000
+   non-dealer tsumo  32000     dealer tsumo  48000   (16000 x 3)
+   ```
+
+   Two things this structure gets right and should be preserved:
+
+   - **`limit` is only ever set from a named yakuman's yaku listing.** Kazoe
+     (13+ han reached naturally) goes through the separate `han >= 13 -> 8000`
+     path in `calculateBasicPoints` and never sets `limit`. That is correct
+     because **kazoe never stacks** — a named double yakuman is 16000 basic
+     points, but 26 han of kazoe is still 8000. Deriving `limit` from han would
+     have to special-case that back out.
+   - **Yonbaiman and yakuman are the same basic points** (4 x mangan = 8000).
+     Rulesets that call 13+ han "yonbaiman" instead of "kazoe yakuman" differ in
+     *naming*, not payout, and the only behavioural difference — whether it can
+     double — is already handled above. That ruleset fork is cheaper than it
+     looks.
+
+   **Still open: what `han` should report on a limit hand.** Today it carries
+   dora, so a kokushi with two dora reports `han: 1, limit: "yakuman"`. The
+   payout is right; the number is misleading for a learner. Options: zero `han`
+   when `limit` is set; leave it and document that consumers ignore `han` on
+   limit hands; or make han a union (`number | "yakuman" | "double-yakuman" |
+   "triple-yakuman"`). Needs research into how the common rulesets and scoring
+   UIs present this, and there is little urgency while only kokushi is detected.
+
+   **Deadline:** before the coach app renders a scoring result. Nothing consumes
+   `han` yet, which is the only reason this is deferrable — the moment the UI
+   reads it, changing its meaning is a breaking change across two repos.
 4. **Ranges:** yes, from day one, for han/fu/dora alike — near-zero comparator
    cost, large yield and pedagogy win; exact remains a degenerate range.
 5. **Situational yaku:** v1 models all of them well enough to *exclude*

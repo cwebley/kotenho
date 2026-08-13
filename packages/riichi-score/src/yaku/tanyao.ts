@@ -15,13 +15,12 @@ export function createTanyaoListing(): YakuListing {
 export function detectTanyao(
   handInterpretation: HandInterpretation,
 ): HandInterpretation {
-  if (handInterpretation.isStandardHand !== true) {
-    return handInterpretation;
-  }
-  const allTiles = [
-    ...handInterpretation.pair.tiles,
-    ...handInterpretation.groups.flatMap((g) => g.tiles),
-  ];
+  const allTiles = handInterpretation.isStandardHand
+    ? [
+        ...handInterpretation.pair.tiles,
+        ...handInterpretation.groups.flatMap((group) => group.tiles),
+      ]
+    : handInterpretation.tiles;
 
   if (!allTiles.every((t) => isSimpleTile(t))) {
     return handInterpretation;

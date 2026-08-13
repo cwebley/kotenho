@@ -61,6 +61,12 @@ export function calculate(handInput: HandInput): HandAnalysis {
       `Some closed tiles are invalid. Invalid tiles: ${invalidClosedTiles}.`,
     );
   }
+  if (!isValidTile(handInput.winningTile.tile)) {
+    handAnalysis.valid = false;
+    handAnalysis.errors.push(
+      `Winning tile is invalid. Tile: ${handInput.winningTile.tile}.`,
+    );
+  }
 
   // verify all the melds are valid (tiles, count, type)
   const invalidMelds = handInput.openMelds.filter((meld) => !isValidMeld(meld));
@@ -71,6 +77,27 @@ export function calculate(handInput: HandInput): HandAnalysis {
         `Invalid meld of type ${invalidMeld.type}. Tiles: ${invalidMeld.tiles}`,
       );
     });
+  }
+
+  // Dora indicators are physical tiles drawn from the same 136-tile set, so
+  // they count against the four-copy limit alongside the hand and its melds.
+  const normalizedInputTiles = replaceAkadora([
+    ...flattenInputTiles(handInput),
+    ...(handInput.gameState?.doraIndicators ?? []),
+    ...(handInput.gameState?.uradoraIndicators ?? []),
+  ]);
+  const tileCounts = new Map<string, number>();
+  normalizedInputTiles.forEach((tile) => {
+    tileCounts.set(tile, (tileCounts.get(tile) ?? 0) + 1);
+  });
+  const overrepresentedTiles = [...tileCounts].filter(([, count]) => count > 4);
+  if (overrepresentedTiles.length) {
+    handAnalysis.valid = false;
+    handAnalysis.errors.push(
+      `A tile appears more than four times: ${overrepresentedTiles
+        .map(([tile, count]) => `${tile} (${count})`)
+        .join(", ")}.`,
+    );
   }
 
   if (handAnalysis.errors.length) {
@@ -151,12 +178,6 @@ export function calculate(handInput: HandInput): HandAnalysis {
     detectDeclaredYaku(hi);
     detectStandardYaku(hi);
     parseFu(hi);
-    hi.rawFu = hi.fuList.reduce((acc, fuItem) => (acc += fuItem.value), 0);
-    hi.fu = roundFu(hi.rawFu);
-    // An open all-run ron hand has no extra fu, but is scored as 30 fu.
-    if (hi.rawFu === 20 && hi.isStandardHand && hi.groups.some((g) => g.open)) {
-      hi.fu = 30;
-    }
 
     const flattenedTiles = flattenTiles(hi);
     hi.gameState.doraIndicators.forEach((doraIndicator) => {
@@ -175,8 +196,9 @@ export function calculate(handInput: HandInput): HandAnalysis {
       hi.uradora +
       hi.akadora +
       hi.yaku.reduce((acc, yaku) => (acc += yaku.han), hi.han);
+    hi.limit = hi.yaku.find((yaku) => yaku.limit)?.limit;
 
-    hi.basicPoints = calculateBasicPoints(hi.han, hi.fu);
+    hi.basicPoints = calculateBasicPoints(hi.han, hi.fu, hi.limit);
     hi.seatPayments = calcaulateSeatPayments(hi);
     hi.totalWinnings = hi.seatPayments.reduce(
       (acc, seat) => (acc += seat.value),

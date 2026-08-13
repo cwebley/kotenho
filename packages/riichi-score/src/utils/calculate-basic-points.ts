@@ -1,9 +1,20 @@
 import { TotalFuValue } from "../parsing/parse-fu.js";
+import { Limit } from "../models/yaku.js";
 
 /**
  * Takes a han count and a fu count and returns the basic points used in scoring payments
  */
-export function calculateBasicPoints(han: number, fu: TotalFuValue): number {
+export function calculateBasicPoints(
+  han: number,
+  fu: TotalFuValue,
+  limit?: Limit,
+): number {
+  if (limit === "double-yakuman") {
+    return 16000;
+  }
+  if (limit === "yakuman") {
+    return 8000;
+  }
   if (han >= 13) {
     // yakuman
     return 8000;
