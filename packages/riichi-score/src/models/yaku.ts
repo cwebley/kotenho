@@ -27,6 +27,9 @@ export type YakuName =
   | "toitoi"
   | "honitsu"
   | "chinitsu"
+  | "chanta"
+  | "junchan"
+  | "honroutou"
   | YakuhaiName;
 
 export interface YakuListing {

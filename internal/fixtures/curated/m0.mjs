@@ -361,4 +361,60 @@ export const m0Fixtures = [
       yaku: ["chinitsu"],
     },
   },
+
+  // ---- chanta / junchan / honroutou ----
+  {
+    name: "every set contains a terminal or honor: chanta, 2 han closed",
+    handInput: {
+      closedTiles: [
+        "1m", "2m", "7p", "8p", "9p", "1z", "1z", "1z", "9s", "9s", "9s", "9m", "9m",
+      ],
+      winningTile: { tile: "3m", from: "north" },
+      gameState: { roundWind: "south", seatWind: "west" },
+    },
+    expected: {
+      rawFu: 48,
+      fu: 50,
+      han: 2,
+      basicPoints: 800,
+      yaku: ["chanta"],
+    },
+  },
+  {
+    name: "the same shape without honors is junchan, 3 han closed",
+    handInput: {
+      closedTiles: [
+        "1m", "2m", "7p", "8p", "9p", "1s", "1s", "1s", "9s", "9s", "9s", "9m", "9m",
+      ],
+      winningTile: { tile: "3m", from: "north" },
+      gameState: { roundWind: "south", seatWind: "west" },
+    },
+    expected: {
+      rawFu: 48,
+      fu: 50,
+      han: 3,
+      basicPoints: 1600,
+      yaku: ["junchan"],
+    },
+  },
+  {
+    // Nothing but terminals and honors, so no run is possible and the hand is
+    // honroutou rather than chanta. Won by ron on a shanpon, which demotes that
+    // triplet to a minko — leaving three concealed, so sanankou not suuankou.
+    name: "all terminals and honors is honroutou, not chanta",
+    handInput: {
+      closedTiles: [
+        "1m", "1m", "9p", "9p", "9p", "1z", "1z", "1z", "5z", "5z", "5z", "9s", "9s",
+      ],
+      winningTile: { tile: "1m", from: "north" },
+      gameState: { roundWind: "south", seatWind: "west" },
+    },
+    expected: {
+      rawFu: 58,
+      fu: 60,
+      han: 7,
+      basicPoints: 3000,
+      yaku: ["haku", "sanankou", "toitoi", "honroutou"],
+    },
+  },
 ];
