@@ -88,6 +88,40 @@ describe("M0 curated scorer conformance", () => {
     expect(result.errors[0]).toContain("no yaku");
   });
 
+  it("never parses honors as a run", () => {
+    // 1z2z3z, 2z3z4z and 5z6z7z all look like sequences to a rank-incrementing
+    // helper. Any interpretation containing one is a phantom.
+    const result = calculate({
+      closedTiles: [
+        "2p", "3p", "3p", "4p", "4p", "5z", "5z", "6z", "6z", "7p", "7p", "7z", "7z",
+      ],
+      winningTile: { tile: "2p", from: "north" },
+      gameState: createGameState(),
+    });
+
+    for (const interpretation of result.handInterpretations) {
+      if (!interpretation.isStandardHand) continue;
+      for (const group of interpretation.groups) {
+        if (group.type !== "run") continue;
+        expect(group.tiles.some((tile) => tile.endsWith("z"))).toBe(false);
+      }
+    }
+  });
+
+  it("rejects a run meld made of honors", () => {
+    const result = calculate({
+      closedTiles: ["1m", "2m", "3m", "4m", "5m", "6m", "7p", "8p", "9p", "5s"],
+      openMelds: [{ type: "run", tiles: ["5z", "6z", "7z"], from: "east" }],
+      winningTile: { tile: "5s", from: "north" },
+      gameState: createGameState(),
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((error) => error.includes("Invalid meld"))).toBe(
+      true,
+    );
+  });
+
   it("reports tiles that form no winning shape as invalid", () => {
     const result = calculate({
       closedTiles: [

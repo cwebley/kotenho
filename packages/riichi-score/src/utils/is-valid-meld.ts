@@ -1,4 +1,5 @@
 import { Meld } from "../models/hand-input.js";
+import { isSuitTile } from "./is-suit-tile.js";
 import { isValidTile } from "./is-valid-tile.js";
 import { nextRank } from "./next-rank.js";
 import { replaceAkadora } from "./replace-akadora.js";
@@ -19,6 +20,11 @@ export function isValidMeld(meld: Meld): boolean {
 
   if (meld.type === "run") {
     if (meld.tiles.length !== 3) {
+      return false;
+    }
+    // Honors have no sequence. nextRank increments blindly, so without this
+    // guard haku-hatsu-chun validates as a run.
+    if (!normalizedTiles.every((tile) => isSuitTile(tile))) {
       return false;
     }
     const sortedTiles = normalizedTiles.sort(tileCompare);

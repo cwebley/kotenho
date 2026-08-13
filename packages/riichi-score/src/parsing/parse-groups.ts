@@ -1,3 +1,4 @@
+import { isSuitTile } from "../utils/is-suit-tile.js";
 import { nextRank } from "../utils/next-rank.js";
 import { removeTiles } from "../utils/remove-tiles.js";
 import { StandardGroup, createStandardGroup } from "../models/standard-group.js";
@@ -37,12 +38,17 @@ export function parseGroups(tiles: MahjongTile[]): StandardGroup[][] {
   const remainingAfterSet = removeTiles(tiles, setCandidate);
 
   // Attempt to form a "run" (three consecutive suited tiles) from the first tile.
-  const runCandidate = [
-    firstTile,
-    nextRank(firstTile),
-    nextRank(nextRank(firstTile)),
-  ];
-  const remainingAfterRun = removeTiles(tiles, runCandidate);
+  //
+  // Only numbered suits have sequences. nextRank increments the rank blindly,
+  // so calling it on an honor yields "6z" from "5z" and the parser would happily
+  // read haku-hatsu-chun as a run. A run also cannot start above 7.
+  const canStartRun = isSuitTile(firstTile) && parseInt(firstTile, 10) <= 7;
+  const runCandidate = canStartRun
+    ? [firstTile, nextRank(firstTile), nextRank(nextRank(firstTile))]
+    : null;
+  const remainingAfterRun = runCandidate
+    ? removeTiles(tiles, runCandidate)
+    : null;
 
   // We'll accumulate all valid interpretations here
   const results: StandardGroup[][] = [];
@@ -64,7 +70,7 @@ export function parseGroups(tiles: MahjongTile[]): StandardGroup[][] {
   }
 
   // 2) If we can remove a run, recurse on the remainder
-  if (remainingAfterRun) {
+  if (runCandidate && remainingAfterRun) {
     const group = createStandardGroup({
       tiles: runCandidate,
       type: "run",

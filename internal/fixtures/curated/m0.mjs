@@ -506,4 +506,26 @@ export const m0Fixtures = [
       yaku: ["ittsuu"],
     },
   },
+
+  // ---- honors have no sequence ----
+  {
+    // Regression: the parser used to build 5z6z7z as a "run", inventing a
+    // standard reading (pinfu + ryanpeikou + honitsu, 3000 pts) for a hand that
+    // has none. Only the chiitoitsu reading is real, and it is worth 2000.
+    name: "haku-hatsu-chun is not a run",
+    handInput: {
+      closedTiles: [
+        "2p", "3p", "3p", "4p", "4p", "5z", "5z", "6z", "6z", "7p", "7p", "7z", "7z",
+      ],
+      winningTile: { tile: "2p", from: "north" },
+      gameState: {},
+    },
+    expected: {
+      rawFu: 25,
+      fu: 25,
+      han: 5,
+      basicPoints: 2000,
+      yaku: ["chiitoitsu", "honitsu"],
+    },
+  },
 ];
