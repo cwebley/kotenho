@@ -275,6 +275,33 @@ describe("parse fu", () => {
     expect(updatedHand.fuList.map((y) => y.reason)).toContain("closed ron");
   });
 
+  it("scores a ron-completed shanpon triplet as open without losing closed ron", () => {
+    const hand = createHandInterpretation({
+      isStandardHand: true,
+      waitType: "shanpon",
+      winningTile: { tile: "8m", from: "north" },
+      yaku: [],
+      fuList: [],
+      pair: createStandardPair({ tiles: ["4p", "4p"] }),
+      groups: [
+        createStandardGroup({ tiles: ["1m", "2m", "3m"], type: "run" }),
+        createStandardGroup({ tiles: ["2p", "3p", "4p"], type: "run" }),
+        createStandardGroup({ tiles: ["7p", "8p", "9p"], type: "run" }),
+        createStandardGroup({
+          tiles: ["8m", "8m", "8m"],
+          type: "set",
+          isFinalWait: true,
+        }),
+      ],
+      gameState: createGameState(),
+    });
+
+    const reasons = parseFu(hand).fuList.map((item) => item.reason);
+    expect(reasons).toContain("open triplet of simples");
+    expect(reasons).not.toContain("closed triplet of simples");
+    expect(reasons).toContain("closed ron");
+  });
+
   it("handles a standard hand with tanki wait, an open honor set, and a tsumo", () => {
     const testHand = createHandInterpretation({
       isStandardHand: true,

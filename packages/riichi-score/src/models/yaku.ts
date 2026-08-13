@@ -11,6 +11,12 @@ export type YakuName =
   | "menzen-tsumo"
   | "pinfu"
   | "riichi"
+  | "double-riichi"
+  | "ippatsu"
+  | "haitei"
+  | "houtei"
+  | "rinshan-kaihou"
+  | "chankan"
   | "tanyao"
   | YakuhaiName;
 

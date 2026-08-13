@@ -7,6 +7,12 @@ export interface GameState {
   doraIndicators: MahjongTile[];
   uradoraIndicators: MahjongTile[];
   isRiichi: boolean;
+  isDoubleRiichi?: boolean;
+  isIppatsu?: boolean;
+  isHaitei?: boolean;
+  isHoutei?: boolean;
+  isRinshan?: boolean;
+  isChankan?: boolean;
   honbaCount: number;
 }
 
@@ -20,6 +26,12 @@ export interface GameStateOptions {
   doraIndicators?: MahjongTile[];
   uradoraIndicators?: MahjongTile[];
   isRiichi?: boolean;
+  isDoubleRiichi?: boolean;
+  isIppatsu?: boolean;
+  isHaitei?: boolean;
+  isHoutei?: boolean;
+  isRinshan?: boolean;
+  isChankan?: boolean;
   honbaCount?: number;
 }
 
@@ -32,6 +44,12 @@ export function createGameState({
   doraIndicators = [],
   uradoraIndicators = [],
   isRiichi = false,
+  isDoubleRiichi = false,
+  isIppatsu = false,
+  isHaitei = false,
+  isHoutei = false,
+  isRinshan = false,
+  isChankan = false,
   honbaCount = 0,
 }: GameStateOptions = {}): GameState {
   return {
@@ -40,6 +58,12 @@ export function createGameState({
     doraIndicators,
     uradoraIndicators,
     isRiichi,
+    isDoubleRiichi,
+    isIppatsu,
+    isHaitei,
+    isHoutei,
+    isRinshan,
+    isChankan,
     honbaCount,
   };
 }

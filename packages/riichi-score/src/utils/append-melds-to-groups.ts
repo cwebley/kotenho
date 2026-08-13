@@ -20,7 +20,8 @@ export function appendMeldsToGroups(
       createStandardGroup({
         tiles: [...meld.tiles],
         type: meld.type,
-        open: true,
+        // Concealed kans do not break menzen and use concealed-kan fu.
+        open: meld.type !== "ankan",
         from: meld.from,
       }),
     );

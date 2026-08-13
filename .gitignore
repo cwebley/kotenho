@@ -4,5 +4,3 @@ coverage/
 *.log
 .DS_Store
 
-# internal planning docs — kept local, not published
-docs/

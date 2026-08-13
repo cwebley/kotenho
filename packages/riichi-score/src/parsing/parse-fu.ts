@@ -161,8 +161,13 @@ export function parseFu(
     }
     // handle sets first. everything else is a kan
     if (group.type === "set") {
+      // A shanpon triplet completed by ron uses open-triplet fu, but it does
+      // not make the hand open for menzen yaku or the closed-ron bonus.
+      const isOpenForFu =
+        group.open ||
+        (!handInterpretation.winningTile.isTsumo && group.isFinalWait);
       if (isSimpleTile(group.tiles[0])) {
-        if (group.open) {
+        if (isOpenForFu) {
           handInterpretation.fuList.push({
             reason: "open triplet of simples",
             value: 2,
@@ -175,7 +180,7 @@ export function parseFu(
         });
       }
       if (isTerminalTile(group.tiles[0]) || isHonorTile(group.tiles[0])) {
-        if (group.open) {
+        if (isOpenForFu) {
           handInterpretation.fuList.push({
             reason: "open triplet of terminals/honors",
             value: 4,

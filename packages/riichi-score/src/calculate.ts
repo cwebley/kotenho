@@ -13,6 +13,7 @@ import { createChiitoiListing, detectChiitoi } from "./yaku/chiitoi.js";
 import { parseStandardHandCombinations } from "./parsing/standard-hand-combinations.js";
 import { interpretWaitsFromGroups } from "./parsing/interpret-waits-from-groups.js";
 import { detectStandardYaku } from "./yaku/index.js";
+import { detectDeclaredYaku } from "./yaku/declared.js";
 import { parseFu } from "./parsing/parse-fu.js";
 import { flattenTiles } from "./utils/flatten-tiles.js";
 import { countDora } from "./utils/count-dora.js";
@@ -147,18 +148,25 @@ export function calculate(handInput: HandInput): HandAnalysis {
   });
 
   handAnalysis.handInterpretations.forEach((hi) => {
+    detectDeclaredYaku(hi);
     detectStandardYaku(hi);
     parseFu(hi);
     hi.rawFu = hi.fuList.reduce((acc, fuItem) => (acc += fuItem.value), 0);
     hi.fu = roundFu(hi.rawFu);
+    // An open all-run ron hand has no extra fu, but is scored as 30 fu.
+    if (hi.rawFu === 20 && hi.isStandardHand && hi.groups.some((g) => g.open)) {
+      hi.fu = 30;
+    }
 
     const flattenedTiles = flattenTiles(hi);
     hi.gameState.doraIndicators.forEach((doraIndicator) => {
       hi.dora += countDora(doraIndicator, flattenedTiles);
     });
-    hi.gameState.uradoraIndicators.forEach((uradoraIndicator) => {
-      hi.uradora += countDora(uradoraIndicator, flattenedTiles);
-    });
+    if (hi.gameState.isRiichi || hi.gameState.isDoubleRiichi) {
+      hi.gameState.uradoraIndicators.forEach((uradoraIndicator) => {
+        hi.uradora += countDora(uradoraIndicator, flattenedTiles);
+      });
+    }
     const flattendHandInputTiles = flattenInputTiles(handInput);
     hi.akadora += countRedFives(flattendHandInputTiles);
 

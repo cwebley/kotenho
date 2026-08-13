@@ -79,4 +79,22 @@ describe("appendMeldsToGroups", () => {
     expect(updatedInterpretation.groups.length).toBe(1);
     expect(updatedInterpretation.groups[0].type).toBe("run");
   });
+
+  it("keeps ankan concealed", () => {
+    const hand = createHandInterpretation({
+      isStandardHand: true,
+      waitType: "ryanmen",
+      pair: createStandardPair({ tiles: ["5m", "5m"] }),
+      groups: [],
+      winningTile: { tile: "5m", isTsumo: true },
+      gameState: createGameState(),
+    });
+
+    const updated = appendMeldsToGroups(
+      [{ type: "ankan", tiles: ["7z", "7z", "7z", "7z"], from: "east" }],
+      hand,
+    );
+
+    expect(updated.groups[0].open).toBe(false);
+  });
 });
