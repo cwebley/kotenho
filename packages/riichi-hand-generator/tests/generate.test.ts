@@ -146,6 +146,42 @@ describe("generate", () => {
     }
   });
 
+  it("treats an attempt sink as an observer", () => {
+    // The sink must never consume the RNG or touch generator state, so
+    // attaching one cannot change what a given seed produces.
+    const signature = (withSink: boolean): string => {
+      const seen: string[] = [];
+      const result = generate(
+        { fu: 40, closed: true },
+        withSink
+          ? { seed: 99, onAttempt: (record) => seen.push(record.skeletonId) }
+          : { seed: 99 },
+      );
+      if (result.status !== "ok") return `not-ok:${result.status}`;
+      return [...result.hand.handInput.closedTiles].sort().join("");
+    };
+    expect(signature(true)).toBe(signature(false));
+  });
+
+  it("never reports a planner defect on a generated hand", () => {
+    // The tripwire from the telemetry design: drift and coverage-shadow are
+    // expected, but a planner-defect means our own fu table or template is
+    // wrong. It should never fire on hands we built ourselves.
+    let defects = 0;
+    for (let seed = 0; seed < 60; seed++) {
+      generate(
+        { fu: 40, closed: true },
+        {
+          seed,
+          onAttempt: (record) => {
+            if (record.diagnosis === "planner-defect") defects++;
+          },
+        },
+      );
+    }
+    expect(defects).toBe(0);
+  });
+
   it("honours requireUnambiguousWait", () => {
     for (let seed = 0; seed < 25; seed++) {
       const result = generate(

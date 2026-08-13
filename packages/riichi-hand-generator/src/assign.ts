@@ -1,6 +1,40 @@
-import type { Direction, HandInput, MahjongTile, Meld } from "riichi-score";
+import type {
+  Direction,
+  HandInput,
+  MahjongTile,
+  Meld,
+  WaitType,
+} from "riichi-score";
 import type { Rng } from "./rng.js";
 import type { Block, PairClass, Skeleton } from "./skeleton.js";
+
+/**
+ * The reading the planner built. It is aiming information, never an answer —
+ * kotenho may well select a different reading, and that is fine. Its only job
+ * is to let the verifier tell "a better reading won" apart from "our fu table
+ * is wrong".
+ */
+export interface IntendedReading {
+  shape: "standard" | "chiitoitsu";
+  /** Each group's tiles, sorted, for signature matching. */
+  groups: string[];
+  pair: MahjongTile;
+  wait: WaitType;
+}
+
+export interface Assignment {
+  handInput: HandInput;
+  intended: IntendedReading;
+}
+
+export const groupSignature = (tiles: readonly string[]): string =>
+  [...tiles].sort().join("");
+
+/** Order-independent identity for a reading, used to find it in a HandAnalysis. */
+export function readingSignature(reading: IntendedReading): string {
+  if (reading.shape === "chiitoitsu") return "chiitoitsu";
+  return `${[...reading.groups].sort().join("|")}/${reading.pair}/${reading.wait}`;
+}
 
 const SUITS = ["m", "p", "s"] as const;
 const DIRECTIONS: Direction[] = ["east", "south", "west", "north"];
@@ -86,7 +120,7 @@ function assignChiitoitsu(
   roundWind: Direction,
   seatWind: Direction,
   rng: Rng,
-): HandInput {
+): Assignment {
   const pairs = rng.shuffled(ALL_TILES).slice(0, 7);
   const winningTile = rng.pick(pairs);
   const closedTiles: MahjongTile[] = [];
@@ -94,21 +128,29 @@ function assignChiitoitsu(
   closedTiles.splice(closedTiles.indexOf(winningTile), 1);
 
   return {
-    closedTiles,
-    openMelds: [],
-    winningTile: skeleton.tsumo
-      ? { tile: winningTile, isTsumo: true }
-      : {
-          tile: winningTile,
-          from: rng.pick(DIRECTIONS.filter((d) => d !== seatWind)),
-        },
-    gameState: {
-      roundWind,
-      seatWind,
-      doraIndicators: [],
-      uradoraIndicators: [],
-      isRiichi: false,
-      honbaCount: 0,
+    handInput: {
+      closedTiles,
+      openMelds: [],
+      winningTile: skeleton.tsumo
+        ? { tile: winningTile, isTsumo: true }
+        : {
+            tile: winningTile,
+            from: rng.pick(DIRECTIONS.filter((d) => d !== seatWind)),
+          },
+      gameState: {
+        roundWind,
+        seatWind,
+        doraIndicators: [],
+        uradoraIndicators: [],
+        isRiichi: false,
+        honbaCount: 0,
+      },
+    },
+    intended: {
+      shape: "chiitoitsu",
+      groups: [],
+      pair: winningTile,
+      wait: "tanki",
     },
   };
 }
@@ -128,7 +170,7 @@ function tryAssign(
   roundWind: Direction,
   seatWind: Direction,
   rng: Rng,
-): HandInput | null {
+): Assignment | null {
   if (skeleton.shape === "chiitoitsu") {
     return assignChiitoitsu(skeleton, roundWind, seatWind, rng);
   }
@@ -206,21 +248,29 @@ function tryAssign(
   closedTiles.splice(winnerIndex, 1);
 
   return {
-    closedTiles,
-    openMelds,
-    winningTile: skeleton.tsumo
-      ? { tile: winningTile, isTsumo: true }
-      : {
-          tile: winningTile,
-          from: rng.pick(DIRECTIONS.filter((d) => d !== seatWind)),
-        },
-    gameState: {
-      roundWind,
-      seatWind,
-      doraIndicators: [],
-      uradoraIndicators: [],
-      isRiichi: false,
-      honbaCount: 0,
+    handInput: {
+      closedTiles,
+      openMelds,
+      winningTile: skeleton.tsumo
+        ? { tile: winningTile, isTsumo: true }
+        : {
+            tile: winningTile,
+            from: rng.pick(DIRECTIONS.filter((d) => d !== seatWind)),
+          },
+      gameState: {
+        roundWind,
+        seatWind,
+        doraIndicators: [],
+        uradoraIndicators: [],
+        isRiichi: false,
+        honbaCount: 0,
+      },
+    },
+    intended: {
+      shape: "standard",
+      groups: concrete.map(({ tiles }) => groupSignature(tiles)),
+      pair: pairTile,
+      wait: skeleton.wait,
     },
   };
 }
@@ -231,10 +281,10 @@ export function assignTiles(
   seatWind: Direction,
   rng: Rng,
   attempts = 12,
-): HandInput | null {
+): Assignment | null {
   for (let i = 0; i < attempts; i++) {
-    const handInput = tryAssign(skeleton, roundWind, seatWind, rng);
-    if (handInput) return handInput;
+    const assignment = tryAssign(skeleton, roundWind, seatWind, rng);
+    if (assignment) return assignment;
   }
   return null;
 }
