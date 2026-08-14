@@ -53,6 +53,8 @@ export interface TilePlan {
   fixed: Map<number, MahjongTile[]>;
   /** Forced pair tile, when a yaku demands one. */
   pair?: MahjongTile;
+  /** Chuuren's multiset is assigned directly, not block by block. */
+  chuuren?: true;
 }
 
 /** Run starts legal under the domain: the whole run must fit in the range. */
@@ -103,6 +105,7 @@ const PLACER_ORDER: Record<string, number> = {
   shousuushii: 5,
   daisuushii: 5,
   tsuuiisou: 5,
+  chuuren: 5,
 };
 
 export function planTiles(
@@ -197,6 +200,7 @@ export function planTiles(
   const freeRuns = [...runBlocks];
   const freeTriplets = [...tripletBlocks];
   let pair: MahjongTile | undefined;
+  let chuuren = false;
 
   for (const name of placers) {
     const kind = templateFor(name)!.placer!;
@@ -312,6 +316,8 @@ export function planTiles(
       }
       pair = DRAGONS.find((tile) => !dragons.includes(tile));
       if (!pair) return null;
+    } else if (kind === "chuuren") {
+      chuuren = true;
     }
   }
 
@@ -320,5 +326,5 @@ export function planTiles(
   //    the same spot. The assigner samples honors per block and rejects a hand
   //    that ends up with none, which satisfies the same rule while leaving the
   //    count free to vary.
-  return { domain, fixed, pair };
+  return { domain, fixed, pair, chuuren: chuuren || undefined };
 }

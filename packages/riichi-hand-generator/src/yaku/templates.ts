@@ -59,7 +59,8 @@ export type PlacerKind =
   | "daisangen"
   | "shousuushii"
   | "daisuushii"
-  | "tsuuiisou";
+  | "tsuuiisou"
+  | "chuuren";
 
 export interface YakuTemplate {
   name: YakuName;
@@ -290,7 +291,16 @@ export const TEMPLATES: YakuTemplate[] = [
     requestable: true,
     incompatibleWith: ["tanyao", "pinfu"],
   }),
-  T({ name: "chuuren-poutou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "chiitoitsu", "honitsu"] }),
+  T({
+    name: "chuuren-poutou",
+    han: { closed: 0, open: null },
+    limit: true,
+    skeleton: { shape: "standard", menzen: true, kanCount: 0 },
+    domain: { singleSuit: true, honorsAllowed: false },
+    placer: "chuuren",
+    requestable: true,
+    incompatibleWith: ["tanyao", "chiitoitsu", "honitsu"],
+  }),
 ];
 
 const BY_NAME = new Map(TEMPLATES.map((t) => [t.name, t]));

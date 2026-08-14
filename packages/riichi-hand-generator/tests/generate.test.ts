@@ -272,6 +272,7 @@ describe("generate", () => {
     ["chinroutou", { yaku: ["chinroutou"] }],
     ["tsuuiisou", { yaku: ["tsuuiisou"] }],
     ["ryuuiisou", { yaku: ["ryuuiisou"] }],
+    ["chuuren-poutou", { yaku: ["chuuren-poutou"] }],
   ];
 
   for (const [label, spec] of yakuSpecs) {
@@ -344,7 +345,7 @@ describe("generate", () => {
   });
 
   it("refuses yaku it cannot deliberately construct", () => {
-    const result = generate({ yaku: ["chuuren-poutou"] }, { seed: 1 });
+    const result = generate({ yaku: ["rinshan-kaihou"] }, { seed: 1 });
     expect(result.status).toBe("unsatisfiable");
     if (result.status !== "unsatisfiable") return;
     expect(result.reason).toContain("not requested");
@@ -633,6 +634,26 @@ describe("generate", () => {
     ];
     expect(tiles.every((tile) => ["2s", "3s", "4s", "6s", "8s", "6z"].includes(tile))).toBe(true);
     expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["ryuuiisou"]);
+  });
+
+  it("constructs the closed chuuren base pattern plus one tile", () => {
+    const result = generate({ yaku: ["chuuren-poutou"] }, { seed: 7, budget: 3000 });
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.hand.handInput.openMelds).toEqual([]);
+    const tiles = [
+      ...result.hand.handInput.closedTiles,
+      result.hand.handInput.winningTile.tile,
+    ];
+    expect(new Set(tiles.map((tile) => tile[1])).size).toBe(1);
+    const counts = Array.from({ length: 9 }, (_, index) =>
+      tiles.filter((tile) => Number(tile[0]) === index + 1).length,
+    );
+    expect(counts[0]).toBeGreaterThanOrEqual(3);
+    expect(counts[8]).toBeGreaterThanOrEqual(3);
+    expect(counts.slice(1, 8).every((count) => count >= 1)).toBe(true);
+    expect(counts.reduce((sum, count) => sum + count, 0)).toBe(14);
+    expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["chuuren-poutou"]);
   });
 
   it("uses the correct open and closed terminal-family han", () => {

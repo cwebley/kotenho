@@ -74,6 +74,7 @@ const ORPHANS: MahjongTile[] = [
   "1m", "9m", "1p", "9p", "1s", "9s",
   "1z", "2z", "3z", "4z", "5z", "6z", "7z",
 ];
+const CHUUREN_BASE = [1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9];
 
 /** Thirteen orphans plus a duplicate. Winning on the duplicate is the 13-wait. */
 function assignKokushi(
@@ -280,6 +281,49 @@ function assignChiitoitsu(
   };
 }
 
+/** Nine gates is a tile multiset, not a prescribed grouping. */
+function assignChuuren(
+  skeleton: Skeleton,
+  domain: Domain,
+  roundWind: Direction,
+  seatWind: Direction,
+  rng: Rng,
+): Assignment {
+  const suit = rng.pick(domain.suits);
+  const winningTile = suited(rng.pick([1, 2, 3, 4, 5, 6, 7, 8, 9]), suit);
+  const closedTiles = CHUUREN_BASE.map((rank) => suited(rank, suit));
+
+  return {
+    handInput: {
+      closedTiles: sortTiles(closedTiles),
+      openMelds: [],
+      winningTile: skeleton.tsumo
+        ? { tile: winningTile, isTsumo: true }
+        : {
+            tile: winningTile,
+            from: rng.pick(DIRECTIONS.filter((direction) => direction !== seatWind)),
+          },
+      gameState: {
+        roundWind,
+        seatWind,
+        doraIndicators: [],
+        uradoraIndicators: [],
+        isRiichi: false,
+        honbaCount: 0,
+        ruleset: createRuleset(),
+      },
+    },
+    // The scorer owns chuuren's many valid decompositions. The intended reading
+    // is diagnostic-only and does not constrain verification for this yakuman.
+    intended: {
+      shape: "standard",
+      groups: [],
+      pair: suited(1, suit),
+      wait: "tanki",
+    },
+  };
+}
+
 function tryAssign(
   skeleton: Skeleton,
   plan: TilePlan,
@@ -293,6 +337,9 @@ function tryAssign(
   }
   if (skeleton.shape === "chiitoitsu") {
     return assignChiitoitsu(skeleton, domain, roundWind, seatWind, rng);
+  }
+  if (plan.chuuren) {
+    return assignChuuren(skeleton, domain, roundWind, seatWind, rng);
   }
 
   const counts = new Map<MahjongTile, number>();
