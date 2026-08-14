@@ -217,9 +217,18 @@ function checkDoraFeasibility(
   return ok;
 }
 
-/** Dora the spec requires beyond the yaku, when that is determinable. */
+/**
+ * Dora the spec requires beyond the yaku, when that is determinable.
+ *
+ * `open` is the caller's knowledge of the hand being built. Most yaku are worth
+ * one han less open, so inferring it from the spec alone charges every skeleton
+ * the closed price: `{ yaku: ["chanta"], han: 3 }` asked for one dora, which no
+ * open skeleton could ever satisfy, and open skeletons are the majority of the
+ * chanta space. Pass the skeleton's own `menzen` wherever one exists.
+ */
 export function requiredDora(
   spec: GenerateSpec,
+  open?: boolean,
 ): { dora: number; ura: number } | null {
   if (spec.dora !== undefined || spec.uraDora !== undefined) {
     return { dora: spec.dora ?? 0, ura: spec.uraDora ?? 0 };
@@ -229,11 +238,12 @@ export function requiredDora(
     .map((name) => templateFor(name))
     .filter((t): t is YakuTemplate => Boolean(t));
   if (!templates.length || templates.some((t) => t.limit)) return null;
-  const open =
-    spec.closed === false ||
-    (spec.openMeldCount !== undefined && spec.openMeldCount > 0);
+  const isOpen =
+    open ??
+    (spec.closed === false ||
+      (spec.openMeldCount !== undefined && spec.openMeldCount > 0));
   const yakuHan = templates.reduce(
-    (sum, t) => sum + (open ? (t.han.open ?? 0) : t.han.closed),
+    (sum, t) => sum + (isOpen ? (t.han.open ?? 0) : t.han.closed),
     0,
   );
   const needed = spec.han - yakuHan;

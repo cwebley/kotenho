@@ -5,9 +5,9 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-231 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+242 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 38 commits          ·   9/9 generator specs at 100% answer-key agreement
-25 of 41 yaku requestable; all 41 enforceable as exclusions
+27 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
 **In one sentence:** `riichi-score` is correct and complete, and the generator
@@ -37,6 +37,8 @@ produces verified practice hands for structural, yaku and dora constraints.
 ```ts
 generate({ fu: 30, closed: true, winMethod: "ron" })     // structural
 generate({ yaku: ["tanyao", "pinfu"] })                  // exactly those yaku
+generate({ yaku: ["chanta", "sanshoku"] })
+generate({ yaku: ["junchan", "chinitsu"] })
 generate({ yaku: ["tanyao"], han: 3 })                   // 1 han yaku + 2 dora
 generate({ yaku: ["riichi"], uraDora: 1 })
 generate({ handShape: "chiitoitsu" })
@@ -108,21 +110,30 @@ candidate attempts; `distinctRatio` uses normalized hand identity; and
 `rejections` exposes every observed rejection cause. Causes are intentionally
 not mutually exclusive, matching the existing attempt telemetry.
 
-The M3 spike found healthy diversity across the supported lesson matrix. The
-weakest supported cases were `40 fu, one called meld` (20.4% mean yield, p10
-3.0%), `50 fu, one kan` (29.0%, p10 3.0%), and exact `pinfu + 3 dora` (26.3%),
-with rejection histograms identifying no-yaku, assignment, and dora-placement
-pressure respectively. This validates the histogram as the authoring signal
-for low-yield specs.
+The M3 spike found healthy diversity across the supported lesson matrix.
+`chanta` yields 84.6% (p10 77.0%), `junchan` 89.9% (p10 82.0%),
+`chanta + sanshoku` 98.0% (p10 90.0%), and `junchan + chinitsu` 40.9%
+(p10 18.0%). Rejection histograms identify no-yaku, assignment, and
+dora-placement pressure, validating the histogram as the authoring signal for
+low-yield specs.
 
-### 3.2 Eighteen yaku are excludable but not requestable
+### 3.2 Sixteen yaku are excludable but not requestable
 
-`chanta`, `junchan`, `honroutou`, `shousangen` and the yakuman family have
-templates but no placer, so requesting one is refused with a reason. They are
-fully policed as exclusions.
+`honroutou`, `shousangen` and the yakuman family have templates but no placer,
+so requesting one is refused with a reason. They are fully policed as
+exclusions.
 
-**chanta and junchan are the ones a lesson is most likely to want.** Both need a
-placer that puts a terminal or honor in every set.
+`chanta` and `junchan` are requestable, and **neither has a placer**. Their
+skeleton constraints (terminal runs, terminal-or-honor groups) plus their domain
+(`requireHonor` for chanta, `honorsAllowed: false` for junchan) describe them
+exactly, so the assigner samples the tiles and the verifier rejects a miss.
+
+Chanta briefly did have a placer, and it cost twice: it built its forced honor
+triplet by picking each tile independently, so `1z 2z 4z` was a common "triplet"
+and `invalid-hand` was 43% of all rejections; and by injecting exactly one honor
+it pinned every hand to the minimum. Removing it took the yield from 47.6% to
+84.6% and let the honor-group count vary — roughly 51% of hands carry one honor
+group, 41% two, 7% three (§3.9).
 
 ### 3.3 M8 — batches *(done)*
 
@@ -184,7 +195,47 @@ Caveat: the yakuman detectors were written into *both* scorers in one sitting
 from the same understanding, which weakens the independence argument for that
 batch. Fixture coverage for yakuman is thin — 4 fixtures, 12 yaku.
 
-### 3.9 Smaller items
+### 3.9 How many honor groups a chanta hand carries — shape decides the ceiling
+
+Honors can only sit in the pair or in a triplet/kan, never in a run, so a hand's
+*capacity* for honor groups is `1 + triplets`. Chanta needs at least one run, so
+the ceiling is 4, and it is lower than that most of the time. Measured capacity
+across accepted chanta hands: 16% can hold one, 25% two, 34% three, 25% four.
+
+Within that capacity the assigner picks the class — honor or terminal — before
+it picks the tile. This matters: a yaochu triplet offers six terminals against
+only two or three legal honors (dragons and the round/seat winds are barred as
+they would score yakuhai), so drawing uniformly over *tiles* gave honors ~25% of
+slots. Choosing the class first makes it a fair coin, which is the only control
+over the honor count — there is no target and no quota.
+
+The result is `1 + Binomial(capacity - 1, ½)`, measured at 51% / 41% / 7% for
+one / two / three honor groups. Four is essentially unreachable and that is
+correct, not a defect: three honor *triplets* need three distinct legal wind
+types, which only exists when the round and seat winds coincide, and the fourth
+honor location then has to be a dragon pair.
+
+Pushing this toward a flat 25/25/25/25 would need per-hand honor targets and
+batch-level quotas, and would spend most of its effort chasing a bucket the
+shape space barely contains. Not worth it.
+
+### 3.10 Dora is priced against the hand, not the spec *(fixed)*
+
+`requiredDora` inferred open/closed from the spec alone, so it charged every
+skeleton the **closed** han price. `{ yaku: ["chanta"], han: 3 }` therefore asked
+for exactly one dora — unreachable for an open hand, where chanta is 1 han and
+needs two — and open skeletons are ~94% of the chanta space. Every such attempt
+was doomed before a tile was placed, showing up as `han-mismatch`.
+
+It now takes the skeleton's own `menzen`, at both call sites: the `doraReachable`
+shape filter and the per-attempt dora placement. A 10-hand `chanta, 3 han` batch
+went from **shortfall at 1,000 attempts** to **filled in 11**.
+
+Visible behaviour change: specs that pin `han` now return open hands where the
+han arithmetic works out, instead of only closed ones. Add `closed: true` to get
+the old behaviour.
+
+### 3.11 Smaller items
 
 - Unsatisfiable reasons blame whichever filter emptied the set, not the
   interaction: `{fu:30, closed, ron, kanchan}` says "no shape scores 30 fu" when

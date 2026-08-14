@@ -11,6 +11,10 @@ export interface SkeletonConstraints {
   tsumo?: boolean;
   /** Every triplet/kan must be of simples — tanyao cannot use a yaochu block. */
   allSimpleBlocks?: boolean;
+  /** Every non-run block is a terminal or honor triplet/kan. */
+  allTerminalOrHonorBlocks?: boolean;
+  /** Every run is 123 or 789. */
+  allTerminalRuns?: boolean;
   allRuns?: boolean;
   noRuns?: boolean;
   minRuns?: number;
@@ -35,6 +39,8 @@ export interface DomainConstraints {
   singleSuit?: boolean;
   /** At least one honor must appear (honitsu). */
   requireHonor?: boolean;
+  /** Restrict the pair independently of its fu class. */
+  pair?: "yaochu" | "terminal";
 }
 
 export type PlacerKind =
@@ -161,7 +167,7 @@ export const TEMPLATES: YakuTemplate[] = [
     incompatibleWith: ["chanta", "junchan", "honroutou", "ittsuu", "chinroutou", "tsuuiisou", "honitsu", "kokushi-musou", "haku", "hatsu", "chun", "round-wind", "seat-wind", "daisangen", "shousangen", "shousuushii", "daisuushii", "ryuuiisou"],
   }),
   T({ name: "sanshoku", han: { closed: 2, open: 1 }, skeleton: { minRuns: 3 }, placer: "sanshoku", requestable: true, incompatibleWith: ["toitoi", "honitsu", "chinitsu", "chiitoitsu"] }),
-  T({ name: "ittsuu", han: { closed: 2, open: 1 }, skeleton: { minRuns: 3 }, placer: "ittsuu", requestable: true, incompatibleWith: ["toitoi", "tanyao", "chiitoitsu"] }),
+  T({ name: "ittsuu", han: { closed: 2, open: 1 }, skeleton: { minRuns: 3 }, placer: "ittsuu", requestable: true, incompatibleWith: ["toitoi", "tanyao", "chiitoitsu", "chanta", "junchan"] }),
   T({ name: "iipeiko", han: { closed: 1, open: null }, skeleton: { minRuns: 2, menzen: true }, placer: "iipeiko", requestable: true, incompatibleWith: ["toitoi", "chiitoitsu", "ryanpeikou"] }),
   T({ name: "ryanpeikou", subsumes: ["iipeiko"], han: { closed: 3, open: null }, skeleton: { allRuns: true, menzen: true }, placer: "ryanpeikou", requestable: true, incompatibleWith: ["toitoi", "iipeiko", "chiitoitsu", "sanankou"] }),
   T({ name: "honitsu", han: { closed: 3, open: 2 }, domain: { singleSuit: true, requireHonor: true }, requestable: true, incompatibleWith: ["tanyao", "chinitsu", "sanshoku", "chinroutou", "junchan"] }),
@@ -174,9 +180,27 @@ export const TEMPLATES: YakuTemplate[] = [
   T({ name: "round-wind", han: { closed: 1, open: 1 }, skeleton: { minTriplets: 1 }, placer: "yakuhai", requestable: true, incompatibleWith: ["tanyao", "chinitsu", "pinfu"] }),
   T({ name: "seat-wind", han: { closed: 1, open: 1 }, skeleton: { minTriplets: 1 }, placer: "yakuhai", requestable: true, incompatibleWith: ["tanyao", "chinitsu", "pinfu"] }),
 
-  // ── terminal/honor families: excludable, not yet placeable ──
-  T({ name: "chanta", han: { closed: 2, open: 1 }, requestable: false, incompatibleWith: ["tanyao", "junchan", "honroutou", "chinitsu"] }),
-  T({ name: "junchan", subsumes: ["chanta"], han: { closed: 3, open: 2 }, requestable: false, incompatibleWith: ["tanyao", "chanta", "honroutou", "honitsu"] }),
+  // ── terminal/honor families ──
+  T({
+    name: "chanta",
+    han: { closed: 2, open: 1 },
+    skeleton: { minRuns: 1, allTerminalOrHonorBlocks: true, allTerminalRuns: true },
+    // No placer: the skeleton constraints plus `requireHonor` already describe
+    // chanta exactly, and letting the assigner sample honors is what gives a
+    // hand one, two or three honor groups instead of always the minimum one.
+    domain: { requireHonor: true, pair: "yaochu" },
+    requestable: true,
+    incompatibleWith: ["tanyao", "junchan", "honroutou", "chinitsu", "toitoi", "chiitoitsu", "ittsuu"],
+  }),
+  T({
+    name: "junchan",
+    subsumes: ["chanta"],
+    han: { closed: 3, open: 2 },
+    skeleton: { minRuns: 1, allTerminalOrHonorBlocks: true, allTerminalRuns: true, pair: ["plain"] },
+    domain: { honorsAllowed: false, pair: "terminal" },
+    requestable: true,
+    incompatibleWith: ["tanyao", "chanta", "honroutou", "honitsu", "toitoi", "chiitoitsu", "ittsuu", "haku", "hatsu", "chun", "round-wind", "seat-wind"],
+  }),
   T({ name: "honroutou", subsumes: ["chanta", "junchan"], han: { closed: 2, open: 2 }, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chanta", "junchan", "chinitsu"] }),
 
   // ── yakuman: excludable, not yet placeable ──
@@ -207,7 +231,9 @@ export function skeletonSatisfies(
   if (constraints.shape === undefined && skeleton.shape !== "standard") {
     // Shape-specific yaku aside, every other constraint assumes blocks exist.
     if (
-      constraints.allRuns ||
+        constraints.allRuns ||
+        constraints.allTerminalOrHonorBlocks ||
+        constraints.allTerminalRuns ||
       constraints.noRuns ||
       constraints.minRuns !== undefined ||
       constraints.minTriplets !== undefined ||
@@ -220,6 +246,22 @@ export function skeletonSatisfies(
   if (
     constraints.allSimpleBlocks &&
     skeleton.blocks.some((b) => b.edge !== "simple")
+  ) {
+    return false;
+  }
+  if (
+    constraints.allTerminalOrHonorBlocks &&
+    skeleton.blocks.some(
+      (block) => block.kind !== "run" && block.edge !== "terminalOrHonor",
+    )
+  ) {
+    return false;
+  }
+  if (
+    constraints.allTerminalRuns &&
+    skeleton.blocks.some(
+      (block) => block.kind === "run" && block.edge !== "terminalRun",
+    )
   ) {
     return false;
   }

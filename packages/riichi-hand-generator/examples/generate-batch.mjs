@@ -3,7 +3,7 @@ import { formatTiles } from "riichi-score";
 
 // Change these to explore different lesson shapes.
 const spec = {
-  yaku: ["tanyao"],
+  yaku: ["chanta"],
   han: 3,
 };
 

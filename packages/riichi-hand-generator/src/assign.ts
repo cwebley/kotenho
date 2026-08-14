@@ -6,7 +6,7 @@ import type {
   WaitType,
 } from "riichi-score";
 import type { Domain, TilePlan } from "./plan.js";
-import { runStarts } from "./plan.js";
+import { runStartsFor } from "./plan.js";
 import type { Rng } from "./rng.js";
 import type { Block, PairClass, Skeleton } from "./skeleton.js";
 
@@ -139,6 +139,23 @@ function tripletOptions(block: Block, domain: Domain): MahjongTile[] {
   return [...numbered, ...honors];
 }
 
+/**
+ * Pick a tile when both honors and numbers are legal for the same slot.
+ *
+ * Sampling the option list uniformly makes the honor/number split an accident
+ * of how many tile *types* each class happens to contribute: a chanta triplet
+ * offers six terminals against two or three legal honors, so honors landed
+ * about a quarter of the time and hands came out honor-poor. Choosing the class
+ * first and the tile second removes that weighting, and it is the only control
+ * over how many honor groups a hand carries — no target, no quota.
+ */
+function pickTile(options: MahjongTile[], rng: Rng): MahjongTile {
+  const honors = options.filter(isHonor);
+  if (!honors.length || honors.length === options.length) return rng.pick(options);
+  const numbers = options.filter((tile) => !isHonor(tile));
+  return rng.pick(rng.next() < 0.5 ? honors : numbers);
+}
+
 function pairOptions(
   pairClass: PairClass,
   domain: Domain,
@@ -147,11 +164,20 @@ function pairOptions(
 ): MahjongTile[] {
   const round = WIND_TILES[roundWind];
   const seat = WIND_TILES[seatWind];
-  if (pairClass === "doubleWind") return round === seat ? [round] : [];
+  const restrict = (tiles: MahjongTile[]): MahjongTile[] =>
+    tiles.filter((tile) => {
+      if (domain.pair === "any") return true;
+      if (tile.endsWith("z")) return domain.pair === "yaochu";
+      const rank = Number(tile[0]);
+      return rank === 1 || rank === 9;
+    });
+  if (pairClass === "doubleWind") {
+    return restrict(round === seat ? [round] : []);
+  }
   if (pairClass === "yakuhai") {
     if (!domain.honorsAllowed) return [];
     const value = round === seat ? DRAGONS : [...DRAGONS, round, seat];
-    return [...new Set(value)];
+    return restrict([...new Set(value)]);
   }
   const excluded = new Set<MahjongTile>([...DRAGONS, round, seat]);
   const numbered = domain.suits.flatMap((suit) => {
@@ -164,7 +190,7 @@ function pairOptions(
   const honors = domain.honorsAllowed
     ? HONORS.filter((tile) => !excluded.has(tile))
     : [];
-  return [...numbered, ...honors];
+  return restrict([...numbered, ...honors]);
 }
 
 /** Where the winning tile sits in a run, given the wait. */
@@ -265,7 +291,6 @@ function tryAssign(
     return true;
   };
 
-  const starts = runStarts(domain);
   const usedRuns = new Set<string>();
   const concrete: { block: Block; tiles: MahjongTile[] }[] = [];
 
@@ -281,6 +306,7 @@ function tryAssign(
     }
 
     if (block.kind === "run") {
+      const starts = runStartsFor(block, domain);
       if (!starts.length) return null;
       // Duplicate-run avoidance is the single highest-value bias measured:
       // it moved the worst compound spec from 31% to 88% acceptance.
@@ -304,15 +330,18 @@ function tryAssign(
 
     const options = tripletOptions(block, domain);
     if (!options.length) return null;
-    const tile = rng.pick(options);
+    const tile = pickTile(options, rng);
     const size = block.kind === "kan" ? 4 : 3;
     const tiles = Array.from({ length: size }, () => tile);
     if (!take(tiles)) return null;
     concrete.push({ block, tiles });
   }
 
+  const pairChoices = pairOptions(skeleton.pair, domain, roundWind, seatWind);
   const pairTile =
-    plan.pair ?? rng.pick(pairOptions(skeleton.pair, domain, roundWind, seatWind) ?? []);
+    plan.pair ??
+    // A yaochu pair has the same terminal-vs-honor split as a yaochu triplet.
+    (domain.pair === "yaochu" ? pickTile(pairChoices, rng) : rng.pick(pairChoices));
   if (!pairTile) return null;
   if (!take([pairTile, pairTile])) return null;
   if (domain.requireHonor && ![...counts.keys()].some(isHonor)) return null;

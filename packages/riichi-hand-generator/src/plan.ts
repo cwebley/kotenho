@@ -1,6 +1,6 @@
 import type { Direction, MahjongTile, YakuName } from "riichi-score";
 import type { Rng } from "./rng.js";
-import type { Skeleton } from "./skeleton.js";
+import type { Block, Skeleton } from "./skeleton.js";
 import { templateFor } from "./yaku/templates.js";
 
 const SUITS = ["m", "p", "s"] as const;
@@ -13,6 +13,7 @@ const WIND_TILES: Record<Direction, MahjongTile> = {
   north: "4z",
 };
 const DRAGONS: MahjongTile[] = ["5z", "6z", "7z"];
+const HONORS: MahjongTile[] = ["1z", "2z", "3z", "4z", ...DRAGONS];
 
 const suited = (rank: number, suit: string): MahjongTile =>
   `${rank}${suit}` as MahjongTile;
@@ -28,6 +29,7 @@ export interface Domain {
   maxRank: number;
   honorsAllowed: boolean;
   requireHonor: boolean;
+  pair: "any" | "yaochu" | "terminal";
   /**
    * Avoid repeating a run unless a duplicate-run yaku was asked for. Worth more
    * than the composition strategy itself: it took the worst measured spec from
@@ -59,6 +61,14 @@ export function runStarts(domain: Domain): number[] {
   return out;
 }
 
+/** Starts allowed for this structural run class. */
+export function runStartsFor(block: Block, domain: Domain): number[] {
+  const starts = runStarts(domain);
+  return block.edge === "terminalRun"
+    ? starts.filter((start) => start === 1 || start === 7)
+    : starts;
+}
+
 function baseDomain(): Domain {
   return {
     suits: [...SUITS],
@@ -66,6 +76,7 @@ function baseDomain(): Domain {
     maxRank: 9,
     honorsAllowed: true,
     requireHonor: false,
+    pair: "any",
     avoidDuplicateRuns: true,
     forbiddenTriplets: [],
   };
@@ -105,10 +116,19 @@ export function planTiles(
     }
     if (constraints.honorsAllowed === false) domain.honorsAllowed = false;
     if (constraints.requireHonor) domain.requireHonor = true;
+    if (constraints.pair === "terminal") domain.pair = "terminal";
+    else if (constraints.pair === "yaochu" && domain.pair === "any") {
+      domain.pair = "yaochu";
+    }
     if (constraints.singleSuit) domain.suits = [rng.pick(domain.suits)];
   }
   if (domain.requireHonor && !domain.honorsAllowed) return null;
-  if (yaku.includes("iipeiko") || yaku.includes("ryanpeikou")) {
+  if (
+    yaku.includes("iipeiko") ||
+    yaku.includes("ryanpeikou") ||
+    yaku.includes("chanta") ||
+    yaku.includes("junchan")
+  ) {
     domain.avoidDuplicateRuns = false;
   }
 
@@ -120,7 +140,6 @@ export function planTiles(
     if (!yaku.includes(name as YakuName)) domain.forbiddenTriplets.push(tile);
   }
 
-  const starts = runStarts(domain);
   const fixed = new Map<number, MahjongTile[]>();
   const runBlocks = skeleton.blocks
     .map((block, index) => (block.kind === "run" ? index : -1))
@@ -134,7 +153,12 @@ export function planTiles(
     suited(start + 1, suit),
     suited(start + 2, suit),
   ];
-
+  const commonRunStarts = (indices: number[]): number[] =>
+    indices.length === 0
+      ? []
+      : runStartsFor(skeleton.blocks[indices[0]], domain).filter((start) =>
+      indices.every((index) => runStartsFor(skeleton.blocks[index], domain).includes(start)),
+      );
   const placers = yaku
     .filter((name) => templateFor(name)?.placer)
     .sort(
@@ -143,14 +167,20 @@ export function planTiles(
         PLACER_ORDER[templateFor(b)!.placer!],
     );
 
-  let freeRuns = [...runBlocks];
-  let freeTriplets = [...tripletBlocks];
+  const freeRuns = [...runBlocks];
+  const freeTriplets = [...tripletBlocks];
 
   for (const name of placers) {
     const kind = templateFor(name)!.placer!;
 
     if (kind === "ittsuu") {
-      if (freeRuns.length < 3 || ![1, 4, 7].every((s) => starts.includes(s))) {
+      const indices = freeRuns.slice(0, 3);
+      if (
+        indices.length < 3 ||
+        ![1, 4, 7].every((start, index) =>
+          runStartsFor(skeleton.blocks[indices[index]], domain).includes(start),
+        )
+      ) {
         return null;
       }
       const suit = rng.pick(domain.suits);
@@ -158,6 +188,7 @@ export function planTiles(
         fixed.set(freeRuns.shift()!, makeRun(start, suit));
       }
     } else if (kind === "sanshoku") {
+      const starts = commonRunStarts(freeRuns.slice(0, 3));
       if (freeRuns.length < 3 || domain.suits.length < 3 || !starts.length) {
         return null;
       }
@@ -166,6 +197,7 @@ export function planTiles(
         fixed.set(freeRuns.shift()!, makeRun(start, suit));
       }
     } else if (kind === "ryanpeikou") {
+      const starts = commonRunStarts(freeRuns.slice(0, 4));
       if (freeRuns.length < 4 || starts.length < 2) return null;
       const shuffled = rng.shuffled(starts);
       for (const start of shuffled.slice(0, 2)) {
@@ -174,6 +206,7 @@ export function planTiles(
         fixed.set(freeRuns.shift()!, makeRun(start, suit));
       }
     } else if (kind === "iipeiko") {
+      const starts = commonRunStarts(freeRuns.slice(0, 2));
       if (freeRuns.length < 2 || !starts.length) return null;
       const start = rng.pick(starts);
       const suit = rng.pick(domain.suits);
@@ -193,24 +226,10 @@ export function planTiles(
     }
   }
 
-  // 2. honitsu needs at least one honor somewhere. The pair is the cheapest
-  //    place to put it when its class allows.
-  let pair: MahjongTile | undefined;
-  if (domain.requireHonor && ![...fixed.values()].some((t) => t[0].endsWith("z"))) {
-    const round = WIND_TILES[roundWind];
-    const seat = WIND_TILES[seatWind];
-    if (skeleton.pair === "plain") {
-      const plain = (["1z", "2z", "3z", "4z"] as MahjongTile[]).filter(
-        (t) => t !== round && t !== seat,
-      );
-      if (!plain.length) return null;
-      pair = rng.pick(plain);
-    } else if (skeleton.pair === "yakuhai") {
-      pair = rng.pick([...DRAGONS, round, seat].filter((t, i, a) => a.indexOf(t) === i));
-    } else {
-      pair = round;
-    }
-  }
-
-  return { domain, fixed, pair };
+  // 2. `requireHonor` is deliberately NOT placed here. Forcing the honor into a
+  //    fixed location makes every hand carry the bare minimum — one honor, in
+  //    the same spot. The assigner samples honors per block and rejects a hand
+  //    that ends up with none, which satisfies the same rule while leaving the
+  //    count free to vary.
+  return { domain, fixed };
 }

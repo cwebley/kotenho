@@ -11,7 +11,7 @@ import { requiredDora } from "./yaku/static.js";
  * space is small enough to enumerate once and index.
  */
 export type BlockKind = "run" | "triplet" | "kan";
-export type EdgeClass = "simple" | "terminalOrHonor";
+export type EdgeClass = "simple" | "terminalOrHonor" | "terminalRun";
 export type PairClass = "plain" | "yakuhai" | "doubleWind";
 
 export interface Block {
@@ -50,6 +50,10 @@ export interface Skeleton {
 const BLOCK_TYPES: Block[] = [
   { kind: "run", called: false, edge: "simple" },
   { kind: "run", called: true, edge: "simple" },
+  // A run cannot contain an honor, but 123/789 satisfies the same chanta
+  // requirement as a terminal-or-honor triplet.
+  { kind: "run", called: false, edge: "terminalRun" },
+  { kind: "run", called: true, edge: "terminalRun" },
   { kind: "triplet", called: false, edge: "simple" },
   { kind: "triplet", called: true, edge: "simple" },
   { kind: "triplet", called: false, edge: "terminalOrHonor" },
@@ -363,7 +367,7 @@ const FILTERS: {
     applies: (spec) =>
       spec.dora !== undefined || spec.uraDora !== undefined || spec.han !== undefined,
     keep: (s, spec) => {
-      const need = requiredDora(spec);
+      const need = requiredDora(spec, !s.menzen);
       if (!need) return true;
       const slots = spec.doraIndicatorCount ?? 1;
       return (

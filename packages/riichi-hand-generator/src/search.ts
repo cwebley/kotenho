@@ -155,7 +155,7 @@ export function runSearch(
       if (assignment) {
         // Dora runs last: choosing indicators never changes the tiles, so it
         // cannot disturb anything decided above.
-        const need = requiredDora(spec) ?? { dora: 0, ura: 0 };
+        const need = requiredDora(spec, !skeleton.menzen) ?? { dora: 0, ura: 0 };
         const declared = declaredGameState(spec);
         const slots = spec.doraIndicatorCount ?? 1;
         const input = assignment.handInput;

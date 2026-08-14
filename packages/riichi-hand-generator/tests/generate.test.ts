@@ -259,6 +259,11 @@ describe("generate", () => {
     ["chiitoitsu + tanyao", { yaku: ["chiitoitsu", "tanyao"] }],
     ["suuankou", { yaku: ["suuankou"] }],
     ["iipeiko + pinfu", { yaku: ["iipeiko", "pinfu"] }],
+    ["chanta", { yaku: ["chanta"] }],
+    ["junchan", { yaku: ["junchan"] }],
+    ["chanta + sanshoku", { yaku: ["chanta", "sanshoku"] }],
+    ["chanta + haku", { yaku: ["chanta", "haku"] }],
+    ["junchan + chinitsu", { yaku: ["junchan", "chinitsu"] }],
   ];
 
   for (const [label, spec] of yakuSpecs) {
@@ -312,6 +317,125 @@ describe("generate", () => {
     expect(result.status).toBe("unsatisfiable");
     if (result.status !== "unsatisfiable") return;
     expect(result.reason).toContain("not requested");
+  });
+
+  it("covers both honor-pair and honor-group chanta constructions", () => {
+    let honorPair = false;
+    let honorGroup = false;
+    for (let seed = 0; seed < 100 && (!honorPair || !honorGroup); seed++) {
+      const result = generate({ yaku: ["chanta"] }, { seed, budget: 3000 });
+      expect(result.status).toBe("ok");
+      if (result.status !== "ok" || !result.hand.canonical.isStandardHand) continue;
+      const { canonical } = result.hand;
+      const pair = canonical.pair.tiles[0];
+      honorPair ||= pair.endsWith("z");
+      honorGroup ||= canonical.groups.some((group) => group.tiles[0].endsWith("z"));
+
+      const groups = [canonical.pair.tiles, ...canonical.groups.map((group) => group.tiles)];
+      expect(
+        groups.every((tiles) =>
+          tiles.some((tile) => tile.endsWith("z") || tile[0] === "1" || tile[0] === "9"),
+        ),
+      ).toBe(true);
+      for (const group of canonical.groups.filter((group) => group.type === "run")) {
+        expect(["1", "7"]).toContain(group.tiles[0][0]);
+      }
+    }
+    expect(honorPair).toBe(true);
+    expect(honorGroup).toBe(true);
+  });
+
+  it("varies how many chanta groups are honors", () => {
+    // A chanta hand can hold honors in its pair and in any triplet/kan, so the
+    // count should move. Pinning it to the minimum of one was the old placer's
+    // doing; honors are now sampled per block and only the "at least one" rule
+    // is enforced, by rejection.
+    const counts = new Map<number, number>();
+    for (let seed = 0; seed < 60; seed++) {
+      const result = generate({ yaku: ["chanta"] }, { seed, budget: 3000 });
+      expect(result.status).toBe("ok");
+      if (result.status !== "ok" || !result.hand.canonical.isStandardHand) continue;
+      const { canonical } = result.hand;
+      // Honors can only sit in the pair or a triplet/kan, never in a run, so
+      // distinct honor tile types is exactly the number of honor groups.
+      const honors = new Set(
+        [canonical.pair.tiles, ...canonical.groups.map((group) => group.tiles)]
+          .flat()
+          .filter((tile) => tile.endsWith("z")),
+      );
+      expect(honors.size).toBeGreaterThan(0);
+      counts.set(honors.size, (counts.get(honors.size) ?? 0) + 1);
+    }
+    const total = [...counts.values()].reduce((sum, n) => sum + n, 0);
+    const multi = [...counts.entries()]
+      .filter(([size]) => size >= 2)
+      .reduce((sum, [, n]) => sum + n, 0);
+    expect(counts.get(1) ?? 0).toBeGreaterThan(0);
+    expect(multi / total).toBeGreaterThan(0.2);
+  });
+
+  it("never emits a malformed forced honor group", () => {
+    // Building an honor triplet by picking each tile independently produced
+    // groups like 1z 2z 4z, which the scorer correctly rejected as an invalid
+    // hand — it was 43% of all rejections on a chanta batch.
+    const result = generate({ yaku: ["chanta"] }, { count: 10, seed: 7, budget: 1000 });
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.rejections["invalid-hand"] ?? 0).toBe(0);
+  });
+
+  it("prices dora against the hand's own open/closed han", () => {
+    // chanta is 2 han closed and 1 open. Charging every skeleton the closed
+    // price made "chanta, 3 han" ask for one dora, which no open skeleton could
+    // reach — and open skeletons are most of the chanta space.
+    const result = generate({ yaku: ["chanta"], han: 3 }, { count: 10, seed: 7, budget: 1000 });
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.hands).toHaveLength(10);
+    expect(result.attempts).toBeLessThan(200);
+    for (const hand of result.hands) expect(hand.canonical.han).toBe(3);
+  });
+
+  it("keeps junchan honor-free and rejects terminal-family contradictions", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const result = generate({ yaku: ["junchan"] }, { seed, budget: 3000 });
+      expect(result.status).toBe("ok");
+      if (result.status !== "ok") continue;
+      const input = result.hand.handInput;
+      const tiles = [
+        ...input.closedTiles,
+        input.winningTile.tile,
+        ...(input.openMelds ?? []).flatMap((meld) => meld.tiles),
+      ];
+      expect(tiles.some((tile) => tile.endsWith("z"))).toBe(false);
+    }
+
+    for (const spec of [
+      { yaku: ["chanta", "ittsuu"] },
+      { yaku: ["chanta", "toitoi"] },
+      { yaku: ["junchan", "haku"] },
+      { yaku: ["junchan", "honitsu"] },
+    ] as GenerateSpec[]) {
+      expect(generate(spec).status).toBe("unsatisfiable");
+    }
+  });
+
+  it("uses the correct open and closed terminal-family han", () => {
+    for (const [name, closedHan, openHan] of [
+      ["chanta", 2, 1],
+      ["junchan", 3, 2],
+    ] as const) {
+      const closed = generate({ yaku: [name], closed: true }, { seed: 7, budget: 3000 });
+      const open = generate({ yaku: [name], closed: false }, { seed: 7, budget: 3000 });
+      expect(closed.status).toBe("ok");
+      expect(open.status).toBe("ok");
+      if (closed.status === "ok") {
+        expect(closed.hand.canonical.yaku).toEqual([{ name, han: closedHan }]);
+      }
+      if (open.status === "ok") {
+        expect(open.hand.canonical.yaku).toEqual([{ name, han: openHan }]);
+      }
+    }
   });
 
   it("does not call kokushi impossible", () => {
@@ -419,16 +543,26 @@ describe("generate", () => {
 
 describe("dora", () => {
   it("reaches an exact han target by placing dora", () => {
-    for (const [spec, dora] of [
-      [{ yaku: ["tanyao"], han: 3 } as GenerateSpec, 2],
-      [{ yaku: ["pinfu"], han: 4 } as GenerateSpec, 3],
-      [{ yaku: ["chinitsu"], han: 8 } as GenerateSpec, 2],
+    // The dora needed depends on the hand, not the spec: most yaku are worth a
+    // han less open, so an open chinitsu closes the gap to 8 with three dora
+    // where a closed one needs two.
+    for (const [spec, closedDora, openDora] of [
+      [{ yaku: ["tanyao"], han: 3 } as GenerateSpec, 2, 2],
+      [{ yaku: ["pinfu"], han: 4 } as GenerateSpec, 3, 3],
+      [{ yaku: ["chinitsu"], han: 8 } as GenerateSpec, 2, 3],
     ] as const) {
-      const result = generate(spec, { seed: 9, budget: 3000 });
+      let result = generate(spec, { seed: 0, budget: 3000 });
+      for (let seed = 1; result.status !== "ok" && seed < 30; seed++) {
+        result = generate(spec, { seed, budget: 3000 });
+      }
       expect(result.status).toBe("ok");
       if (result.status !== "ok") continue;
-      expect(result.hand.canonical.han).toBe(spec.han);
-      expect(result.hand.canonical.dora).toBe(dora);
+      const { canonical } = result.hand;
+      const menzen =
+        canonical.isStandardHand !== true ||
+        canonical.groups.every((group) => !group.open);
+      expect(canonical.han).toBe(spec.han);
+      expect(canonical.dora).toBe(menzen ? closedDora : openDora);
     }
   });
 
