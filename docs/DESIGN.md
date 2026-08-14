@@ -1,12 +1,16 @@
 # riichi-hand-generator — Design & Implementation Plan
 
-**Status:** v2.2 · architecture accepted per `DESIGN-REVIEW.md`; required
-revisions §2.1–2.3, minor corrections §3, the aka-dora reconsideration §6, the
-telemetry design, and the review addendum all incorporated (changes listed in
-Appendix B)
+**Status:** v3 · M0, M1 and M5 delivered; architecture validated by measurement
+rather than argument. Changes listed in Appendix B.
+
+> **Read `STATUS.md` first.** It is the live ledger of what is done and what is
+> open. This document is the plan and the reasoning behind it; where the two
+> disagree, `STATUS.md` is newer. Sections below carry **[DELIVERED]** markers
+> where reality has overtaken the plan.
+
 **Origin:** responds to `PLANNING-PROMPT.md` against `SPEC.md`
-**Companion facts:** based on inspection of `../riichi-score` (current source) and
-`../riichi-hand-generator` (abandoned v1) as of 2026-08-12.
+**Companion facts:** originally based on inspection of `riichi-score` and the
+abandoned v1 generator as of 2026-08-12, both since absorbed into this repo.
 
 ---
 
@@ -289,15 +293,17 @@ are simply flags the generator sets iff requested.
    multiset (after subsumption) to equal the requested set — and, per §5 below,
    requires *every score-tied top reading* to satisfy it.
 
-**What the guarantee is worth — exactly as much as the scorer's blindness
-allows, and today that is not much.** The guarantee is: *"no yaku that
-`riichi-score` version X can detect, other than those requested."* Inspection
-of the scorer shows it detects **six**: tanyao, pinfu, yakuhai, menzen-tsumo,
-chiitoitsu, kokushi. It cannot see iipeiko, sanshoku (either), ittsuu, chanta,
-junchan, honitsu, chinitsu, toitoi, sanankou, sankantsu, honroutou, shousangen,
-ryanpeikou, or any yakuman but kokushi. A "pinfu only" hand containing
-accidental iipeiko sails through verification today, and the coach marks a
-knowledgeable learner wrong — SPEC §8.4's scenario, confirmed in code.
+**What the guarantee is worth — exactly as much as the scorer's coverage
+allows.** The guarantee is: *"no yaku that `riichi-score` version X can detect,
+other than those requested."*
+
+**[DELIVERED — M5]** When this was written the scorer detected six yaku, and a
+"pinfu only" hand containing accidental iipeiko sailed straight through
+verification. It now detects the full standard set bar nagashi mangan, measured
+at 100% answer-key agreement against an independent implementation across all
+nine generator specs. The guarantee is therefore worth what it claims, and the
+enforceability gate below is close to a no-op — it existed to refuse specs the
+scorer could not police, and that set is now empty.
 
 **The subtle point: exclusivity needs coverage of the *accidental* yaku, not
 the *requested* ones.** The set of yaku learners want lessons about and the set
@@ -372,12 +378,14 @@ payment and where fu-counting lessons don't live. Consequences:
   the static engine warns when a fu-exact spec's han range reaches the cap.
 - The output keeps all four diagnostic flags (`wait/fu/han/yaku`) — they are
   computed from T regardless and cost nothing.
-- **Open caveat, owned by M1:** the review's sample contained no kans, and the
-  high-fu/low-han kan region is the one place a sub-mangan collision could
-  plausibly hide. It requires rounded fu to exactly double across readings with
-  a 1-han offset — hard, since declared kans contribute identical fu to every
-  reading, so decompositions differ by small fu deltas — but the M1 harness
-  runs the experiment before `requireUnambiguousWait` semantics freeze in M7.
+- **[DELIVERED — M1] Caveat closed.** The kan region was measured: **0 true
+  collisions across 4,362 multi-reading hands**, with kans up to three. The
+  reasoning that motivated the caveat turned out backwards — a declared kan is a
+  meld, so it contributes identical fu to *every* reading and pushes the ratio
+  between them toward 1, making a doubling collision harder rather than easier.
+  Cap-driven fu/han ambiguity does climb with fu (4 cases at 50 fu, 18 at 60, 22
+  at 70), which reinforces the mangan+ exclusion above but changes nothing about
+  the API. `requireUnambiguousWait` alone is correct.
 
 **Winning-tile selection is the primary ambiguity lever.** Measurement puts
 wait disagreement in **85.5% of tied top sets**, and the mechanism is almost
@@ -453,6 +461,25 @@ skeleton selection is weighted-random-without-recent-repeats rather than
 best-first — which simultaneously prevents lock-in on a cursed skeleton and
 serves variety. No formal no-good learning in v1; the layered caps subsume its
 benefit at this problem size.
+
+**[DELIVERED — M1] Measured, on the real loop.** Every spec generated 300/300
+hands; worst case 10.2 attempts each, inside the estimates below.
+
+```
+30 fu closed ron (pinfu)      1.00        40 fu closed ron            5.01
+40 fu closed tsumo            1.00        50 fu, one kan              5.50
+chiitoitsu                    1.00        50 fu closed ron            6.13
+40 fu closed, kanchan         2.13        40 fu, one called meld     10.16
+40 fu closed, shanpon         3.06
+```
+
+Two results worth carrying forward. **Zero `planner-defect` diagnoses across
+~9,000 attempts** — the skeleton fu model and the scorer never disagreed on a
+hand the generator built, which is the strongest evidence the fu table is right.
+And **convergence speed says nothing about correctness**: "40 fu closed tsumo"
+converged in exactly one attempt while getting han wrong 37% of the time, fast
+precisely *because* the scorer was not scrutinising it. The estimates below
+remain as the reasoning that preceded the measurement.
 
 **The arithmetic** (the load-bearing estimate; the M1 spike in §10 measures it
 for real):
@@ -647,8 +674,24 @@ versioned.
 
 ## 9. State of `riichi-score`, and the cross-repo critical path
 
-Inspection findings that the plan depends on (each becomes a conformance test
-and a scorer work item):
+**[DELIVERED — M0 and M5] All eight findings below are closed**, along with five
+more that only surfaced once the differential harness existed. See `STATUS.md`
+§2.2 for the full table. The list is kept here because the *reasoning* about
+sequencing still holds, and because two of the later discoveries change how you
+should think about this class of bug:
+
+- **Yaku-less hands reported `valid: true`** with an empty interpretation array,
+  so any consumer writing `if (result.valid) use(result.handInterpretations[0])`
+  crashed. Found by a throwaway probe crashing, not by a test.
+- **Honors were parsed as a run** — `5z6z7z` read as a sequence, inventing whole
+  interpretations. Every other bug here *under*-scored; this one **over**-scored
+  a hand by a full limit tier, which is worse, because a learner who answers
+  correctly gets marked wrong with no way to tell the app is confused. No
+  curated fixture would ever have caught it — you have to already suspect that
+  honors could form runs to think of testing it. Two independent implementations
+  found it in minutes.
+
+Original findings, all now fixed:
 
 1. **Ankan is scored as open.** `appendMeldsToGroups` marks every meld
    `open: true`, including ankan. Consequences: closed-with-ankan hands lose
@@ -663,7 +706,12 @@ and a scorer work item):
    but only gates ura-dora counting. A riichi hand's answer key is 1+ han
    short. Haitei/houtei/rinshan/chankan flags don't exist in `GameState` at all.
 4. **Yaku coverage is 6 of ~25** (see §4) and there is no subsumption
-   machinery yet.
+   machinery yet. *(Now the full standard set bar nagashi mangan. The rule that
+   emerged doing it: **never add a yaku without the one that subsumes it** —
+   iipeiko needs ryanpeikou, sanankou needs suuankou, honitsu needs chinitsu,
+   chanta needs junchan and honroutou. Adding only the lesser one is worse than
+   adding neither, because it turns a missing yaku into a confidently wrong
+   one.)*
 5. **No kuipinfu floor:** an open all-run 20-fu hand scores 20 fu.
 6. **No ruleset configuration object** (SPEC §4.12 requires divergences be
    locatable in one place — that object has to live in the scorer, since the
@@ -677,13 +725,30 @@ and a scorer work item):
 **Sequencing consequence:** the scorer is on the critical path twice — once for
 *answer-key correctness* (items 1–3, 5 block even the structural lessons that
 §8.4 says shouldn't need coverage) and once for *exclusivity* (item 4). The
-build order below therefore starts in the scorer repo, and yaku extension runs
-as a parallel track ordered by accidental-yaku frequency: **riichi family
-(trivial, declared) → iipeiko → sanshoku doujun → ittsuu → chanta/junchan →
-honitsu/chinitsu → toitoi/sanankou/sanshoku doukou → honroutou/shousangen/
-sankantsu → ryanpeikou → yakuman batch.** Each detector lands with fixtures
-shared into the generator's regression corpus, and each landing widens the set
-of specs for which `"exact"` is enforceable (§4).
+build order below therefore starts in the scorer repo.
+
+**[SUPERSEDED] The priority order this section proposed was wrong**, and the way
+it was wrong is worth keeping. It ran *riichi family → iipeiko → sanshoku →
+ittsuu → chanta → honitsu → toitoi/sanankou → … → yakuman*, derived from
+sampling **pinfu-shape** hands where every block is a run. Once fu is the
+constraint, hands acquire triplets, and the measured order was completely
+different:
+
+```
+sanankou   17–32%     ← invisible in pinfu-shape sampling; sanankou needs triplets
+honitsu     2–12%
+toitoi      0.3–11%   ← concentrated in the 50-fu spec
+chanta      1–2%
+sanshoku    0.7–2.3%
+ittsuu      0.3%      ← the plan ranked this third
+```
+
+**The general lesson: accidental-yaku frequency is a property of the spec, not
+of the game.** Any future ordering has to be measured against the specs that
+will actually be generated, not against a convenient sample. Moot for detector
+order now that coverage is complete, but it applies directly to M4's anti-yaku
+bias layer, which must be built around **iipeiko first** (33.1% of fills on a
+tanyao-constrained pinfu spec) rather than treated as one heuristic among peers.
 
 ---
 
@@ -694,7 +759,10 @@ Milestones are tagged **[v1]** (blocking: the coach app cannot ship its
 representative lesson table without it) or **[post-v1]** (aspirational — real,
 but explicitly not a silent backlog inside v1).
 
-**M0 — Scorer conformance harness** *(riichi-score repo)* **[v1]**
+**M0 — Scorer conformance harness** *(riichi-score repo)* **[v1] ✅ DELIVERED**
+36 curated fixtures pinning every line of the fu table, all hand-computed before
+running. Thirteen bugs fixed (§9). Only the ruleset config object (finding 6) is
+outstanding.
 Fix findings 1–3 and 5 — **ankan-open and ron-completed-triplet first**, since
 those are what make current fu lessons wrong; add curated fu/score tables
 (WRC/Tenhou book examples, the SPEC §4.10 example verbatim) and a differential
@@ -703,7 +771,12 @@ harness against the reference scorer adopted in M1.
 *Evidence:* zero disagreements on the curated corpus; disagreement vs the
 reference scorer only in documented ruleset deltas.
 
-**M1 — The convergence spike** *(throwaway proposer, permanent harness)* **[v1]**
+**M1 — The convergence spike** *(throwaway proposer, permanent harness)* **[v1] ✅ DELIVERED — verdict: GO**
+300/300 hands on every spec at 1–10 attempts; zero planner defects in ~9,000
+attempts; answer-key agreement 58–95% → **100% on all nine specs** as detectors
+landed; kan-collision question closed (§5). The §2.1 correction below proved
+exactly right — measured against `calculate()` alone the loop looked ~95%
+accepting where the truth was ~63%.
 Naive proposer + telemetry, verified against the **independent reference
 scorer** built during spec work (own parser, own fu model, 17 yaku detectors) —
 **not** `calculate()`. This is the review's §2.1 correction and it is right:
@@ -723,7 +796,14 @@ caveat closed one way or the other; a written go/adjust decision.
 *Sequencing:* decoupled from `riichi-score` correctness, **M0 and M1 run in
 parallel.*
 
-**M2 — Core library, structural constraints end-to-end** **[v1]**
+**M2 — Core library, structural constraints end-to-end** **[v1] 🟨 MOSTLY DELIVERED**
+Built and working: seeded RNG, skeleton enumeration with fu as a pure function
+of shape, exact structural lookup, tile assigner under the 4-copy limit,
+tied-top-set comparator, attempt telemetry, chiitoitsu. **Outstanding: kokushi
+is absent from the skeleton model, which is a live soundness bug** — the static
+engine reads an empty candidate set as a *proof* of impossibility, so a kokushi
+spec is wrongly reported `unsatisfiable`. Same bug already fixed for
+chiitoitsu, same place. `analyze()` is M3.
 Normalizer, static engine v1 (rule table), skeleton planner with the fu
 decomposition table, tile assigner, verifier/comparator with tied-top-set
 semantics, controller, seeded RNG, result assembler. Scope: fu / wait /
@@ -752,6 +832,14 @@ The "Recognise pinfu" lesson ships here.
 differential scorer; measured accidental-yaku rejection rate matching M1
 projections.
 
+**M5 — Scorer yaku extension track** **✅ DELIVERED IN FULL**
+Not the v1 subset originally scoped — the entire standard set bar nagashi
+mangan, including all yakuman. Composite yakuman stack at `8000 × N` (standard);
+single-hand doubles (kokushi 13-wait, suuankou tanki) deliberately **not**
+applied, as those are local rules and belong to the ruleset object. See the
+superseded priority order in §9.
+
+*Original scoping, retained for the reasoning:*
 **M5 — Scorer yaku extension track** *(parallel from M2 onward; order per §9)*
 **[v1 through the accidental set for run-based flagship lessons: riichi family,
 iipeiko, sanshoku doujun, ittsuu; post-v1 beyond that]**
@@ -768,11 +856,12 @@ placement patterns, pedagogical spread option. *Evidence:* exact-dora specs
 across counts 1–8; distribution test showing pair-dora and spread-dora both
 occur.
 
-**M7 — Ambiguity machinery** **[v1]** — `requireUnambiguousWait`, the four
-diagnostic output flags, the "identify the wait" lesson, the documented
-mangan+ exclusion for fu-graded lessons. *Evidence:* generated wait-lessons
-have provably unique waits (checked by exhaustive T-set inspection); yield
-cost measured.
+**M7 — Ambiguity machinery** **[v1] 🟨 PARTLY DELIVERED** —
+`requireUnambiguousWait` and the four diagnostic flags are built and tested.
+Outstanding: the "identify the wait" lesson itself and the measured yield cost.
+Original scope: the documented mangan+ exclusion for fu-graded lessons.
+*Evidence:* generated wait-lessons have provably unique waits (checked by
+exhaustive T-set inspection); yield cost measured.
 
 **M8 — Variety and batches** **[v1: batch distinctness + no-silent-repeats
 (SPEC §7.6); post-v1: `analyze` v2 diversity metrics].**
@@ -788,6 +877,17 @@ support is blocked on the scorer's config object regardless.
 
 The system is arranged so only two components can produce a wrong answer key;
 test effort is allocated accordingly.
+
+**[REVISED] On differential testing.** §12 below calls it "non-negotiable". That
+overstated it. Riichi fu comes from a table of about fifteen rules and the
+correct answer *is* independently computable, so the primary oracle is
+**hand-verified curated fixtures**, with differential testing as a supplement —
+valuable but bounded, since two implementations cannot catch a rule misread the
+same way twice. In practice the split earned out both ways: the fixtures caught
+two of my own arithmetic errors (a forgotten yakuhai pair, a tanki misread as a
+run), and the differential caught the honor-run bug that no fixture would have.
+The reference scorer is a **temporary measurement instrument** with an exit
+condition, not permanent infrastructure.
 
 1. **The scorer (the truth source):** curated canonical tables (book examples,
    every SPEC §4.6 special case, the §4.10 example); differential testing
@@ -806,6 +906,10 @@ test effort is allocated accordingly.
    verdict is challenged by a large-budget generate — must never be beaten);
    completeness corpus of known-satisfiable specs (must never be called
    impossible); reason-string snapshot tests since they're UI-facing.
+   **This fuzz is not yet built, and it would already be failing:** kokushi is
+   missing from the skeleton model, so those specs are wrongly proved
+   impossible. Worth building precisely because it catches that whole class —
+   a shape omitted from the model silently becomes a false impossibility claim.
 4. **The always-on invariant:** every hand `generate` returns is re-checked
    against its spec via a fresh `calculate()` before leaving the library
    (cheap — one extra call), and CI soak-tests 10k+ seeds nightly across the
@@ -822,21 +926,31 @@ test effort is allocated accordingly.
 
 ## 12. The riskiest part, stated plainly
 
-**The single biggest risk is not in this library: it is that `riichi-score` is
-wrong or incomplete while being the sole authority.** We found three
-correctness bugs and a 6-of-25 yaku coverage in an afternoon of reading (§9).
-Every downstream guarantee inherits from it. That is why M0 exists, why
-differential testing is non-negotiable, and why exact-policy enforceability is
-gated on a version-pinned capability manifest instead of hope. Early action:
-M0 immediately, and wire the differential harness before the generator exists.
+**[RETIRED] The single biggest risk was that `riichi-score` is wrong or
+incomplete while being the sole authority.** Thirteen correctness bugs and a
+6-of-25 coverage gap, all now closed, with 36 hand-verified fixtures and 100%
+agreement against an independent implementation on every generator spec (§9).
+The judgement was right — this was the correct thing to fear, and the correct
+thing to spend the first half of the project on.
 
-**The biggest design risk inside this library** is the bet that propose-verify
-converges on the tight end of real lesson specs (compound exact constraints +
-unambiguity). The estimates in §7 say yes with room to spare, but they are
-estimates; M1 exists to replace them with measurements in week one, before any
-architecture is load-bearing. The known fallback if a spec class converges
-poorly is to promote that constraint from "aimed" to "constructed" (as already
-done for fu), which the layered design accommodates without restructuring.
+**[RETIRED] The biggest design risk inside this library** was whether
+propose-verify converges. Measured: 300/300 on every spec at 1–10 attempts, zero
+planner defects across ~9,000 candidates (§7). The fallback of promoting a
+constraint from "aimed" to "constructed" was never needed.
+
+**The risks that remain are smaller and different in kind:**
+
+- **Correctness now depends on the fixtures being right, not on the code.** Two
+  of the hand-computed expectations were wrong on first write and the tests
+  caught them. The discipline that makes the corpus worth anything is computing
+  every expectation from the rules *before* running — pasting in actual output
+  turns the oracle into a mirror.
+- **Shared blind spots.** The yakuman detectors were written into both scorers
+  in one sitting from the same understanding, so differential testing cannot
+  vouch for them. Their fixture coverage is thin (4 fixtures, 12 yaku).
+- **Silent soundness holes in the static engine.** A shape missing from the
+  skeleton model becomes a false proof of impossibility. This bit chiitoitsu
+  once and is live for kokushi now (§10 M2).
 
 A second-order risk worth naming: **ambiguity filtering may starve specific
 lessons** — if ~a third of triplet-bearing hands are wait-ambiguous, a
@@ -1020,3 +1134,37 @@ interface GeneratedHand {
   measures the system it is predicting.
 - **§4's stale bias-layer estimate** (10–20%) reconciled with §7's measured
   ~4%.
+
+**v3 (2026-08-13), post-delivery pass — M0, M1 and M5 shipped:**
+
+Reality overtook the plan in several places. Delivered sections are marked
+**[DELIVERED]**, corrected ones **[SUPERSEDED]** or **[REVISED]**. Superseded
+reasoning is kept rather than deleted — how the plan was wrong is often more
+useful than the corrected version.
+
+- **§4 exclusivity guarantee** — coverage went 6 yaku → the full standard set
+  bar nagashi mangan. The enforceability gate is now close to a no-op.
+- **§5 kan-collision caveat closed** — 0 true collisions in 4,362 multi-reading
+  hands. The reasoning behind the caveat was backwards: a declared kan is a
+  meld, so it contributes identical fu to every reading and makes a doubling
+  collision *harder*. `requireUnambiguousWait` alone confirmed correct.
+- **§7 convergence measured** — 300/300 per spec at 1–10 attempts, zero planner
+  defects. Added the finding that **convergence speed says nothing about
+  correctness**: the fastest spec had the worst answer keys, precisely because
+  the scorer was not scrutinising it.
+- **§9 findings closed**, plus five bugs found only once the harness existed.
+  The honor-run bug is called out specifically: it **over**-scored where every
+  other bug under-scored, and no curated fixture would have caught it.
+  Added the subsumption rule: never add a yaku without the one that subsumes it.
+- **§9 detector priority order SUPERSEDED.** It was derived from pinfu-shape
+  sampling where every block is a run, so sanankou — the actual leader at
+  17–32% — was structurally invisible, while ittsuu was ranked third at a
+  measured 0.3%. General lesson recorded: **accidental-yaku frequency is a
+  property of the spec, not of the game.** Applies directly to M4's bias layer.
+- **§10 M0/M1/M5 marked delivered**, M2 and M7 marked partial. M2 carries the
+  live kokushi soundness bug.
+- **§11 differential testing REVISED** from "non-negotiable" to a bounded
+  supplement; curated fixtures are the primary oracle. Both halves earned out.
+  §11.3's soundness fuzz noted as unbuilt *and already failing* on kokushi.
+- **§12 both headline risks retired**, replaced with the three that remain:
+  fixture discipline, shared blind spots, and silent soundness holes.
