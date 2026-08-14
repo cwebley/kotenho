@@ -864,7 +864,10 @@ Original scope: the documented mangan+ exclusion for fu-graded lessons.
 exhaustive T-set inspection); yield cost measured.
 
 **M8 — Variety and batches** **[v1: batch distinctness + no-silent-repeats
-(SPEC §7.6); post-v1: `analyze` v2 diversity metrics].**
+(SPEC §7.6); post-v1: `analyze` v2 diversity metrics] ✅ DELIVERED.**
+`generate(spec, { count })` derives deterministic streams per batch attempt,
+dedupes normalized hands, and returns `shortfall` with the hands found and an
+explicit budget reason rather than silent repeats.
 
 **M9 — Ruleset config, docs, perf** **[post-v1, two exceptions: the config
 *object* itself lands with M0/M2 so divergence points are locatable from day

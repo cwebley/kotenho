@@ -79,6 +79,13 @@ export interface GenerateOptions {
   __unsafeSkipInferredChecks?: boolean;
 }
 
+export interface BatchGenerateOptions extends GenerateOptions {
+  /** Number of materially distinct hands to generate. */
+  count: number;
+  /** Maximum verifier calls across the entire batch. */
+  budget?: number;
+}
+
 export interface AnalyzeOptions {
   seed?: number;
   /** Number of candidate attempts in the seeded probe. Defaults to 100. */
@@ -133,7 +140,8 @@ export type RejectionCause =
   | "fu-mismatch"
   | "wait-mismatch"
   | "ambiguous-wait"
-  | "assignment-failed";
+  | "assignment-failed"
+  | "duplicate-in-batch";
 
 /**
  * Why the reading the planner built is not the one that scored. Only
@@ -186,3 +194,31 @@ export type GenerateResult =
       nearMisses: NearMiss[];
     }
   | { status: "ok"; hand: GeneratedHand };
+
+export type GenerateBatchResult =
+  | { status: "unsatisfiable"; requested: number; reason: string }
+  | {
+      status: "exhausted";
+      requested: number;
+      attempts: number;
+      rejections: Record<string, number>;
+      diagnoses: Record<string, number>;
+      nearMisses: NearMiss[];
+    }
+  | {
+      status: "shortfall";
+      requested: number;
+      hands: GeneratedHand[];
+      attempts: number;
+      rejections: Record<string, number>;
+      diagnoses: Record<string, number>;
+      reason: string;
+    }
+  | {
+      status: "ok";
+      requested: number;
+      hands: GeneratedHand[];
+      attempts: number;
+      rejections: Record<string, number>;
+      diagnoses: Record<string, number>;
+    };

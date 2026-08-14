@@ -16,6 +16,14 @@ let seedCounter = 0;
 export const freshSeed = (): number =>
   (Date.now() ^ Math.imul(seedCounter++, 0x9e3779b9)) >>> 0;
 
+/** Deterministic independent stream for one batch controller attempt. */
+export const deriveSeed = (seed: number, index: number): number => {
+  let value = (seed + Math.imul(index + 1, 0x9e3779b9)) >>> 0;
+  value = Math.imul(value ^ (value >>> 16), 0x21f0aaad);
+  value = Math.imul(value ^ (value >>> 15), 0x735a2d97);
+  return (value ^ (value >>> 15)) >>> 0;
+};
+
 /** mulberry32 — small, fast, and good enough for content generation. */
 export function createRng(seed: number): Rng {
   let state = seed >>> 0;

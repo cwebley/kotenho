@@ -9,9 +9,11 @@ export { verify } from "./verify.js";
 export type {
   GenerateSpec,
   GenerateOptions,
+  BatchGenerateOptions,
   AnalyzeOptions,
   AnalyzeResult,
   GenerateResult,
+  GenerateBatchResult,
   GeneratedHand,
   AmbiguityFlags,
   WinMethod,

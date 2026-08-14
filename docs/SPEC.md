@@ -413,7 +413,7 @@ hand, only what it must be true of.
 |---|---|
 | `seed` | Deterministic output for a given seed — required for reproducible lessons and testable behaviour |
 | `requireUnambiguousWait` | Reject hands whose wait is not uniquely determined (see §7.1) |
-| `count` | Generate a batch |
+| `count` | Generate a batch of distinct normalized hands; return a partial batch with an explicit shortfall rather than repeats |
 
 **Result** must distinguish two failure modes:
 
@@ -421,6 +421,10 @@ hand, only what it must be true of.
   reason (`"pinfu requires a ryanmen wait"`). The coach app should be able to
   surface this in a lesson-authoring UI.
 - **Exhausted** — no hand found within budget, but not proven impossible.
+
+For a batch, an **Exhausted** result means no hand was found. A **Shortfall**
+result carries the distinct hands found, but fewer than requested, after the
+shared batch budget ran out. It must not claim that no other hands exist.
 
 These are different facts and the caller must be able to tell them apart.
 

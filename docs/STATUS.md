@@ -5,7 +5,7 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-218 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+222 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 38 commits          ·   9/9 generator specs at 100% answer-key agreement
 25 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
@@ -19,15 +19,15 @@ produces verified practice hands for structural, yaku and dora constraints.
 
 | | Milestone | State |
 |---|---|---|
-| M0 | Scorer conformance | **done** — except the ruleset config object (§3.4) |
+| M0 | Scorer conformance | **done** — except the ruleset config object (§3.5) |
 | M1 | Convergence spike | **done** — verdict **go** |
 | M2 | Core library, structural | **done** |
 | M3 | Static engine v2 + `analyze()` | **done** — static proofs + seeded 100-attempt yield probe |
 | M4 | Yaku templates + exact policy | **done** |
 | M5 | Scorer yaku extension | **done** — full standard set bar nagashi mangan |
-| M6 | Dora planner | **done** — aka deferred (§3.3) |
+| M6 | Dora planner | **done** — aka deferred (§3.4) |
 | M7 | Ambiguity machinery | `requireUnambiguousWait` + diagnostic flags done |
-| M8 | Variety and batches | not started |
+| M8 | Variety and batches | **done** — deterministic distinct batches and explicit shortfall |
 | M9 | Ruleset config, docs, perf | not started |
 
 ---
@@ -41,6 +41,7 @@ generate({ yaku: ["tanyao"], han: 3 })                   // 1 han yaku + 2 dora
 generate({ yaku: ["riichi"], uraDora: 1 })
 generate({ handShape: "chiitoitsu" })
 generate({ kanCount: 1, fu: 50, doraIndicatorCount: 2 })
+generate({ fu: 30, closed: true, winMethod: "ron" }, { count: 10, seed: 7 })
 analyze({ yaku: ["pinfu"], han: 4 }, { seed: 7 })
 ```
 
@@ -61,7 +62,7 @@ idea paid off four separate times, and each time the measurement was dramatic:
 
 The corollary is the thing to protect: **too-tight shape reasoning loses hands
 silently**, because a false "impossible" returns before any verifier can catch
-it. That has now bitten five times (§4).
+it. That has now bitten seven times (§4).
 
 ### Correctness
 
@@ -113,7 +114,16 @@ fully policed as exclusions.
 **chanta and junchan are the ones a lesson is most likely to want.** Both need a
 placer that puts a terminal or honor in every set.
 
-### 3.3 Aka dora — deferred, and it will fit
+### 3.3 M8 — batches *(done)*
+
+`generate(spec, { count })` uses a single global batch budget and independent
+derived seeds per batch attempt. It returns only normalized-distinct hands:
+`ok` when the count is filled, `exhausted` when none is found, and `shortfall`
+with the partial batch when the budget runs out. It never silently repeats a
+hand. The batch's aggregate attempts and rejection histogram remain available
+to the authoring UI.
+
+### 3.4 Aka dora — deferred, and it will fit
 
 `riichi-score` already handles `0m/0p/0s` end to end (`replaceAkadora`,
 `countRedFives`, `rehydrateRedFives`). The dora solver runs on **normalised**
@@ -123,12 +133,12 @@ What is left: allocate red 5s inside the **tile assigner's 4-copy budget** — n
 as a post-hoc `5p → 0p` substitution, which could double-spend a 5 the dora plan
 already committed. Also a ruleset flag for how many aka exist.
 
-### 3.4 Ruleset configuration object
+### 3.5 Ruleset configuration object
 
 `DESIGN.md` §9 finding 6, never built. Waiting customers: kuitan, double-wind
 pair 2 vs 4 fu, kiriage mangan, aka count, and single-hand double yakuman.
 
-### 3.5 Declared yaku and indicator state *(done)*
+### 3.6 Declared yaku and indicator state *(done)*
 
 Declared yaku are requested only through `yaku` and become `GameState` facts:
 riichi/double-riichi reveal a matching ura indicator set; ippatsu, haitei and
@@ -141,7 +151,7 @@ kans in the winner's hand. Extra indicators remain valid to model other players'
 kans. Omote indicators are always returned in `handInput.gameState`; ura
 indicators are returned at the same count for riichi and double-riichi.
 
-### 3.6 The incompatibility table is hand-written
+### 3.7 The incompatibility table is hand-written
 
 ~80 declared pairs. The soundness fuzz (§4) now covers this surface, but only
 for specs it happens to sample.
@@ -155,7 +165,7 @@ Related: the lists are **asymmetric** — pinfu names chanta, chanta does not na
 pinfu. Behaviour is right because the check tests both directions, but reading
 one entry tells you nothing. Worth normalising at build time.
 
-### 3.7 The reference scorer needs a written expiry
+### 3.8 The reference scorer needs a written expiry
 
 `internal/reference-scorer` is a **temporary measurement instrument**, not
 permanent infrastructure — agreed but never written into its README.
@@ -164,7 +174,7 @@ Caveat: the yakuman detectors were written into *both* scorers in one sitting
 from the same understanding, which weakens the independence argument for that
 batch. Fixture coverage for yakuman is thin — 4 fixtures, 12 yaku.
 
-### 3.8 Smaller items
+### 3.9 Smaller items
 
 - Unsatisfiable reasons blame whichever filter emptied the set, not the
   interaction: `{fu:30, closed, ron, kanchan}` says "no shape scores 30 fu" when

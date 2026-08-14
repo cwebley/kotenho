@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calculate } from "riichi-score";
 import { generate } from "../src/generate.js";
+import { normalizedHandSignature } from "../src/identity.js";
 import { allSkeletons, selectSkeletons } from "../src/skeleton.js";
 import type { GenerateSpec } from "../src/types.js";
 
@@ -428,6 +429,64 @@ describe("dora", () => {
     expect(result.status).toBe("unsatisfiable");
     if (result.status !== "unsatisfiable") return;
     expect(result.reason).toContain("at least");
+  });
+});
+
+describe("batch generation", () => {
+  it("returns deterministic, materially distinct hands", () => {
+    const options = { count: 10, seed: 31, budget: 1000 };
+    const first = generate({ fu: 30, closed: true, winMethod: "ron" }, options);
+    const second = generate({ fu: 30, closed: true, winMethod: "ron" }, options);
+
+    expect(first.status).toBe("ok");
+    expect(second.status).toBe("ok");
+    if (first.status !== "ok" || second.status !== "ok") return;
+    expect(first.requested).toBe(10);
+    expect(first.hands.map((hand) => normalizedHandSignature(hand.handInput))).toEqual(
+      second.hands.map((hand) => normalizedHandSignature(hand.handInput)),
+    );
+    expect(
+      new Set(first.hands.map((hand) => normalizedHandSignature(hand.handInput))).size,
+    ).toBe(10);
+  });
+
+  it("returns the distinct hands it found as a shortfall", () => {
+    const result = generate(
+      { handShape: "chiitoitsu" },
+      { count: 2, seed: 7, budget: 1 },
+    );
+
+    expect(result.status).toBe("shortfall");
+    if (result.status !== "shortfall") return;
+    expect(result.hands).toHaveLength(1);
+    expect(result.reason).toContain("1 distinct hand");
+  });
+
+  it("keeps static impossibility distinct from an exhausted batch", () => {
+    const result = generate(
+      { yaku: ["pinfu"], openMeldCount: 1 },
+      { count: 3, seed: 1 },
+    );
+
+    expect(result).toMatchObject({
+      status: "unsatisfiable",
+      requested: 3,
+    });
+
+    const exhausted = generate(
+      { fu: 40, closed: true, winMethod: "ron" },
+      { count: 1, seed: 0, budget: 1 },
+    );
+    expect(exhausted).toMatchObject({ status: "exhausted", requested: 1 });
+  });
+
+  it("rejects invalid batch counts", () => {
+    expect(() => generate({}, { count: 0 })).toThrow(
+      "count must be a positive integer",
+    );
+    expect(() => generate({}, { count: 1.5 })).toThrow(
+      "count must be a positive integer",
+    );
   });
 });
 
