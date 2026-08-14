@@ -17,10 +17,12 @@ import type {
   IntendedReadingDiagnosis,
   NearMiss,
   RejectionCause,
+  WindConstraint,
 } from "./types.js";
 import { verify } from "./verify.js";
 
 const DIRECTIONS: Direction[] = ["east", "south", "west", "north"];
+const DEFAULT_ROUND_WINDS: Direction[] = ["east", "south"];
 const ATTEMPTS_PER_SKELETON = 20;
 const NEAR_MISS_LIMIT = 5;
 
@@ -62,17 +64,28 @@ const skeletonId = (skeleton: Skeleton): string =>
       ].join(":");
 
 /** Resolve winds for one attempt, forcing a double-wind pair when necessary. */
+function allowedWinds(
+  constraint: WindConstraint | undefined,
+  fallback: readonly Direction[],
+): Direction[] {
+  if (constraint === undefined) return [...fallback];
+  return [...new Set(Array.isArray(constraint) ? constraint : [constraint])];
+}
+
 function resolveWinds(
   skeleton: Skeleton,
   spec: GenerateSpec,
   pick: <T>(items: readonly T[]) => T,
 ): { roundWind: Direction; seatWind: Direction } | null {
-  const roundWind = spec.roundWind ?? pick(DIRECTIONS);
+  const roundChoices = allowedWinds(spec.roundWind, DEFAULT_ROUND_WINDS);
+  const seatChoices = allowedWinds(spec.seatWind, DIRECTIONS);
   if (skeleton.pair === "doubleWind") {
-    if (spec.seatWind !== undefined && spec.seatWind !== roundWind) return null;
-    return { roundWind, seatWind: roundWind };
+    const shared = roundChoices.filter((wind) => seatChoices.includes(wind));
+    if (!shared.length) return null;
+    const wind = pick(shared);
+    return { roundWind: wind, seatWind: wind };
   }
-  return { roundWind, seatWind: spec.seatWind ?? pick(DIRECTIONS) };
+  return { roundWind: pick(roundChoices), seatWind: pick(seatChoices) };
 }
 
 /** Run the shared planner/verifier loop for either generation or analysis. */

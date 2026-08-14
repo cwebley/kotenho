@@ -3,7 +3,7 @@ import { formatTiles } from "riichi-score";
 
 // Change these to explore different lesson shapes.
 const spec = {
-  yaku: ["tanyao", "pinfu"],
+  yaku: ["tanyao"],
   han: 3,
 };
 
@@ -47,6 +47,7 @@ for (const [index, hand] of result.hands.entries()) {
   console.log(`\nHand ${index + 1} (seed ${seed}, ${stats.attempts} attempts)`);
   console.log(`  Closed: ${formatTiles(handInput.closedTiles)}`);
   console.log(`  Melds: ${melds}`);
+  console.log(`  Round / seat: ${state.roundWind} / ${state.seatWind}`);
   console.log(`  Win: ${handInput.winningTile.tile} (${win})`);
   console.log(`  Dora indicators: ${formatTiles(state.doraIndicators)}`);
   if (state.isRiichi || state.isDoubleRiichi) {

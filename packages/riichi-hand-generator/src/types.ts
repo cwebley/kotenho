@@ -8,6 +8,7 @@ import type {
 } from "riichi-score";
 
 export type WinMethod = "ron" | "tsumo";
+export type WindConstraint = Direction | readonly Direction[];
 
 /**
  * `"exact"` — the hand has these yaku and no others. This is the default
@@ -49,8 +50,10 @@ export interface GenerateSpec {
   openMeldCount?: number;
   /** Total kans of any type. */
   kanCount?: number;
-  roundWind?: Direction;
-  seatWind?: Direction;
+  /** A fixed wind or seeded-random selection from allowed winds. */
+  roundWind?: WindConstraint;
+  /** A fixed wind or seeded-random selection from allowed winds. */
+  seatWind?: WindConstraint;
 }
 
 export interface GenerateOptions {

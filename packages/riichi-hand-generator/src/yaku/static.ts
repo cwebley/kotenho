@@ -1,5 +1,5 @@
-import type { YakuName } from "riichi-score";
-import type { GenerateSpec } from "../types.js";
+import type { Direction, YakuName } from "riichi-score";
+import type { GenerateSpec, WindConstraint } from "../types.js";
 import { templateFor, type YakuTemplate } from "./templates.js";
 
 export interface Feasibility {
@@ -9,6 +9,19 @@ export interface Feasibility {
 
 const ok: Feasibility = { ok: true };
 const no = (reason: string): Feasibility => ({ ok: false, reason });
+const DIRECTIONS: Direction[] = ["east", "south", "west", "north"];
+
+function checkWindConstraint(
+  name: "roundWind" | "seatWind",
+  constraint: WindConstraint | undefined,
+): Feasibility {
+  if (constraint === undefined) return ok;
+  const values = Array.isArray(constraint) ? constraint : [constraint];
+  if (!values.length || values.some((wind) => !DIRECTIONS.includes(wind))) {
+    return no(`${name} must be a direction or a non-empty array of directions`);
+  }
+  return ok;
+}
 
 export interface DeclaredGameState {
   isRiichi: boolean;
@@ -61,6 +74,11 @@ function forcedYaku(spec: GenerateSpec): { name: YakuName; why: string }[] {
  * proof of impossibility with a reason an author can act on, not a timeout.
  */
 export function checkYakuFeasibility(spec: GenerateSpec): Feasibility {
+  const roundWindCheck = checkWindConstraint("roundWind", spec.roundWind);
+  if (!roundWindCheck.ok) return roundWindCheck;
+  const seatWindCheck = checkWindConstraint("seatWind", spec.seatWind);
+  if (!seatWindCheck.ok) return seatWindCheck;
+
   const requested = spec.yaku ?? [];
   const exact = (spec.yakuPolicy ?? "exact") === "exact";
 

@@ -5,7 +5,7 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-228 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+231 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 38 commits          ·   9/9 generator specs at 100% answer-key agreement
 25 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
@@ -53,6 +53,10 @@ Generated tile arrays are returned in display order (manzu, pinzu, souzu,
 honors; red fives in the five position before ordinary fives). `riichi-score`
 exports `sortTiles`, `formatTiles`, and `parseTiles` for array and compact
 Tenhou-style notation conversion.
+
+`roundWind` and `seatWind` each accept a fixed wind or an allowed list. Omitted
+rounds sample only East/South; West and North remain explicit extension-round
+constraints. Omitted seats sample all four player winds.
 
 ### The architectural bet, and why it held
 

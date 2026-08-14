@@ -146,6 +146,46 @@ describe("generate", () => {
     }
   });
 
+  it("defaults round winds to East and South", () => {
+    const rounds = new Set<string>();
+    for (let seed = 0; seed < 40; seed++) {
+      const result = generate(
+        { fu: 30, closed: true, winMethod: "ron" },
+        { seed },
+      );
+      expect(result.status).toBe("ok");
+      if (result.status === "ok") {
+        rounds.add(result.hand.handInput.gameState.roundWind);
+      }
+    }
+    expect(rounds).toEqual(new Set(["east", "south"]));
+  });
+
+  it("chooses winds from explicit allowed lists", () => {
+    const result = generate(
+      {
+        fu: 30,
+        closed: true,
+        winMethod: "ron",
+        roundWind: ["west"],
+        seatWind: ["south", "west", "north"],
+      },
+      { seed: 7 },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    const state = result.hand.handInput.gameState;
+    expect(state.roundWind).toBe("west");
+    expect(["south", "west", "north"]).toContain(state.seatWind);
+  });
+
+  it("rejects empty wind constraints", () => {
+    const result = generate({ roundWind: [] });
+    expect(result.status).toBe("unsatisfiable");
+    if (result.status !== "unsatisfiable") return;
+    expect(result.reason).toContain("roundWind");
+  });
+
   /**
    * The always-on invariant: every hand we hand back is re-scored from its own
    * handInput and must still satisfy the spec. This is the guard that makes a

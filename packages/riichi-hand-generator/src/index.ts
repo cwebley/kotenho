@@ -17,6 +17,7 @@ export type {
   GeneratedHand,
   AmbiguityFlags,
   WinMethod,
+  WindConstraint,
   AttemptRecord,
   NearMiss,
   RejectionCause,
