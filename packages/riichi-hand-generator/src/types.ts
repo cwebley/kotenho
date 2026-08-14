@@ -3,6 +3,7 @@ import type {
   HandAnalysis,
   HandInput,
   HandInterpretation,
+  RulesetOptions,
   WaitType,
   YakuName,
 } from "riichi-score";
@@ -22,6 +23,8 @@ export type YakuPolicy = "exact" | "atLeast";
 
 /** A lesson description. Every field is optional; omitted means "generator's choice". */
 export interface GenerateSpec {
+  /** Ruleset overrides carried into each generated hand's game state. */
+  ruleset?: RulesetOptions;
   /** The yaku the hand must have. */
   yaku?: YakuName[];
   /** Defaults to `"exact"`. */

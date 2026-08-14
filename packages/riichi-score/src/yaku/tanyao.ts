@@ -25,6 +25,13 @@ export function detectTanyao(
   if (!allTiles.every((t) => isSimpleTile(t))) {
     return handInterpretation;
   }
+  if (
+    handInterpretation.isStandardHand &&
+    handInterpretation.groups.some((group) => group.open) &&
+    handInterpretation.gameState.ruleset?.openTanyao === false
+  ) {
+    return handInterpretation;
+  }
 
   handInterpretation.yaku.push(createTanyaoListing());
   return handInterpretation;

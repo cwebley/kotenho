@@ -312,6 +312,27 @@ describe("generate", () => {
     }
   });
 
+  it("propagates rulesets and proves open tanyao unavailable when kuitan is off", () => {
+    const unavailable = generate({
+      yaku: ["tanyao"],
+      closed: false,
+      ruleset: { openTanyao: false },
+    });
+    expect(unavailable.status).toBe("unsatisfiable");
+    if (unavailable.status === "unsatisfiable") {
+      expect(unavailable.reason).toContain("disabled for open hands");
+    }
+
+    const result = generate(
+      { yaku: ["tanyao"], ruleset: { kiriageMangan: true } },
+      { seed: 7 },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.hand.handInput.gameState.ruleset?.kiriageMangan).toBe(true);
+    }
+  });
+
   it("refuses yaku it cannot deliberately construct", () => {
     const result = generate({ yaku: ["daisangen"] }, { seed: 1 });
     expect(result.status).toBe("unsatisfiable");

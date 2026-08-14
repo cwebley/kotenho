@@ -1,10 +1,12 @@
 export { calculate } from "./calculate.js";
 export { createGameState } from "./models/game-state.js";
+export { createRuleset, TENHOU_RULESET } from "./models/ruleset.js";
 export { formatTiles, parseTiles, sortTiles } from "./utils/tile-notation.js";
 
 // Consumers build HandInput values and read HandAnalysis back, so the types are
 // part of the public contract, not internals.
 export type { GameState, GameStateOptions } from "./models/game-state.js";
+export type { Ruleset, RulesetOptions } from "./models/ruleset.js";
 export type { HandInput, Meld } from "./models/hand-input.js";
 export type { HandAnalysis } from "./models/hand-analysis.js";
 export type {

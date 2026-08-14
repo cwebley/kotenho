@@ -405,7 +405,7 @@ hand, only what it must be true of.
 | `doraIndicatorCount` | How many indicators are face up — **independent of the hand's own kan count** |
 | `uraDoraCount`, `akaDoraCount` | If modelled |
 | `riichi`, `ippatsu`, `haitei`, … | Declared and situational flags |
-| `ruleSet` | Which rules variant to score under |
+| `ruleset` | `RulesetOptions` overrides for the scoring variant |
 
 **Options**
 

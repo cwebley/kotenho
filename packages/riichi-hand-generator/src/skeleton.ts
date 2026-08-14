@@ -1,4 +1,5 @@
 import type { WaitType } from "riichi-score";
+import { createRuleset, TENHOU_RULESET, type Ruleset } from "riichi-score";
 import type { GenerateSpec } from "./types.js";
 import { skeletonSatisfies, templateFor, TEMPLATES } from "./yaku/templates.js";
 import { doraReachable } from "./dora.js";
@@ -101,6 +102,7 @@ export function computeFu(
   wait: WaitType,
   waitHost: number,
   tsumo: boolean,
+  ruleset: Pick<Ruleset, "doubleWindPairFu" | "openPinfuMinimumFu"> = TENHOU_RULESET,
 ): { rawFu: number; fu: number; pinfuShape: boolean } {
   const menzen = blocks.every((block) => !block.called);
   const allRuns = blocks.every((block) => block.kind === "run");
@@ -120,11 +122,14 @@ export function computeFu(
     const scoredOpen = !tsumo && wait === "shanpon" && index === waitHost;
     raw += blockFu(block, scoredOpen);
   });
-  raw += pairFu(pair);
+  raw += pair === "doubleWind" ? ruleset.doubleWindPairFu : pairFu(pair);
   raw += waitFu(wait);
 
   // An open hand that would otherwise total 20 fu is floored to 30 (kuipinfu).
-  const fu = pinfuShape && !menzen ? 30 : Math.ceil(raw / 10) * 10;
+  const fu =
+    pinfuShape && !menzen
+      ? ruleset.openPinfuMinimumFu
+      : Math.ceil(raw / 10) * 10;
   return { rawFu: raw, fu, pinfuShape };
 }
 
@@ -342,7 +347,17 @@ const FILTERS: {
   {
     name: "fu",
     applies: (spec) => spec.fu !== undefined,
-    keep: (s, spec) => s.fu === spec.fu,
+    keep: (s, spec) =>
+      (s.shape !== "standard"
+        ? s.fu
+        : computeFu(
+            s.blocks,
+            s.pair,
+            s.wait,
+            s.waitHost,
+            s.tsumo,
+            createRuleset(spec.ruleset),
+          ).fu) === spec.fu,
     reason: (spec) =>
       `no hand shape scores exactly ${spec.fu} fu under the other constraints`,
   },

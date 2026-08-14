@@ -1,4 +1,4 @@
-import type { Direction, YakuName } from "riichi-score";
+import { createRuleset, type Direction, type Ruleset, type YakuName } from "riichi-score";
 import type { GenerateSpec, WindConstraint } from "../types.js";
 import { templateFor, type YakuTemplate } from "./templates.js";
 
@@ -29,6 +29,7 @@ export interface DeclaredGameState {
   isIppatsu: boolean;
   isHaitei: boolean;
   isHoutei: boolean;
+  ruleset: Ruleset;
 }
 
 /**
@@ -44,6 +45,7 @@ export function declaredGameState(spec: GenerateSpec): DeclaredGameState {
     isIppatsu: requested.has("ippatsu"),
     isHaitei: requested.has("haitei"),
     isHoutei: requested.has("houtei"),
+    ruleset: createRuleset(spec.ruleset),
   };
 }
 
@@ -81,6 +83,7 @@ export function checkYakuFeasibility(spec: GenerateSpec): Feasibility {
 
   const requested = spec.yaku ?? [];
   const exact = (spec.yakuPolicy ?? "exact") === "exact";
+  const ruleset = createRuleset(spec.ruleset);
 
   const templates: YakuTemplate[] = [];
   for (const name of requested) {
@@ -113,6 +116,9 @@ export function checkYakuFeasibility(spec: GenerateSpec): Feasibility {
     if (closedOnly) {
       return no(`${closedOnly.name} only exists on a concealed hand`);
     }
+  }
+  if (wantsOpen && requested.includes("tanyao") && !ruleset.openTanyao) {
+    return no("tanyao is disabled for open hands by this ruleset");
   }
 
   // Declared prerequisites.

@@ -59,7 +59,7 @@ function finalizeFu(handInterpretation: HandInterpretation): HandInterpretation 
     handInterpretation.groups.some((group) => group.open)
   ) {
     // An open all-run ron hand has no extra fu, but is scored as 30 fu.
-    handInterpretation.fu = 30;
+    handInterpretation.fu = handInterpretation.gameState.ruleset?.openPinfuMinimumFu ?? 30;
   } else {
     handInterpretation.fu = roundFu(handInterpretation.rawFu);
   }
@@ -121,7 +121,7 @@ export function parseFu(
       if (roundWindTile === seatWindTile && roundWindTile === pairTile) {
         handInterpretation.fuList.push({
           reason: "double wind pair",
-          value: 4,
+          value: handInterpretation.gameState.ruleset?.doubleWindPairFu ?? 4,
         });
       } else if (
         pairTile === roundWindTile ||
@@ -142,7 +142,7 @@ export function parseFu(
     ) {
       handInterpretation.fuList.push({
         reason: "double wind pair",
-        value: 4,
+        value: handInterpretation.gameState.ruleset?.doubleWindPairFu ?? 4,
       });
     } else if (
       handInterpretation.pair.tiles[0] === roundWindTile ||

@@ -5,8 +5,8 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-242 tests passing   ·   36 curated fixtures, 36/36 cross-checked
-38 commits          ·   9/9 generator specs at 100% answer-key agreement
+247 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+44 commits          ·   9/9 generator specs at 100% answer-key agreement
 27 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
@@ -28,7 +28,7 @@ produces verified practice hands for structural, yaku and dora constraints.
 | M6 | Dora planner | **done** — aka deferred (§3.4) |
 | M7 | Ambiguity machinery | `requireUnambiguousWait` + diagnostic flags done |
 | M8 | Variety and batches | **done** — deterministic distinct batches and explicit shortfall |
-| M9 | Ruleset config, docs, perf | not started |
+| M9 | Ruleset config, docs, perf | **in progress** — ruleset plumbing and scorer switches delivered |
 
 ---
 
@@ -144,20 +144,30 @@ with the partial batch when the budget runs out. It never silently repeats a
 hand. The batch's aggregate attempts and rejection histogram remain available
 to the authoring UI.
 
-### 3.4 Aka dora — deferred, and it will fit
+### 3.4 Aka dora — allocation deferred, ruleset availability delivered
 
 `riichi-score` already handles `0m/0p/0s` end to end (`replaceAkadora`,
 `countRedFives`, `rehydrateRedFives`). The dora solver runs on **normalised**
 tiles, so nothing in it needs to know aka exists.
 
-What is left: allocate red 5s inside the **tile assigner's 4-copy budget** — not
-as a post-hoc `5p → 0p` substitution, which could double-spend a 5 the dora plan
-already committed. Also a ruleset flag for how many aka exist.
+`Ruleset.akaDora` now sets the physical red-five availability per suit, and the
+scorer rejects inputs exceeding it. What is left: allocate red 5s inside the
+**tile assigner's 4-copy budget** — not as a post-hoc `5p → 0p` substitution,
+which could double-spend a 5 the dora plan already committed.
 
-### 3.5 Ruleset configuration object
+### 3.5 Ruleset configuration object *(partly done)*
 
-`DESIGN.md` §9 finding 6, never built. Waiting customers: kuitan, double-wind
-pair 2 vs 4 fu, kiriage mangan, aka count, and single-hand double yakuman.
+`riichi-score` exports `TENHOU_RULESET`, `createRuleset()`, `Ruleset`, and
+`RulesetOptions`. The resolved ruleset is carried in `GameState`; callers can
+override it through `createGameState({ ruleset })`, and the generator accepts
+the same `ruleset` field in `GenerateSpec`.
+
+Implemented switches: kuitan, double-wind pair 2 vs 4 fu, open-pinfu 20 vs 30
+fu, kiriage mangan, kazoe yakuman versus sanbaiman cap, and per-suit aka
+availability. Defaults are Tenhou-flavored.
+
+Still open: red-five allocation in generation and local single-hand double
+yakuman / chiitoitsu-versus-ryanpeikou precedence rules.
 
 ### 3.6 Declared yaku and indicator state *(done)*
 

@@ -5,6 +5,7 @@ import type {
   Meld,
   WaitType,
 } from "riichi-score";
+import { createRuleset } from "riichi-score";
 import type { Domain, TilePlan } from "./plan.js";
 import { runStartsFor } from "./plan.js";
 import type { Rng } from "./rng.js";
@@ -102,6 +103,7 @@ function assignKokushi(
         uradoraIndicators: [],
         isRiichi: false,
         honbaCount: 0,
+        ruleset: createRuleset(),
       },
     },
     intended: {
@@ -255,6 +257,7 @@ function assignChiitoitsu(
         uradoraIndicators: [],
         isRiichi: false,
         honbaCount: 0,
+        ruleset: createRuleset(),
       },
     },
     intended: {
@@ -398,6 +401,7 @@ function tryAssign(
         uradoraIndicators: [],
         isRiichi: false,
         honbaCount: 0,
+        ruleset: createRuleset(),
       },
     },
     intended: {

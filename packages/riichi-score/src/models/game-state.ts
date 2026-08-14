@@ -1,5 +1,6 @@
 import { Direction } from "./direction.js";
 import { MahjongTile } from "./mahjong-tile.js";
+import { createRuleset, Ruleset, RulesetOptions } from "./ruleset.js";
 
 export interface GameState {
   roundWind: Direction;
@@ -16,6 +17,8 @@ export interface GameState {
   isTenhou?: boolean;
   isChiihou?: boolean;
   honbaCount: number;
+  /** Resolved by createGameState; optional for source compatibility with v1 inputs. */
+  ruleset?: Ruleset;
 }
 
 /**
@@ -37,6 +40,7 @@ export interface GameStateOptions {
   isTenhou?: boolean;
   isChiihou?: boolean;
   honbaCount?: number;
+  ruleset?: RulesetOptions;
 }
 
 /**
@@ -57,6 +61,7 @@ export function createGameState({
   isTenhou = false,
   isChiihou = false,
   honbaCount = 0,
+  ruleset,
 }: GameStateOptions = {}): GameState {
   return {
     roundWind,
@@ -73,5 +78,6 @@ export function createGameState({
     isTenhou,
     isChiihou,
     honbaCount,
+    ruleset: createRuleset(ruleset),
   };
 }

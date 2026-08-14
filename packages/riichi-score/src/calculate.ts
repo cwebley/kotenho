@@ -2,6 +2,7 @@ import { flattenInputTiles, HandInput } from "./models/hand-input.js";
 import { appendMeldsToGroups } from "./utils/append-melds-to-groups.js";
 import { rehydrateRedFives } from "./utils/rehydrate-red-fives.js";
 import { createGameState } from "./models/game-state.js";
+import { createRuleset } from "./models/ruleset.js";
 import { createHandInterpretation } from "./models/hand-interpretation.js";
 import { HandAnalysis, createHandAnalysis } from "./models/hand-analysis.js";
 import { isValidMeld } from "./utils/is-valid-meld.js";
@@ -25,6 +26,8 @@ import { calcaulateSeatPayments } from "./utils/calculate-seat-payments.js";
 
 export function calculate(handInput: HandInput): HandAnalysis {
   const handAnalysis = createHandAnalysis();
+  const gameState = createGameState(handInput.gameState);
+  const ruleset = gameState.ruleset ?? createRuleset();
 
   // verify there's a winningTile
   if (!handInput.winningTile?.tile) {
@@ -87,6 +90,24 @@ export function calculate(handInput: HandInput): HandAnalysis {
     ...(handInput.gameState?.doraIndicators ?? []),
     ...(handInput.gameState?.uradoraIndicators ?? []),
   ]);
+  const redBySuit = { manzu: 0, pinzu: 0, souzu: 0 };
+  for (const tile of [
+    ...flattenInputTiles(handInput),
+    ...(handInput.gameState?.doraIndicators ?? []),
+    ...(handInput.gameState?.uradoraIndicators ?? []),
+  ]) {
+    if (tile === "0m") redBySuit.manzu++;
+    if (tile === "0p") redBySuit.pinzu++;
+    if (tile === "0s") redBySuit.souzu++;
+  }
+  for (const suit of ["manzu", "pinzu", "souzu"] as const) {
+    if (redBySuit[suit] > ruleset.akaDora[suit]) {
+      handAnalysis.valid = false;
+      handAnalysis.errors.push(
+        `Too many red fives in ${suit}: ${redBySuit[suit]} exceeds the ruleset limit of ${ruleset.akaDora[suit]}.`,
+      );
+    }
+  }
   const tileCounts = new Map<string, number>();
   normalizedInputTiles.forEach((tile) => {
     tileCounts.set(tile, (tileCounts.get(tile) ?? 0) + 1);
@@ -104,8 +125,6 @@ export function calculate(handInput: HandInput): HandAnalysis {
   if (handAnalysis.errors.length) {
     return handAnalysis;
   }
-
-  const gameState = createGameState(handInput.gameState); // sets some default values that we can depend on
 
   // replace akadora with regular five tiles to make hand analysis easier
   // we'll repopulate them later
@@ -210,7 +229,12 @@ export function calculate(handInput: HandInput): HandAnalysis {
         ? LIMIT_BY_COUNT[Math.min(yakumanCount, LIMIT_BY_COUNT.length) - 1]
         : undefined;
 
-    hi.basicPoints = calculateBasicPoints(hi.han, hi.fu, yakumanCount);
+    hi.basicPoints = calculateBasicPoints(
+      hi.han,
+      hi.fu,
+      yakumanCount,
+      hi.gameState.ruleset ?? ruleset,
+    );
     hi.seatPayments = calcaulateSeatPayments(hi);
     hi.totalWinnings = hi.seatPayments.reduce(
       (acc, seat) => (acc += seat.value),
