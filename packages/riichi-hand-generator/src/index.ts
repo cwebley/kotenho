@@ -1,4 +1,5 @@
 export { generate } from "./generate.js";
+export { analyze } from "./analyze.js";
 export { allSkeletons, selectSkeletons, computeFu } from "./skeleton.js";
 export { createRng } from "./rng.js";
 
@@ -8,6 +9,8 @@ export { verify } from "./verify.js";
 export type {
   GenerateSpec,
   GenerateOptions,
+  AnalyzeOptions,
+  AnalyzeResult,
   GenerateResult,
   GeneratedHand,
   AmbiguityFlags,

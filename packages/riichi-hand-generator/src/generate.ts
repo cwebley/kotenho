@@ -1,59 +1,14 @@
-import type { Direction } from "riichi-score";
-import { assignTiles } from "./assign.js";
-import { planTiles } from "./plan.js";
-import { createRng } from "./rng.js";
-import { selectSkeletons, type Skeleton } from "./skeleton.js";
-import { checkYakuFeasibility, requiredDora } from "./yaku/static.js";
-import { placeDora } from "./dora.js";
+import { freshSeed } from "./rng.js";
+import { selectSkeletons } from "./skeleton.js";
+import { checkYakuFeasibility } from "./yaku/static.js";
+import { runSearch } from "./search.js";
 import type {
-  AttemptRecord,
   GenerateOptions,
   GenerateResult,
   GenerateSpec,
-  NearMiss,
-  RejectionCause,
 } from "./types.js";
-import { verify } from "./verify.js";
 
-const DIRECTIONS: Direction[] = ["east", "south", "west", "north"];
 const DEFAULT_BUDGET = 1000;
-const ATTEMPTS_PER_SKELETON = 20;
-const NEAR_MISS_LIMIT = 5;
-
-let seedCounter = 0;
-const freshSeed = (): number =>
-  (Date.now() ^ Math.imul(seedCounter++, 0x9e3779b9)) >>> 0;
-
-const skeletonId = (skeleton: Skeleton): string =>
-  skeleton.shape === "chiitoitsu"
-    ? `chiitoi:${skeleton.tsumo ? "tsumo" : "ron"}`
-    : [
-        skeleton.blocks
-          .map((b) => `${b.kind[0]}${b.called ? "o" : "c"}${b.edge[0]}`)
-          .join(""),
-        skeleton.pair,
-        skeleton.wait,
-        skeleton.tsumo ? "tsumo" : "ron",
-        `${skeleton.fu}fu`,
-      ].join(":");
-
-/**
- * Resolve winds for one attempt. A double-wind pair only exists when the round
- * and seat winds coincide, so an unpinned seat wind is forced to match rather
- * than left to chance — otherwise those skeletons could never be filled.
- */
-function resolveWinds(
-  skeleton: Skeleton,
-  spec: GenerateSpec,
-  pick: <T>(items: readonly T[]) => T,
-): { roundWind: Direction; seatWind: Direction } | null {
-  const roundWind = spec.roundWind ?? pick(DIRECTIONS);
-  if (skeleton.pair === "doubleWind") {
-    if (spec.seatWind !== undefined && spec.seatWind !== roundWind) return null;
-    return { roundWind, seatWind: roundWind };
-  }
-  return { roundWind, seatWind: spec.seatWind ?? pick(DIRECTIONS) };
-}
 
 /**
  * Structural constraints are resolved by lookup; tile identities by randomised
@@ -83,163 +38,38 @@ export function generate(
   }
 
   const seed = options.seed ?? freshSeed();
-  const budget = options.budget ?? DEFAULT_BUDGET;
-  const requireUnambiguousWait = options.requireUnambiguousWait ?? false;
-  const onAttempt = options.onAttempt;
-  const rng = createRng(seed);
+  const run = runSearch(spec, candidates, {
+    seed,
+    budget: options.budget ?? DEFAULT_BUDGET,
+    requireUnambiguousWait: options.requireUnambiguousWait ?? false,
+    stopOnFirstSuccess: true,
+    onAttempt: options.onAttempt,
+  });
+  const candidate = run.accepted[0];
 
-  const rejections: Record<string, number> = {};
-  const diagnoses: Record<string, number> = {};
-  const nearMisses: NearMiss[] = [];
-
-  const record = (entry: AttemptRecord): void => {
-    for (const cause of entry.causes) {
-      rejections[cause] = (rejections[cause] ?? 0) + 1;
-    }
-    if (entry.diagnosis) {
-      diagnoses[entry.diagnosis] = (diagnoses[entry.diagnosis] ?? 0) + 1;
-    }
-    if (
-      entry.causes.length === 1 &&
-      entry.handInput &&
-      nearMisses.length < NEAR_MISS_LIMIT
-    ) {
-      nearMisses.push({
-        closedTiles: [...entry.handInput.closedTiles],
-        winningTile: entry.handInput.winningTile.tile,
-        violated: entry.causes[0],
-      });
-    }
-    onAttempt?.(entry);
-  };
-
-  // Shuffle rather than iterate in table order: skeleton choice is the largest
-  // source of variety between calls, and first-fit would make every hand for a
-  // given spec structurally identical.
-  const order = rng.shuffled(candidates);
-  let attempts = 0;
-  let cursor = 0;
-
-  while (attempts < budget) {
-    const skeleton = order[cursor % order.length];
-    cursor++;
-    const id = skeletonId(skeleton);
-
-    for (let i = 0; i < ATTEMPTS_PER_SKELETON && attempts < budget; i++) {
-      const winds = resolveWinds(skeleton, spec, rng.pick);
-      if (!winds) break;
-
-      attempts++;
-      const plan = planTiles(
-        skeleton,
-        spec.yaku ?? [],
-        winds.roundWind,
-        winds.seatWind,
-        rng,
-      );
-      const assignment = plan
-        ? assignTiles(skeleton, plan, winds.roundWind, winds.seatWind, rng)
-        : null;
-      if (assignment) {
-        // Dora runs last: choosing indicators never changes the tiles, so it
-        // cannot disturb anything decided above. A spec silent about dora still
-        // gets a realistic face-up indicator — one worth zero.
-        const need = requiredDora(spec) ?? { dora: 0, ura: 0 };
-        const riichiDeclared =
-          Boolean(spec.riichi) ||
-          (spec.yaku ?? []).includes("riichi") ||
-          (spec.yaku ?? []).includes("double-riichi");
-        const slots = spec.doraIndicatorCount ?? 1;
-        const input = assignment.handInput;
-        const placement = placeDora(
-          [
-            ...input.closedTiles,
-            input.winningTile.tile,
-            ...(input.openMelds ?? []).flatMap((meld) => meld.tiles),
-          ],
-          slots,
-          need.dora,
-          riichiDeclared ? slots : 0,
-          need.ura,
-          rng,
-        );
-        if (!placement) {
-          record({
-            attempt: attempts,
-            stage: "verification",
-            outcome: "rejected",
-            causes: ["dora-unplaceable"],
-            primaryCause: "dora-unplaceable",
-            skeletonId: id,
-            handInput: input,
-          });
-          continue;
-        }
-        input.gameState = {
-          ...input.gameState!,
-          isRiichi: riichiDeclared,
-          isIppatsu: Boolean(spec.ippatsu),
-          doraIndicators: placement.doraIndicators,
-          uradoraIndicators: placement.uradoraIndicators,
-        };
-      }
-      if (!assignment) {
-        const cause: RejectionCause = "assignment-failed";
-        record({
-          attempt: attempts,
-          stage: "assignment",
-          outcome: "rejected",
-          causes: [cause],
-          primaryCause: cause,
-          skeletonId: id,
-        });
-        continue;
-      }
-
-      const result = verify(
-        assignment.handInput,
-        assignment.intended,
-        spec,
-        requireUnambiguousWait,
-      );
-
-      if (!result.ok) {
-        record({
-          attempt: attempts,
-          stage: "verification",
-          outcome: "rejected",
-          diagnosis: result.diagnosis,
-          causes: result.causes,
-          primaryCause: result.primaryCause,
-          skeletonId: id,
-          handInput: assignment.handInput,
-        });
-        continue;
-      }
-
-      record({
-        attempt: attempts,
-        stage: "verification",
-        outcome: "accepted",
-        diagnosis: result.diagnosis,
-        causes: [],
-        skeletonId: id,
-        handInput: assignment.handInput,
-      });
-
-      return {
-        status: "ok",
-        hand: {
-          handInput: assignment.handInput,
-          analysis: result.analysis,
-          canonical: result.canonical,
-          ambiguity: result.ambiguity,
-          seed,
-          stats: { attempts, rejections, diagnoses },
+  if (candidate) {
+    return {
+      status: "ok",
+      hand: {
+        handInput: candidate.handInput,
+        analysis: candidate.analysis,
+        canonical: candidate.canonical,
+        ambiguity: candidate.ambiguity,
+        seed,
+        stats: {
+          attempts: run.attempts,
+          rejections: run.rejections,
+          diagnoses: run.diagnoses,
         },
-      };
-    }
+      },
+    };
   }
 
-  return { status: "exhausted", attempts, rejections, diagnoses, nearMisses };
+  return {
+    status: "exhausted",
+    attempts: run.attempts,
+    rejections: run.rejections,
+    diagnoses: run.diagnoses,
+    nearMisses: run.nearMisses,
+  };
 }

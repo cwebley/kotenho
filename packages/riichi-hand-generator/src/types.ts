@@ -81,6 +81,25 @@ export interface GenerateOptions {
   __unsafeSkipInferredChecks?: boolean;
 }
 
+export interface AnalyzeOptions {
+  seed?: number;
+  /** Number of candidate attempts in the seeded probe. Defaults to 100. */
+  sampleSize?: number;
+  requireUnambiguousWait?: boolean;
+}
+
+export interface AnalyzeResult {
+  /** False only when the static engine proves the spec impossible. */
+  feasible: boolean;
+  reason?: string;
+  /** Accepted candidates divided by sampled candidate attempts. */
+  estimatedYield: number;
+  /** Unique accepted hand identities divided by accepted candidates. */
+  distinctRatio: number;
+  /** Actual candidate attempts made by the probe. */
+  sampleSize: number;
+}
+
 /** Which dimensions the score-tied top readings disagree on. Diagnostic only. */
 export interface AmbiguityFlags {
   wait: boolean;

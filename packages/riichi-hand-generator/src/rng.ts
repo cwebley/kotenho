@@ -11,6 +11,11 @@ export interface Rng {
   shuffled<T>(items: readonly T[]): T[];
 }
 
+let seedCounter = 0;
+
+export const freshSeed = (): number =>
+  (Date.now() ^ Math.imul(seedCounter++, 0x9e3779b9)) >>> 0;
+
 /** mulberry32 — small, fast, and good enough for content generation. */
 export function createRng(seed: number): Rng {
   let state = seed >>> 0;
