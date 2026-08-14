@@ -5,9 +5,9 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-269 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+273 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
-37 of 41 yaku requestable; all 41 enforceable as exclusions
+41 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
 **In one sentence:** `riichi-score` is correct and complete, and the generator
@@ -120,10 +120,13 @@ Rejection histograms identify no-yaku, assignment, and
 dora-placement pressure, validating the histogram as the authoring signal for
 low-yield specs.
 
-### 3.2 Four yaku are excludable but not requestable
+### 3.2 All yaku are requestable
 
-Rinshan/chankan and tenhou/chiihou have no requestable template, so requesting
-one is refused with a reason. They are fully policed as exclusions.
+Every yaku the scorer emits is requestable and fully policed under the exact
+policy. Event yaku set their matching `GameState` flag: rinshan forces tsumo,
+chankan forces ron, tenhou forces the dealer's concealed tsumo, and chiihou
+forces a non-dealer concealed tsumo. Incompatible event contexts are rejected
+before search.
 
 `chanta` and `junchan` are requestable, and **neither has a placer**. Their
 skeleton constraints (terminal runs, terminal-or-honor groups) plus their domain
@@ -168,6 +171,10 @@ the scorer. Its M3 yield is 100.0% (p10 100.0%).
 `kokushi-musou` is requestable with both ordinary and 13-sided waits. Both score
 as a single yakuman under the default ruleset. Its M3 yield is 100.0% (p10
 100.0%).
+
+`rinshan-kaihou` and `chankan` are requestable at 81.5% (p10 61.0%) and 83.6%
+(p10 69.0%) M3 yield respectively. `tenhou` and `chiihou` are requestable at
+99.7% mean yield (p10 99.0%).
 
 ### 3.3 M8 — batches *(done)*
 
@@ -215,9 +222,11 @@ interpretation; no configuration surface is planned for that convention.
 ### 3.6 Declared yaku and indicator state *(done)*
 
 Declared yaku are requested only through `yaku` and become `GameState` facts:
-riichi/double-riichi reveal a matching ura indicator set; ippatsu, haitei and
-houtei set their scorer flags. The scorer, not the generator, emits the yaku.
-Haitei/houtei are requestable again and constrained to tsumo/ron respectively.
+riichi/double-riichi reveal a matching ura indicator set; ippatsu, haitei,
+houtei, rinshan, chankan, tenhou and chiihou set their scorer flags. The scorer,
+not the generator, emits the yaku. Haitei/rinshan require tsumo; houtei/chankan
+require ron; tenhou/chiihou additionally enforce dealer/non-dealer first-turn
+conditions.
 
 `doraIndicatorCount` is the total visible count, including the initial
 indicator. It is an integer from 1 to 5, and must be at least `1 + kanCount` for

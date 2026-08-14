@@ -29,6 +29,10 @@ export interface DeclaredGameState {
   isIppatsu: boolean;
   isHaitei: boolean;
   isHoutei: boolean;
+  isRinshan: boolean;
+  isChankan: boolean;
+  isTenhou: boolean;
+  isChiihou: boolean;
   ruleset: Ruleset;
 }
 
@@ -45,6 +49,10 @@ export function declaredGameState(spec: GenerateSpec): DeclaredGameState {
     isIppatsu: requested.has("ippatsu"),
     isHaitei: requested.has("haitei"),
     isHoutei: requested.has("houtei"),
+    isRinshan: requested.has("rinshan-kaihou"),
+    isChankan: requested.has("chankan"),
+    isTenhou: requested.has("tenhou"),
+    isChiihou: requested.has("chiihou"),
     ruleset: createRuleset(spec.ruleset),
   };
 }
@@ -84,6 +92,18 @@ export function checkYakuFeasibility(spec: GenerateSpec): Feasibility {
   const requested = spec.yaku ?? [];
   const exact = (spec.yakuPolicy ?? "exact") === "exact";
   const ruleset = createRuleset(spec.ruleset);
+
+  const seats = spec.seatWind === undefined
+    ? DIRECTIONS
+    : Array.isArray(spec.seatWind)
+      ? spec.seatWind
+      : [spec.seatWind];
+  if (requested.includes("tenhou") && !seats.includes("east")) {
+    return no("tenhou requires the dealer seat (east)");
+  }
+  if (requested.includes("chiihou") && seats.every((seat) => seat === "east")) {
+    return no("chiihou requires a non-dealer seat");
+  }
 
   const templates: YakuTemplate[] = [];
   for (const name of requested) {

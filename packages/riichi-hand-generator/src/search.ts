@@ -79,7 +79,11 @@ function resolveWinds(
   pick: <T>(items: readonly T[]) => T,
 ): { roundWind: Direction; seatWind: Direction } | null {
   const roundChoices = allowedWinds(spec.roundWind, DEFAULT_ROUND_WINDS);
-  const seatChoices = allowedWinds(spec.seatWind, DIRECTIONS);
+  let seatChoices = allowedWinds(spec.seatWind, DIRECTIONS);
+  const requested = new Set(spec.yaku ?? []);
+  if (requested.has("tenhou")) seatChoices = seatChoices.filter((seat) => seat === "east");
+  if (requested.has("chiihou")) seatChoices = seatChoices.filter((seat) => seat !== "east");
+  if (!seatChoices.length) return null;
   if (skeleton.pair === "doubleWind") {
     const shared = roundChoices.filter((wind) => seatChoices.includes(wind));
     if (!shared.length) return null;

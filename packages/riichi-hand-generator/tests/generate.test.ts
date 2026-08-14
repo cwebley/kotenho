@@ -274,6 +274,10 @@ describe("generate", () => {
     ["ryuuiisou", { yaku: ["ryuuiisou"] }],
     ["chuuren-poutou", { yaku: ["chuuren-poutou"] }],
     ["kokushi-musou", { yaku: ["kokushi-musou"] }],
+    ["rinshan-kaihou", { yaku: ["rinshan-kaihou"] }],
+    ["chankan", { yaku: ["chankan"] }],
+    ["tenhou", { yaku: ["tenhou"] }],
+    ["chiihou", { yaku: ["chiihou"] }],
   ];
 
   for (const [label, spec] of yakuSpecs) {
@@ -345,11 +349,11 @@ describe("generate", () => {
     }
   });
 
-  it("refuses yaku it cannot deliberately construct", () => {
-    const result = generate({ yaku: ["rinshan-kaihou"] }, { seed: 1 });
+  it("proves event yaku wind constraints", () => {
+    const result = generate({ yaku: ["tenhou"], seatWind: "south" }, { seed: 1 });
     expect(result.status).toBe("unsatisfiable");
     if (result.status !== "unsatisfiable") return;
-    expect(result.reason).toContain("not requested");
+    expect(result.reason).toContain("dealer");
   });
 
   it("covers both honor-pair and honor-group chanta constructions", () => {
@@ -725,6 +729,10 @@ describe("generate", () => {
       ["houtei", { isHoutei: true }, false],
       ["riichi", { isRiichi: true }, undefined],
       ["double-riichi", { isDoubleRiichi: true }, undefined],
+      ["rinshan-kaihou", { isRinshan: true }, true],
+      ["chankan", { isChankan: true }, false],
+      ["tenhou", { isTenhou: true }, true],
+      ["chiihou", { isChiihou: true }, true],
     ] as const;
 
     for (const [name, flags, tsumo] of cases) {
@@ -736,6 +744,8 @@ describe("generate", () => {
       if (tsumo !== undefined) {
         expect(Boolean(result.hand.handInput.winningTile.isTsumo)).toBe(tsumo);
       }
+      if (name === "tenhou") expect(state.seatWind).toBe("east");
+      if (name === "chiihou") expect(state.seatWind).not.toBe("east");
       expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual([name]);
     }
   });

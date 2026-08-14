@@ -111,10 +111,10 @@ export const TEMPLATES: YakuTemplate[] = [
   T({ name: "ippatsu", han: { closed: 1, open: null }, declared: true, requestable: true, skeleton: { menzen: true } }),
   T({ name: "haitei", han: { closed: 1, open: 1 }, declared: true, requestable: true, skeleton: { tsumo: true } }),
   T({ name: "houtei", han: { closed: 1, open: 1 }, declared: true, requestable: true, skeleton: { tsumo: false } }),
-  T({ name: "rinshan-kaihou", han: { closed: 1, open: 1 }, declared: true, requestable: false }),
-  T({ name: "chankan", han: { closed: 1, open: 1 }, declared: true, requestable: false }),
-  T({ name: "tenhou", han: { closed: 0, open: null }, limit: true, declared: true, requestable: false }),
-  T({ name: "chiihou", han: { closed: 0, open: null }, limit: true, declared: true, requestable: false }),
+  T({ name: "rinshan-kaihou", han: { closed: 1, open: 1 }, declared: true, skeleton: { tsumo: true }, requestable: true, incompatibleWith: ["haitei", "houtei", "chankan", "tenhou", "chiihou"] }),
+  T({ name: "chankan", han: { closed: 1, open: 1 }, declared: true, skeleton: { tsumo: false }, requestable: true, incompatibleWith: ["haitei", "houtei", "rinshan-kaihou", "tenhou", "chiihou"] }),
+  T({ name: "tenhou", han: { closed: 0, open: null }, limit: true, declared: true, skeleton: { menzen: true, tsumo: true }, requestable: true, incompatibleWith: ["haitei", "houtei", "rinshan-kaihou", "chankan", "chiihou"] }),
+  T({ name: "chiihou", han: { closed: 0, open: null }, limit: true, declared: true, skeleton: { menzen: true, tsumo: true }, requestable: true, incompatibleWith: ["haitei", "houtei", "rinshan-kaihou", "chankan", "tenhou"] }),
 
   // ── shape alone: satisfied by picking the right skeleton ──
   T({
