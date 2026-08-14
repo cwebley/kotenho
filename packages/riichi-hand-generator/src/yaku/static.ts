@@ -130,6 +130,11 @@ export function checkYakuFeasibility(spec: GenerateSpec): Feasibility {
   // there is nothing to be exhaustive about, and "closed tsumo" is an ordinary
   // spec rather than a contradiction.
   if (exact && requested.length) {
+    if (requested.includes("honroutou") && !requested.includes("toitoi")) {
+      return no(
+        "honroutou has no runs, so its standard-hand construction also scores toitoi — an exact yaku list must include toitoi",
+      );
+    }
     for (const { name, why } of forcedYaku(spec)) {
       if (!requested.includes(name)) {
         return no(

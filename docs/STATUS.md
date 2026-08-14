@@ -5,9 +5,9 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-251 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+253 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
-27 of 41 yaku requestable; all 41 enforceable as exclusions
+28 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
 **In one sentence:** `riichi-score` is correct and complete, and the generator
@@ -112,16 +112,16 @@ not mutually exclusive, matching the existing attempt telemetry.
 
 The M3 spike found healthy diversity across the supported lesson matrix.
 `chanta` yields 84.6% (p10 77.0%), `junchan` 89.9% (p10 82.0%),
-`chanta + sanshoku` 98.0% (p10 90.0%), and `junchan + chinitsu` 40.9%
-(p10 18.0%). `tanyao + 1 aka` yields 74.0% (p10 51.0%). Rejection histograms identify no-yaku, assignment, and
+`chanta + sanshoku` 98.0% (p10 90.0%), `honroutou + toitoi` 76.2%
+(p10 69.0%), and `junchan + chinitsu` 40.9% (p10 18.0%). `tanyao + 1 aka`
+yields 74.0% (p10 51.0%). Rejection histograms identify no-yaku, assignment, and
 dora-placement pressure, validating the histogram as the authoring signal for
 low-yield specs.
 
-### 3.2 Sixteen yaku are excludable but not requestable
+### 3.2 Fifteen yaku are excludable but not requestable
 
-`honroutou`, `shousangen` and the yakuman family have templates but no placer,
-so requesting one is refused with a reason. They are fully policed as
-exclusions.
+`shousangen` and the yakuman family have templates but no placer, so requesting
+one is refused with a reason. They are fully policed as exclusions.
 
 `chanta` and `junchan` are requestable, and **neither has a placer**. Their
 skeleton constraints (terminal runs, terminal-or-honor groups) plus their domain
@@ -134,6 +134,11 @@ and `invalid-hand` was 43% of all rejections; and by injecting exactly one honor
 it pinned every hand to the minimum. Removing it took the yield from 47.6% to
 84.6% and let the honor-group count vary — roughly 51% of hands carry one honor
 group, 41% two, 7% three (§3.9).
+
+`honroutou` is requestable with its required `toitoi` companion under the
+default exact policy: `generate({ yaku: ["honroutou", "toitoi"] })`. Its
+terminal-or-honor, no-run skeleton and yaochu pair domain describe the hand
+without a placer. `yakuPolicy: "atLeast"` may request `honroutou` alone.
 
 ### 3.3 M8 — batches *(done)*
 

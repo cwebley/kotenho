@@ -201,7 +201,15 @@ export const TEMPLATES: YakuTemplate[] = [
     requestable: true,
     incompatibleWith: ["tanyao", "chanta", "honroutou", "honitsu", "toitoi", "chiitoitsu", "ittsuu", "haku", "hatsu", "chun", "round-wind", "seat-wind"],
   }),
-  T({ name: "honroutou", subsumes: ["chanta", "junchan"], han: { closed: 2, open: 2 }, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chanta", "junchan", "chinitsu"] }),
+  T({
+    name: "honroutou",
+    subsumes: ["chanta", "junchan"],
+    han: { closed: 2, open: 2 },
+    skeleton: { noRuns: true, allTerminalOrHonorBlocks: true },
+    domain: { pair: "yaochu" },
+    requestable: true,
+    incompatibleWith: ["tanyao", "pinfu", "chanta", "junchan", "chinitsu"],
+  }),
 
   // ── yakuman: excludable, not yet placeable ──
   T({ name: "kokushi-musou", shapeGuarantees: true, skeleton: { shape: "kokushi" }, han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chiitoitsu"] }),

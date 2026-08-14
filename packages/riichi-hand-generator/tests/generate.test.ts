@@ -264,6 +264,7 @@ describe("generate", () => {
     ["chanta + sanshoku", { yaku: ["chanta", "sanshoku"] }],
     ["chanta + haku", { yaku: ["chanta", "haku"] }],
     ["junchan + chinitsu", { yaku: ["junchan", "chinitsu"] }],
+    ["honroutou + toitoi", { yaku: ["honroutou", "toitoi"] }],
   ];
 
   for (const [label, spec] of yakuSpecs) {
@@ -303,6 +304,7 @@ describe("generate", () => {
         { yaku: ["tanyao"], closed: true, winMethod: "tsumo" },
         "menzen-tsumo",
       ],
+      [{ yaku: ["honroutou"] }, "also scores toitoi"],
     ];
     for (const [spec, fragment] of cases) {
       const result = generate(spec, { seed: 1 });
@@ -510,6 +512,27 @@ describe("generate", () => {
       { yaku: ["junchan", "honitsu"] },
     ] as GenerateSpec[]) {
       expect(generate(spec).status).toBe("unsatisfiable");
+    }
+  });
+
+  it("generates all-terminal-or-honor honroutou alongside its toitoi companion", () => {
+    const result = generate(
+      { yaku: ["honroutou", "toitoi"] },
+      { count: 10, seed: 7, budget: 3000 },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    for (const hand of result.hands) {
+      const tiles = [
+        ...hand.handInput.closedTiles,
+        hand.handInput.winningTile.tile,
+        ...(hand.handInput.openMelds ?? []).flatMap((meld) => meld.tiles),
+      ];
+      expect(tiles.every((tile) => tile.endsWith("z") || tile[0] === "1" || tile[0] === "9")).toBe(true);
+      expect(hand.canonical.yaku.map((yaku) => yaku.name).sort()).toEqual([
+        "honroutou",
+        "toitoi",
+      ]);
     }
   });
 
