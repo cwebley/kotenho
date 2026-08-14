@@ -5,7 +5,7 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-273 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+276 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
 41 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
@@ -209,13 +209,13 @@ the same `ruleset` field in `GenerateSpec`.
 
 Implemented switches: kuitan, double-wind pair 2 vs 4 fu, open-pinfu 20 vs 30
 fu, kiriage mangan, kazoe yakuman versus sanbaiman cap, and per-suit aka
-availability. Defaults are Tenhou-flavored.
+availability. `doubleYakuman` independently enables daisuushii, kokushi's
+13-sided wait, suuankou tanki, and junsei chuuren; all default to single
+yakuman. Defaults are Tenhou-flavored.
 
-Still open: a local double-yakuman ruleset switch for daisuushii, kokushi's
-13-sided wait, suuankou tanki, and junsei chuuren's nine-sided wait. The default
-flattens each to single yakuman. Also open is Kansai-style chiitoitsu, which
-permits two identical pairs made from all four copies of a tile; the default
-remains standard seven-distinct-pairs chiitoitsu.
+Still open: Kansai-style chiitoitsu, which permits two identical pairs made from
+all four copies of a tile; the default remains standard seven-distinct-pairs
+chiitoitsu.
 Chiitoitsu/ryanpeikou overlap follows the standard higher-scoring ryanpeikou
 interpretation; no configuration surface is planned for that convention.
 

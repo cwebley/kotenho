@@ -10,6 +10,7 @@ import { isValidTile } from "./utils/is-valid-tile.js";
 import { replaceAkadora } from "./utils/replace-akadora.js";
 import { tileCompare } from "./utils/tile-compare.js";
 import { createKokushiListing, detectKokushiWait } from "./yaku/kokushi.js";
+import { yakumanMultiplier } from "./models/yaku.js";
 import { createChiitoiListing, detectChiitoi } from "./yaku/chiitoi.js";
 import { parseStandardHandCombinations } from "./parsing/standard-hand-combinations.js";
 import { interpretWaitsFromGroups } from "./parsing/interpret-waits-from-groups.js";
@@ -148,7 +149,12 @@ export function calculate(handInput: HandInput): HandAnalysis {
           winningTile: handInput.winningTile,
           waitType: kokushiWaitType,
           gameState,
-          yaku: [createKokushiListing()],
+          yaku: [
+            createKokushiListing(
+              kokushiWaitType === "kokushi-wide" &&
+                gameState.ruleset?.doubleYakuman.kokushi13Wait,
+            ),
+          ],
         }),
       );
     }
@@ -223,7 +229,10 @@ export function calculate(handInput: HandInput): HandAnalysis {
     // Composite yakuman stack, and this is standard rather than a local rule:
     // an all-honors hand of concealed triplets is both suuankou and tsuuiisou
     // and pays double. The label caps at quadruple; the payout does not.
-    const yakumanCount = hi.yaku.filter((yaku) => yaku.limit).length;
+    const yakumanCount = hi.yaku.reduce(
+      (count, yaku) => count + yakumanMultiplier(yaku.limit),
+      0,
+    );
     hi.limit =
       yakumanCount > 0
         ? LIMIT_BY_COUNT[Math.min(yakumanCount, LIMIT_BY_COUNT.length) - 1]

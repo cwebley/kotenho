@@ -8,11 +8,11 @@ export function createSanankouListing(): YakuListing {
   };
 }
 
-export function createSuuankouListing(): YakuListing {
+export function createSuuankouListing(doubleYakuman = false): YakuListing {
   return {
     name: "suuankou",
     han: 0,
-    limit: "yakuman",
+    limit: doubleYakuman ? "double-yakuman" : "yakuman",
   };
 }
 
@@ -43,7 +43,12 @@ export function detectSanankou(
   }).length;
 
   if (concealed >= 4) {
-    handInterpretation.yaku.push(createSuuankouListing());
+    handInterpretation.yaku.push(
+      createSuuankouListing(
+        handInterpretation.waitType === "tanki" &&
+          handInterpretation.gameState.ruleset?.doubleYakuman.suuankouTanki,
+      ),
+    );
   } else if (concealed === 3) {
     handInterpretation.yaku.push(createSanankouListing());
   }

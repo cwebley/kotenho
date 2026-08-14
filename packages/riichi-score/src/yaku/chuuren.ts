@@ -1,12 +1,24 @@
 import { HandInterpretation } from "../models/hand-interpretation.js";
+import { MahjongTile } from "../models/mahjong-tile.js";
 import { YakuListing } from "../models/yaku.js";
 import { isHonorTile } from "../utils/is-honor-tile.js";
 
 /** The pure shape: 1112345678999, before the fourteenth tile is added. */
 const BASE = [3, 1, 1, 1, 1, 1, 1, 1, 3];
 
-export function createChuurenListing(): YakuListing {
-  return { name: "chuuren-poutou", han: 0, limit: "yakuman" };
+export function createChuurenListing(doubleYakuman = false): YakuListing {
+  return { name: "chuuren-poutou", han: 0, limit: doubleYakuman ? "double-yakuman" : "yakuman" };
+}
+
+function isJunseiChuuren(tiles: MahjongTile[], winningTile: MahjongTile): boolean {
+  const ranks = tiles.map((tile) => (tile[0] === "0" ? 5 : Number(tile[0])));
+  const winningRank = winningTile[0] === "0" ? 5 : Number(winningTile[0]);
+  const winningIndex = ranks.indexOf(winningRank);
+  if (winningIndex === -1) return false;
+  ranks.splice(winningIndex, 1);
+  const counts = new Array(9).fill(0);
+  for (const rank of ranks) counts[rank - 1] += 1;
+  return counts.every((count, rank) => count === BASE[rank]);
 }
 
 /**
@@ -39,7 +51,7 @@ export function detectChuuren(
   }
 
   const counts = new Array(9).fill(0);
-  for (const tile of tiles) counts[Number(tile[0]) - 1] += 1;
+  for (const tile of tiles) counts[(tile[0] === "0" ? 5 : Number(tile[0])) - 1] += 1;
 
   let surplus = 0;
   for (let rank = 0; rank < 9; rank++) {
@@ -49,6 +61,11 @@ export function detectChuuren(
   }
   if (surplus !== 1) return handInterpretation;
 
-  handInterpretation.yaku.push(createChuurenListing());
+  handInterpretation.yaku.push(
+    createChuurenListing(
+      isJunseiChuuren(tiles, handInterpretation.winningTile.tile) &&
+        handInterpretation.gameState.ruleset?.doubleYakuman.junseiChuuren,
+    ),
+  );
   return handInterpretation;
 }

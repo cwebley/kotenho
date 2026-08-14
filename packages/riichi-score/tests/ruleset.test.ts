@@ -7,6 +7,7 @@ import { parseFu } from "../src/parsing/parse-fu";
 import { detectTanyao } from "../src/yaku/tanyao";
 import { calculateBasicPoints } from "../src/utils/calculate-basic-points";
 import { calculate } from "../src/calculate";
+import type { MahjongTile } from "../src/models/mahjong-tile";
 
 function allRunHand(options: {
   open?: boolean;
@@ -106,5 +107,85 @@ describe("ruleset", () => {
     expect(analysis.handInterpretations[0].yaku.map((yaku) => yaku.name)).toEqual([
       "tsuuiisou",
     ]);
+  });
+
+  it("applies configured single-hand double yakuman variants", () => {
+    const cases: {
+      name: "daisuushii" | "kokushi-musou" | "suuankou" | "chuuren-poutou";
+      flag: "daisuushii" | "kokushi13Wait" | "suuankouTanki" | "junseiChuuren";
+      closedTiles: MahjongTile[];
+      winningTile: MahjongTile;
+      tsumo: boolean;
+    }[] = [
+      {
+        name: "daisuushii",
+        flag: "daisuushii",
+        closedTiles: [
+          "1z", "1z", "1z", "2z", "2z", "2z", "3z", "3z", "3z", "4z", "4z", "5m", "5m",
+        ],
+        winningTile: "4z",
+        tsumo: false,
+      },
+      {
+        name: "kokushi-musou",
+        flag: "kokushi13Wait",
+        closedTiles: [
+          "1m", "9m", "1p", "9p", "1s", "9s", "1z", "2z", "3z", "4z", "5z", "6z", "7z",
+        ],
+        winningTile: "1m",
+        tsumo: true,
+      },
+      {
+        name: "suuankou",
+        flag: "suuankouTanki",
+        closedTiles: [
+          "1m", "1m", "1m", "2p", "2p", "2p", "3s", "3s", "3s", "4z", "4z", "4z", "5m",
+        ],
+        winningTile: "5m",
+        tsumo: true,
+      },
+      {
+        name: "chuuren-poutou",
+        flag: "junseiChuuren",
+        closedTiles: [
+          "1m", "1m", "1m", "2m", "3m", "4m", "5m", "6m", "7m", "8m", "9m", "9m", "9m",
+        ],
+        winningTile: "5m",
+        tsumo: true,
+      },
+    ];
+
+    for (const fixture of cases) {
+      const input = (enabled: boolean) => ({
+        closedTiles: fixture.closedTiles,
+        openMelds: [],
+        winningTile: fixture.tsumo
+          ? { tile: fixture.winningTile, isTsumo: true as const }
+          : { tile: fixture.winningTile, from: "south" as const },
+        gameState: createGameState({
+          ruleset: { doubleYakuman: { [fixture.flag]: enabled } },
+        }),
+      });
+      const single = calculate(input(false)).handInterpretations[0];
+      const doubled = calculate(input(true)).handInterpretations[0];
+
+      expect(single.yaku).toContainEqual({ name: fixture.name, han: 0, limit: "yakuman" });
+      expect(single.basicPoints).toBe(8000);
+      expect(doubled.yaku).toContainEqual({ name: fixture.name, han: 0, limit: "double-yakuman" });
+      expect(doubled.basicPoints).toBe(16000);
+    }
+  });
+
+  it("stacks a configured double yakuman with a distinct yakuman", () => {
+    const analysis = calculate({
+      closedTiles: [
+        "1z", "1z", "1z", "2z", "2z", "2z", "3z", "3z", "3z", "4z", "4z", "5z", "5z",
+      ],
+      openMelds: [],
+      winningTile: { tile: "4z", from: "south" },
+      gameState: createGameState({ ruleset: { doubleYakuman: { daisuushii: true } } }),
+    });
+
+    expect(analysis.handInterpretations[0].basicPoints).toBe(24000);
   });
 });

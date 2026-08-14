@@ -24,6 +24,16 @@ export const LIMIT_BY_COUNT: Limit[] = [
   "quadruple-yakuman",
 ];
 
+export function yakumanMultiplier(limit: Limit | undefined): number {
+  switch (limit) {
+    case "quadruple-yakuman": return 4;
+    case "triple-yakuman": return 3;
+    case "double-yakuman": return 2;
+    case "yakuman": return 1;
+    default: return 0;
+  }
+}
+
 export type YakuName =
   | "chiitoitsu"
   | "kokushi-musou"

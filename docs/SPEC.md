@@ -355,9 +355,10 @@ library must eventually accommodate:
 - Kuipinfu: is the open 20-fu hand floored to 30
 - Kiriage mangan: is 4 han 30 fu / 3 han 60 fu rounded up to mangan
 - Kazoe yakuman: does 13+ han count as yakuman
-- Double yakuman: recognised or flattened to single. The future ruleset switch
-  must cover daisuushii, kokushi's 13-sided wait, suuankou tanki, and junsei
-  chuuren's nine-sided wait. The default flattens each to single yakuman.
+- Double yakuman: recognised or flattened to single. `Ruleset.doubleYakuman`
+  controls daisuushii, kokushi's 13-sided wait, suuankou tanki, and junsei
+  chuuren's nine-sided wait independently. The default flattens each to single
+  yakuman.
 - Aka dora count
 - Chiitoitsu vs. ryanpeikou precedence conventions
 - Chiitoitsu pair uniqueness: standard seven distinct pairs versus the Kansai

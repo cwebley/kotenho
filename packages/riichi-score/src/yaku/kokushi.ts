@@ -3,11 +3,11 @@ import { WinningTile } from "../models/winning-tile.js";
 import { KokushiWaitType } from "../models/wait-type.js";
 import { YakuListing } from "../models/yaku.js";
 
-export function createKokushiListing(): YakuListing {
+export function createKokushiListing(doubleYakuman = false): YakuListing {
   return {
     name: "kokushi-musou",
     han: 0,
-    limit: "yakuman",
+    limit: doubleYakuman ? "double-yakuman" : "yakuman",
   };
 }
 

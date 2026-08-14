@@ -596,6 +596,19 @@ describe("generate", () => {
     }
   });
 
+  it("carries double-yakuman ruleset overrides into the answer key", () => {
+    const result = generate(
+      { yaku: ["daisuushii"], ruleset: { doubleYakuman: { daisuushii: true } } },
+      { seed: 7, budget: 3000 },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.hand.canonical.yaku).toEqual([
+      { name: "daisuushii", han: 0, limit: "double-yakuman" },
+    ]);
+    expect(result.hand.canonical.basicPoints).toBe(16000);
+  });
+
   it("constructs terminal-only chinroutou", () => {
     const result = generate({ yaku: ["chinroutou"] }, { seed: 7, budget: 3000 });
     expect(result.status).toBe("ok");

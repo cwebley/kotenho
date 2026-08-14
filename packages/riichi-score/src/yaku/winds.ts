@@ -10,10 +10,8 @@ export function createShousuushiiListing(): YakuListing {
   return { name: "shousuushii", han: 0, limit: "yakuman" };
 }
 
-export function createDaisuushiiListing(): YakuListing {
-  // Many rulesets score this as a double yakuman. Left single until the ruleset
-  // configuration object exists — the same choice made for suuankou tanki.
-  return { name: "daisuushii", han: 0, limit: "yakuman" };
+export function createDaisuushiiListing(doubleYakuman = false): YakuListing {
+  return { name: "daisuushii", han: 0, limit: doubleYakuman ? "double-yakuman" : "yakuman" };
 }
 
 /** Four wind triplets is daisuushii; three plus a wind pair is shousuushii. */
@@ -29,7 +27,9 @@ export function detectWinds(
   ).length;
 
   if (windTriplets >= 4) {
-    handInterpretation.yaku.push(createDaisuushiiListing());
+    handInterpretation.yaku.push(
+      createDaisuushiiListing(handInterpretation.gameState.ruleset?.doubleYakuman.daisuushii),
+    );
   } else if (
     windTriplets === 3 &&
     isWindTile(handInterpretation.pair.tiles[0])

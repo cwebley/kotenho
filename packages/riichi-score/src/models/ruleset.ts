@@ -10,11 +10,21 @@ export interface Ruleset {
   kiriageMangan: boolean;
   /** Treat 13+ naturally accumulated han as yakuman rather than sanbaiman. */
   kazoeYakuman: boolean;
+  /** Local single-hand double-yakuman variants. */
+  doubleYakuman: {
+    daisuushii: boolean;
+    kokushi13Wait: boolean;
+    suuankouTanki: boolean;
+    junseiChuuren: boolean;
+  };
   /** Physical red-five availability by suit. */
   akaDora: { manzu: number; pinzu: number; souzu: number };
 }
 
-export type RulesetOptions = Partial<Ruleset>;
+export type RulesetOptions = Omit<Partial<Ruleset>, "akaDora" | "doubleYakuman"> & {
+  akaDora?: Partial<Ruleset["akaDora"]>;
+  doubleYakuman?: Partial<Ruleset["doubleYakuman"]>;
+};
 
 /** The established current behavior, named so callers can select it explicitly. */
 export const TENHOU_RULESET: Readonly<Ruleset> = Object.freeze({
@@ -23,6 +33,12 @@ export const TENHOU_RULESET: Readonly<Ruleset> = Object.freeze({
   openPinfuMinimumFu: 30,
   kiriageMangan: false,
   kazoeYakuman: true,
+  doubleYakuman: Object.freeze({
+    daisuushii: false,
+    kokushi13Wait: false,
+    suuankouTanki: false,
+    junseiChuuren: false,
+  }),
   akaDora: Object.freeze({ manzu: 1, pinzu: 1, souzu: 1 }),
 });
 
@@ -31,6 +47,7 @@ export function createRuleset(options: RulesetOptions = {}): Ruleset {
   return {
     ...TENHOU_RULESET,
     ...options,
+    doubleYakuman: { ...TENHOU_RULESET.doubleYakuman, ...options.doubleYakuman },
     akaDora: { ...TENHOU_RULESET.akaDora, ...options.akaDora },
   };
 }
