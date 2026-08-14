@@ -58,11 +58,15 @@ const sortTiles = (tiles: readonly MahjongTile[]): MahjongTile[] => {
 };
 
 export const groupSignature = (tiles: readonly string[]): string =>
-  [...tiles].sort().join("");
+  [...tiles]
+    .map((tile) => (tile[0] === "0" ? `5${tile[1]}` : tile))
+    .sort()
+    .join("");
 
 export function readingSignature(reading: IntendedReading): string {
   if (reading.shape !== "standard") return reading.shape;
-  return `${[...reading.groups].sort().join("|")}/${reading.pair}/${reading.wait}`;
+  const pair = reading.pair[0] === "0" ? `5${reading.pair[1]}` : reading.pair;
+  return `${[...reading.groups].sort().join("|")}/${pair}/${reading.wait}`;
 }
 
 const ORPHANS: MahjongTile[] = [

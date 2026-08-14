@@ -5,7 +5,7 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-247 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+249 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
 27 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
@@ -28,7 +28,7 @@ produces verified practice hands for structural, yaku and dora constraints.
 | M6 | Dora planner | **done** — aka deferred (§3.4) |
 | M7 | Ambiguity machinery | `requireUnambiguousWait` + diagnostic flags done |
 | M8 | Variety and batches | **done** — deterministic distinct batches and explicit shortfall |
-| M9 | Ruleset config, docs, perf | **in progress** — ruleset plumbing and scorer switches delivered |
+| M9 | Ruleset config, docs, perf | **in progress** — ruleset plumbing, scorer switches, and aka allocation delivered |
 
 ---
 
@@ -113,7 +113,7 @@ not mutually exclusive, matching the existing attempt telemetry.
 The M3 spike found healthy diversity across the supported lesson matrix.
 `chanta` yields 84.6% (p10 77.0%), `junchan` 89.9% (p10 82.0%),
 `chanta + sanshoku` 98.0% (p10 90.0%), and `junchan + chinitsu` 40.9%
-(p10 18.0%). Rejection histograms identify no-yaku, assignment, and
+(p10 18.0%). `tanyao + 1 aka` yields 74.0% (p10 51.0%). Rejection histograms identify no-yaku, assignment, and
 dora-placement pressure, validating the histogram as the authoring signal for
 low-yield specs.
 
@@ -144,16 +144,16 @@ with the partial batch when the budget runs out. It never silently repeats a
 hand. The batch's aggregate attempts and rejection histogram remain available
 to the authoring UI.
 
-### 3.4 Aka dora — allocation deferred, ruleset availability delivered
+### 3.4 Aka dora *(done)*
 
 `riichi-score` already handles `0m/0p/0s` end to end (`replaceAkadora`,
 `countRedFives`, `rehydrateRedFives`). The dora solver runs on **normalised**
 tiles, so nothing in it needs to know aka exists.
 
-`Ruleset.akaDora` now sets the physical red-five availability per suit, and the
-scorer rejects inputs exceeding it. What is left: allocate red 5s inside the
-**tile assigner's 4-copy budget** — not as a post-hoc `5p → 0p` substitution,
-which could double-spend a 5 the dora plan already committed.
+`Ruleset.akaDora` sets physical red-five availability per suit, and
+`GenerateSpec.akaDora` requests an exact number of aka han. The allocator swaps
+selected physical fives for red fives before dora-indicator placement, so the
+shared four-copy budget is enforced across the hand and its indicators.
 
 ### 3.5 Ruleset configuration object *(partly done)*
 
@@ -166,8 +166,7 @@ Implemented switches: kuitan, double-wind pair 2 vs 4 fu, open-pinfu 20 vs 30
 fu, kiriage mangan, kazoe yakuman versus sanbaiman cap, and per-suit aka
 availability. Defaults are Tenhou-flavored.
 
-Still open: red-five allocation in generation and local single-hand double
-yakuman variants. Chiitoitsu/ryanpeikou overlap follows the standard
+Still open: local single-hand double yakuman variants. Chiitoitsu/ryanpeikou overlap follows the standard
 higher-scoring ryanpeikou interpretation; no configuration surface is planned.
 
 ### 3.6 Declared yaku and indicator state *(done)*

@@ -31,6 +31,7 @@ const SPECS = [
     { yaku: ["riichi", "menzen-tsumo"], closed: true, winMethod: "tsumo" },
   ],
   ["pinfu + 3 dora", { yaku: ["pinfu"], han: 4 }],
+  ["tanyao + 1 aka", { yaku: ["tanyao"], akaDora: 1 }],
   ["chanta", { yaku: ["chanta"] }],
   ["junchan", { yaku: ["junchan"] }],
   ["chanta + sanshoku", { yaku: ["chanta", "sanshoku"] }],

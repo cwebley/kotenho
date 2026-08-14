@@ -36,6 +36,7 @@ const CAUSE_PRIORITY: RejectionCause[] = [
   "yaku-mismatch",
   "han-mismatch",
   "dora-unplaceable",
+  "aka-unplaceable",
   "fu-mismatch",
   "wait-mismatch",
   "ambiguous-wait",
@@ -142,6 +143,9 @@ export function verify(
   }
   if (spec.uraDora !== undefined && tied.some((hi) => hi.uradora !== spec.uraDora)) {
     causes.push("dora-unplaceable");
+  }
+  if (spec.akaDora !== undefined && tied.some((hi) => hi.akadora !== spec.akaDora)) {
+    causes.push("aka-unplaceable");
   }
   if (
     spec.waitType !== undefined &&

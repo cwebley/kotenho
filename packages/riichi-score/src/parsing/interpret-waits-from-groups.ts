@@ -14,11 +14,17 @@ export function interpretWaitsFromGroups(
   handInput: HandInput,
 ): HandInterpretation[] {
   const allHandInterpretations: HandInterpretation[] = [];
+  // Groups have been normalized to ordinary fives for parsing. Keep the original
+  // winning tile on the result, but compare against its normalized identity.
+  const winningTile =
+    handInput.winningTile.tile[0] === "0"
+      ? (`5${handInput.winningTile.tile[1]}` as typeof handInput.winningTile.tile)
+      : handInput.winningTile.tile;
   // we need to account for the wait since it impacts the scoring
   // each wait that is different gives us another hand interpretation
   // loop through the pair and all the groups for each waitlessHandInterpretation to look for the winningTile.
   waitlessHandInterpretations.forEach((whi) => {
-    if (whi.pair.tiles[0] === handInput.winningTile.tile) {
+    if (whi.pair.tiles[0] === winningTile) {
       // found a single tile wait (tanki) interpretation
       allHandInterpretations.push(
         createHandInterpretation({
@@ -33,7 +39,7 @@ export function interpretWaitsFromGroups(
     }
 
     whi.groups.forEach((parsedGroup, i) => {
-      if (parsedGroup.tiles.includes(handInput.winningTile.tile)) {
+      if (parsedGroup.tiles.includes(winningTile)) {
         if (parsedGroup.tiles[0] === parsedGroup.tiles[1]) {
           allHandInterpretations.push(
             createHandInterpretation({
@@ -55,7 +61,7 @@ export function interpretWaitsFromGroups(
           return;
         }
 
-        if (parsedGroup.tiles[1] === handInput.winningTile.tile) {
+        if (parsedGroup.tiles[1] === winningTile) {
           allHandInterpretations.push(
             createHandInterpretation({
               isStandardHand: true,
@@ -84,7 +90,7 @@ export function interpretWaitsFromGroups(
         if (
           (isTerminalTile(parsedGroup.tiles[0]) ||
             isTerminalTile(parsedGroup.tiles[2])) &&
-          !isTerminalTile(handInput.winningTile.tile)
+          !isTerminalTile(winningTile)
         ) {
           allHandInterpretations.push(
             createHandInterpretation({

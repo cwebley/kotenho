@@ -417,6 +417,33 @@ describe("generate", () => {
     for (const hand of result.hands) expect(hand.canonical.han).toBe(3);
   });
 
+  it("allocates exact aka dora inside the physical five-tile budget", () => {
+    const result = generate(
+      { yaku: ["tanyao"], han: 3, dora: 1, akaDora: 1 },
+      { count: 10, seed: 7, budget: 3000 },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      for (const hand of result.hands) {
+        const input = hand.handInput;
+        const tiles = [
+          ...input.closedTiles,
+          input.winningTile.tile,
+          ...(input.openMelds ?? []).flatMap((meld) => meld.tiles),
+        ];
+        expect(tiles.filter((tile) => tile[0] === "0")).toHaveLength(1);
+        expect(hand.canonical.akadora).toBe(1);
+        expect(hand.canonical.dora).toBe(1);
+        expect(hand.canonical.han).toBe(3);
+      }
+    }
+
+    expect(
+      generate({ yaku: ["tanyao"], akaDora: 1, ruleset: { akaDora: { manzu: 0, pinzu: 0, souzu: 0 } } }).status,
+    ).toBe("unsatisfiable");
+    expect(generate({ yaku: ["tanyao"], akaDora: 4 }).status).toBe("unsatisfiable");
+  });
+
   it("keeps junchan honor-free and rejects terminal-family contradictions", () => {
     for (let seed = 0; seed < 20; seed++) {
       const result = generate({ yaku: ["junchan"] }, { seed, budget: 3000 });

@@ -41,6 +41,8 @@ export interface GenerateSpec {
   doraIndicatorCount?: number;
   /** Ura dora. Requires riichi, which is what reveals the ura indicators. */
   uraDora?: number;
+  /** Red dora carried by physical red fives in the hand. */
+  akaDora?: number;
   /** Constrain the winning shape. */
   handShape?: "standard" | "chiitoitsu" | "kokushi";
   /** Rounded fu, exactly. */
@@ -142,6 +144,7 @@ export type RejectionCause =
   | "no-yaku"
   | "yaku-mismatch"
   | "dora-unplaceable"
+  | "aka-unplaceable"
   | "han-mismatch"
   | "fu-mismatch"
   | "wait-mismatch"

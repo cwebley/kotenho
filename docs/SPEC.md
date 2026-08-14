@@ -403,7 +403,7 @@ hand, only what it must be true of.
 | `roundWind`, `seatWind` | A fixed direction or allowed direction list; omitted rounds sample East/South, omitted seats sample all four winds |
 | `doraCount` | Total dora han in the hand |
 | `doraIndicatorCount` | How many indicators are face up — **independent of the hand's own kan count** |
-| `uraDoraCount`, `akaDoraCount` | If modelled |
+| `uraDora`, `akaDora` | Exact ura and red dora han; ura requires riichi |
 | `riichi`, `ippatsu`, `haitei`, … | Declared and situational flags |
 | `ruleset` | `RulesetOptions` overrides for the scoring variant |
 

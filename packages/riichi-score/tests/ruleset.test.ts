@@ -79,4 +79,18 @@ describe("ruleset", () => {
       "Too many red fives in manzu: 14 exceeds the ruleset limit of 0.",
     );
   });
+
+  it("scores a hand won on a red five", () => {
+    const analysis = calculate({
+      closedTiles: [
+        "3m", "4m", "2p", "3p", "4p", "3s", "4s", "5s", "6s", "6s", "6s", "2m", "2m",
+      ],
+      winningTile: { tile: "0m", isTsumo: true },
+      gameState: createGameState(),
+    });
+
+    expect(analysis.valid).toBe(true);
+    expect(analysis.handInterpretations[0].akadora).toBe(1);
+    expect(analysis.handInterpretations[0].yaku.map((yaku) => yaku.name)).toContain("tanyao");
+  });
 });

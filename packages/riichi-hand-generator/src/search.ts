@@ -5,6 +5,7 @@ import type {
   HandInterpretation,
 } from "riichi-score";
 import { assignTiles } from "./assign.js";
+import { placeAka } from "./aka.js";
 import { placeDora } from "./dora.js";
 import { planTiles } from "./plan.js";
 import { createRng, type Rng } from "./rng.js";
@@ -155,10 +156,23 @@ export function runSearch(
       if (assignment) {
         // Dora runs last: choosing indicators never changes the tiles, so it
         // cannot disturb anything decided above.
-        const need = requiredDora(spec, !skeleton.menzen) ?? { dora: 0, ura: 0 };
+        const need =
+          requiredDora(spec, !skeleton.menzen) ?? { dora: 0, ura: 0, aka: 0 };
         const declared = declaredGameState(spec);
         const slots = spec.doraIndicatorCount ?? 1;
         const input = assignment.handInput;
+        input.gameState = { ...input.gameState!, ...declared };
+        if (!placeAka(input, need.aka, declared.ruleset, rng)) {
+          record({
+            attempt: attempts,
+            stage: "assignment",
+            outcome: "rejected",
+            causes: ["aka-unplaceable"],
+            primaryCause: "aka-unplaceable",
+            skeletonId: id,
+          });
+          continue;
+        }
         const placement = placeDora(
           [
             ...input.closedTiles,
@@ -185,7 +199,6 @@ export function runSearch(
         }
         input.gameState = {
           ...input.gameState!,
-          ...declared,
           doraIndicators: placement.doraIndicators,
           uradoraIndicators: placement.uradoraIndicators,
         };

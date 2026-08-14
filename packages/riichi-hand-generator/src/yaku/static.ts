@@ -168,8 +168,12 @@ function checkDoraFeasibility(
       "ura dora requires riichi — the ura indicators are only revealed to a player who declared it",
     );
   }
-  if ((spec.dora ?? 0) < 0 || (spec.uraDora ?? 0) < 0) {
+  if ((spec.dora ?? 0) < 0 || (spec.uraDora ?? 0) < 0 || (spec.akaDora ?? 0) < 0) {
     return no("dora counts cannot be negative");
+  }
+  if (!Number.isInteger(spec.akaDora ?? 0)) return no("aka dora count must be an integer");
+  if ((spec.akaDora ?? 0) > Object.values(createRuleset(spec.ruleset).akaDora).reduce((sum, n) => sum + n, 0)) {
+    return no("aka dora count exceeds this ruleset's red-five supply");
   }
 
   const slots = spec.doraIndicatorCount ?? 1;
@@ -210,9 +214,12 @@ function checkDoraFeasibility(
   const yakuHan = possibleTotals[0];
 
   const needed = spec.han - yakuHan;
-  if (spec.dora !== undefined && spec.dora + (spec.uraDora ?? 0) !== needed) {
+  if (
+    (spec.dora !== undefined || spec.uraDora !== undefined || spec.akaDora !== undefined) &&
+    (spec.dora ?? 0) + (spec.uraDora ?? 0) + (spec.akaDora ?? 0) !== needed
+  ) {
     return no(
-      `${(spec.yaku ?? []).join(" + ")} is ${yakuHan} han, so reaching ${spec.han} needs ${needed} dora, not ${spec.dora + (spec.uraDora ?? 0)}`,
+      `${(spec.yaku ?? []).join(" + ")} is ${yakuHan} han, so reaching ${spec.han} needs ${needed} dora, not ${(spec.dora ?? 0) + (spec.uraDora ?? 0) + (spec.akaDora ?? 0)}`,
     );
   }
   if (needed > 4 * (slots + (riichiDeclared ? slots : 0))) {
@@ -235,9 +242,9 @@ function checkDoraFeasibility(
 export function requiredDora(
   spec: GenerateSpec,
   open?: boolean,
-): { dora: number; ura: number } | null {
-  if (spec.dora !== undefined || spec.uraDora !== undefined) {
-    return { dora: spec.dora ?? 0, ura: spec.uraDora ?? 0 };
+): { dora: number; ura: number; aka: number } | null {
+  if (spec.dora !== undefined || spec.uraDora !== undefined || spec.akaDora !== undefined) {
+    return { dora: spec.dora ?? 0, ura: spec.uraDora ?? 0, aka: spec.akaDora ?? 0 };
   }
   if (spec.han === undefined) return null;
   const templates = (spec.yaku ?? [])
@@ -253,7 +260,7 @@ export function requiredDora(
     0,
   );
   const needed = spec.han - yakuHan;
-  return needed >= 0 ? { dora: needed, ura: 0 } : null;
+  return needed >= 0 ? { dora: needed, ura: 0, aka: 0 } : null;
 }
 
 /** Yaku the situation forces, so the planner can request them implicitly. */

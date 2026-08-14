@@ -187,7 +187,7 @@ export function calculate(handInput: HandInput): HandAnalysis {
 
   const closedRedFives = [
     ...handInput.closedTiles,
-    handInput.winningTile,
+    handInput.winningTile.tile,
   ].filter((t) => t === "0m" || t === "0p" || t === "0s");
 
   handAnalysis.handInterpretations.forEach((hi) => {

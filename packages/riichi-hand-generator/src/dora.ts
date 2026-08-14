@@ -23,7 +23,10 @@ export function nextTile(tile: MahjongTile): MahjongTile {
 
 const tally = (tiles: readonly MahjongTile[]): Map<MahjongTile, number> => {
   const counts = new Map<MahjongTile, number>();
-  for (const tile of tiles) counts.set(tile, (counts.get(tile) ?? 0) + 1);
+  for (const tile of tiles) {
+    const normal = (tile[0] === "0" ? `5${tile[1]}` : tile) as MahjongTile;
+    counts.set(normal, (counts.get(normal) ?? 0) + 1);
+  }
   return counts;
 };
 
