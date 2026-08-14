@@ -167,7 +167,8 @@ fu, kiriage mangan, kazoe yakuman versus sanbaiman cap, and per-suit aka
 availability. Defaults are Tenhou-flavored.
 
 Still open: red-five allocation in generation and local single-hand double
-yakuman / chiitoitsu-versus-ryanpeikou precedence rules.
+yakuman variants. Chiitoitsu/ryanpeikou overlap follows the standard
+higher-scoring ryanpeikou interpretation; no configuration surface is planned.
 
 ### 3.6 Declared yaku and indicator state *(done)*
 
