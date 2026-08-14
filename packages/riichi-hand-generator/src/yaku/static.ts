@@ -10,6 +10,34 @@ export interface Feasibility {
 const ok: Feasibility = { ok: true };
 const no = (reason: string): Feasibility => ({ ok: false, reason });
 
+export interface DeclaredGameState {
+  isRiichi: boolean;
+  isDoubleRiichi: boolean;
+  isIppatsu: boolean;
+  isHaitei: boolean;
+  isHoutei: boolean;
+}
+
+/**
+ * Declared yaku are facts about the simulated winning situation. They are
+ * derived only from the requested yaku so the scorer, dora planner and
+ * exclusivity verifier all describe the same hand.
+ */
+export function declaredGameState(spec: GenerateSpec): DeclaredGameState {
+  const requested = new Set(spec.yaku ?? []);
+  return {
+    isRiichi: requested.has("riichi"),
+    isDoubleRiichi: requested.has("double-riichi"),
+    isIppatsu: requested.has("ippatsu"),
+    isHaitei: requested.has("haitei"),
+    isHoutei: requested.has("houtei"),
+  };
+}
+
+export function hasRiichi(state: DeclaredGameState): boolean {
+  return state.isRiichi || state.isDoubleRiichi;
+}
+
 /**
  * Yaku forced by the situation rather than chosen. Under an exact policy a
  * spec that triggers one without listing it is contradictory, and the search
@@ -24,12 +52,6 @@ function forcedYaku(spec: GenerateSpec): { name: YakuName; why: string }[] {
       name: "menzen-tsumo",
       why: "a concealed hand won by tsumo always has menzen tsumo",
     });
-  }
-  if (spec.riichi) {
-    forced.push({ name: "riichi", why: "the riichi flag is set" });
-  }
-  if (spec.ippatsu) {
-    forced.push({ name: "ippatsu", why: "the ippatsu flag is set" });
   }
   return forced;
 }
@@ -115,10 +137,7 @@ function checkDoraFeasibility(
   spec: GenerateSpec,
   templates: YakuTemplate[],
 ): Feasibility {
-  const riichiDeclared =
-    Boolean(spec.riichi) ||
-    (spec.yaku ?? []).includes("riichi") ||
-    (spec.yaku ?? []).includes("double-riichi");
+  const riichiDeclared = hasRiichi(declaredGameState(spec));
 
   if ((spec.uraDora ?? 0) > 0 && !riichiDeclared) {
     return no(
@@ -130,8 +149,8 @@ function checkDoraFeasibility(
   }
 
   const slots = spec.doraIndicatorCount ?? 1;
-  if ((spec.dora ?? 0) > 0 && slots === 0) {
-    return no("dora requires at least one indicator");
+  if (!Number.isInteger(slots) || slots < 1 || slots > 5) {
+    return no("dora indicator count must be an integer from 1 to 5");
   }
 
   if (spec.han === undefined || !templates.length) return ok;

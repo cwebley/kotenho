@@ -5,7 +5,7 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-212 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+218 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 38 commits          ·   9/9 generator specs at 100% answer-key agreement
 25 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
@@ -38,9 +38,9 @@ produces verified practice hands for structural, yaku and dora constraints.
 generate({ fu: 30, closed: true, winMethod: "ron" })     // structural
 generate({ yaku: ["tanyao", "pinfu"] })                  // exactly those yaku
 generate({ yaku: ["tanyao"], han: 3 })                   // 1 han yaku + 2 dora
-generate({ yaku: ["riichi"], riichi: true, uraDora: 1 })
+generate({ yaku: ["riichi"], uraDora: 1 })
 generate({ handShape: "chiitoitsu" })
-generate({ kanCount: 1, fu: 50 })
+generate({ kanCount: 1, fu: 50, doraIndicatorCount: 2 })
 analyze({ yaku: ["pinfu"], han: 4 }, { seed: 7 })
 ```
 
@@ -88,14 +88,23 @@ it. That has now bitten five times (§4).
 
 `analyze()` now separates static impossibility proofs from empirical search
 quality. It reports `{ feasible, reason?, estimatedYield, distinctRatio,
-sampleSize }`, using a deterministic 100-attempt probe by default. A zero-yield
+sampleSize, rejections }`, using a deterministic 100-attempt probe by default. A zero-yield
 probe remains feasible: it is an empirical warning, not a proof.
 
 The probe shares the planner, dora placement, verifier, and attempt telemetry
 with `generate()`. `estimatedYield` is accepted candidates divided by sampled
-candidate attempts; `distinctRatio` uses normalized hand identity.
+candidate attempts; `distinctRatio` uses normalized hand identity; and
+`rejections` exposes every observed rejection cause. Causes are intentionally
+not mutually exclusive, matching the existing attempt telemetry.
 
-### 3.2 Sixteen yaku are excludable but not requestable
+The M3 spike found healthy diversity across the supported lesson matrix. The
+weakest supported cases were `40 fu, one called meld` (20.4% mean yield, p10
+3.0%), `50 fu, one kan` (29.0%, p10 3.0%), and exact `pinfu + 3 dora` (26.3%),
+with rejection histograms identifying no-yaku, assignment, and dora-placement
+pressure respectively. This validates the histogram as the authoring signal
+for low-yield specs.
+
+### 3.2 Eighteen yaku are excludable but not requestable
 
 `chanta`, `junchan`, `honroutou`, `shousangen` and the yakuman family have
 templates but no placer, so requesting one is refused with a reason. They are
@@ -119,13 +128,18 @@ already committed. Also a ruleset flag for how many aka exist.
 `DESIGN.md` §9 finding 6, never built. Waiting customers: kuitan, double-wind
 pair 2 vs 4 fu, kiriage mangan, aka count, and single-hand double yakuman.
 
-### 3.5 haitei and houtei are advertised but unreachable
+### 3.5 Declared yaku and indicator state *(done)*
 
-Marked `requestable: true` and correctly constrained to tsumo/ron skeletons, but
-the generator cannot set the game-state flag, so they never appear and the spec
-**exhausts**. Either give them spec flags as riichi has, or mark them
-`requestable: false`. Advertising something that always fails is the worst of
-the three options.
+Declared yaku are requested only through `yaku` and become `GameState` facts:
+riichi/double-riichi reveal a matching ura indicator set; ippatsu, haitei and
+houtei set their scorer flags. The scorer, not the generator, emits the yaku.
+Haitei/houtei are requestable again and constrained to tsumo/ron respectively.
+
+`doraIndicatorCount` is the total visible count, including the initial
+indicator. It is an integer from 1 to 5, and must be at least `1 + kanCount` for
+kans in the winner's hand. Extra indicators remain valid to model other players'
+kans. Omote indicators are always returned in `handInput.gameState`; ura
+indicators are returned at the same count for riichi and double-riichi.
 
 ### 3.6 The incompatibility table is hand-written
 
@@ -183,10 +197,10 @@ It found two real bugs on its first run:
 
 Currently **0 false claims** over 1,500 sampled specs.
 
-**The five false-impossibility bugs found so far**, all the same failure mode:
+**The seven false-impossibility bugs found so far**, all the same failure mode:
 chiitoitsu missing from the skeleton model · kokushi missing · suuankou excluded
-by sanankou's shape · pinfu + 3 dora (runs stack) · the two above. Expect more
-whenever a static rule is added.
+by sanankou's shape · pinfu + 3 dora (runs stack) · iipeiko + 4 dora (runs plus
+pair) · the two above. Expect more whenever a static rule is added.
 
 ---
 
@@ -198,6 +212,7 @@ All in `internal/reference-scorer/experiments/`, plain node, no deps.
 |---|---|
 | `soundness-fuzz.mjs` | does the engine ever falsely claim impossible? |
 | `m1-spike.mjs` | convergence + answer-key agreement per spec |
+| `analyze-spike.mjs` | yield, diversity, and rejection causes across lesson specs |
 | `m4-composition-spike.mjs` | do multiple yaku placers compose? |
 | `m6-dora-spike.mjs` | which (dora, indicator) bands are reachable? |
 | `declared-only.mjs` | what contaminates a "nothing but X" spec? |

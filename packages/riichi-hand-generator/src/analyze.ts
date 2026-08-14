@@ -23,6 +23,7 @@ export function analyze(
       estimatedYield: 0,
       distinctRatio: 0,
       sampleSize: 0,
+      rejections: {},
     };
   }
 
@@ -34,6 +35,7 @@ export function analyze(
       estimatedYield: 0,
       distinctRatio: 0,
       sampleSize: 0,
+      rejections: {},
     };
   }
 
@@ -47,6 +49,7 @@ export function analyze(
       estimatedYield: 0,
       distinctRatio: 0,
       sampleSize: 0,
+      rejections: {},
     };
   }
 
@@ -67,5 +70,6 @@ export function analyze(
     distinctRatio:
       run.accepted.length === 0 ? 0 : identities.size / run.accepted.length,
     sampleSize: run.attempts,
+    rejections: run.rejections,
   };
 }

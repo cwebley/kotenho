@@ -16,11 +16,11 @@ import { scoreHand } from "../src/index.mjs";
 const distinct = (values) => new Set(values).size;
 
 const SPECS = [
-  ["1 kan, 50 fu", { fu: 50, kanCount: 1 }],
-  ["1 kan, 60 fu", { fu: 60, kanCount: 1 }],
-  ["1 kan, 70 fu", { fu: 70, kanCount: 1 }],
-  ["2 kans", { kanCount: 2 }],
-  ["3 kans", { kanCount: 3 }],
+  ["1 kan, 50 fu", { fu: 50, kanCount: 1, doraIndicatorCount: 2 }],
+  ["1 kan, 60 fu", { fu: 60, kanCount: 1, doraIndicatorCount: 2 }],
+  ["1 kan, 70 fu", { fu: 70, kanCount: 1, doraIndicatorCount: 2 }],
+  ["2 kans", { kanCount: 2, doraIndicatorCount: 3 }],
+  ["3 kans", { kanCount: 3, doraIndicatorCount: 4 }],
   ["no kans (control)", { kanCount: 0 }],
 ];
 

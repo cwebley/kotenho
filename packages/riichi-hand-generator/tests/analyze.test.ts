@@ -14,6 +14,7 @@ describe("analyze", () => {
       estimatedYield: 0,
       distinctRatio: 0,
       sampleSize: 0,
+      rejections: {},
     });
   });
 
@@ -29,6 +30,7 @@ describe("analyze", () => {
     expect(result.estimatedYield).toBeLessThanOrEqual(1);
     expect(result.distinctRatio).toBeGreaterThan(0);
     expect(result.distinctRatio).toBeLessThanOrEqual(1);
+    expect(result.rejections).toEqual(expect.any(Object));
   });
 
   it("is deterministic for a seed", () => {
@@ -44,6 +46,7 @@ describe("analyze", () => {
       estimatedYield: 0,
       distinctRatio: 0,
       sampleSize: 0,
+      rejections: {},
     });
   });
 
@@ -69,5 +72,13 @@ describe("analyze", () => {
     expect(() => analyze({}, { sampleSize: 1.5 })).toThrow(
       "sampleSize must be a non-negative integer",
     );
+  });
+
+  it("measures haitei and houtei as supported declared yaku", () => {
+    for (const name of ["haitei", "houtei"] as const) {
+      const result = analyze({ yaku: [name] }, { seed: 1 });
+      expect(result.feasible).toBe(true);
+      expect(result.estimatedYield).toBeGreaterThan(0);
+    }
   });
 });

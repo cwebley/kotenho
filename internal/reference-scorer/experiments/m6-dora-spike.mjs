@@ -80,7 +80,7 @@ const SPECS = [
   ["pinfu (all runs)", { yaku: ["pinfu"] }],
   ["40 fu, mixed", { fu: 40, closed: true }],
   ["toitoi (all triplets)", { yaku: ["toitoi"] }],
-  ["one kan", { kanCount: 1 }],
+  ["one kan", { kanCount: 1, doraIndicatorCount: 2 }],
   ["chiitoitsu", { handShape: "chiitoitsu" }],
 ];
 

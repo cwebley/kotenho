@@ -45,6 +45,41 @@ describe("M0 curated scorer conformance", () => {
 
     expect(withRiichi.handInterpretations[0].uradora).toBe(1);
     expect(withoutRiichi.handInterpretations[0].uradora).toBe(0);
+
+    const withDoubleRiichi = calculate({
+      ...input,
+      gameState: createGameState({
+        isDoubleRiichi: true,
+        uradoraIndicators: ["8s"],
+      }),
+    });
+    expect(withDoubleRiichi.handInterpretations[0].uradora).toBe(1);
+    expect(withDoubleRiichi.handInterpretations[0].yaku.map((yaku) => yaku.name)).toContain("double-riichi");
+  });
+
+  it("emits haitei and houtei only for their matching win method", () => {
+    const closedTiles = [
+      "1m", "2m", "3m", "9p", "9p", "1s", "2s", "3s", "3s", "4s", "5s", "7s", "8s",
+    ];
+    const haitei = calculate({
+      closedTiles,
+      winningTile: { tile: "9s", isTsumo: true },
+      gameState: createGameState({ isHaitei: true }),
+    });
+    const houtei = calculate({
+      closedTiles,
+      winningTile: { tile: "9s", from: "north" },
+      gameState: createGameState({ isHoutei: true }),
+    });
+    const mismatched = calculate({
+      closedTiles,
+      winningTile: { tile: "9s", isTsumo: true },
+      gameState: createGameState({ isHoutei: true }),
+    });
+
+    expect(haitei.handInterpretations[0].yaku.map((yaku) => yaku.name)).toContain("haitei");
+    expect(houtei.handInterpretations[0].yaku.map((yaku) => yaku.name)).toContain("houtei");
+    expect(mismatched.handInterpretations[0].yaku.map((yaku) => yaku.name)).not.toContain("houtei");
   });
 
   it("rejects hands containing more than four copies of a tile", () => {

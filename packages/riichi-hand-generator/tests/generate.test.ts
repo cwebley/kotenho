@@ -64,7 +64,7 @@ describe("generate", () => {
   const specs: [string, GenerateSpec][] = [
     ["30 fu closed ron", { fu: 30, closed: true, winMethod: "ron" }],
     ["40 fu closed ron", { fu: 40, closed: true, winMethod: "ron" }],
-    ["50 fu with one kan", { fu: 50, kanCount: 1 }],
+    ["50 fu with one kan", { fu: 50, kanCount: 1, doraIndicatorCount: 2 }],
     ["40 fu kanchan", { fu: 40, waitType: "kanchan" }],
     ["dealer 40 fu", { fu: 40, roundWind: "east", seatWind: "east" }],
     ["one called meld", { fu: 30, openMeldCount: 1 }],
@@ -284,6 +284,71 @@ describe("generate", () => {
       expect(result.hand.ambiguity.wait).toBe(false);
     }
   });
+
+  it("models declared yaku through game state", () => {
+    const cases = [
+      ["haitei", { isHaitei: true }, true],
+      ["houtei", { isHoutei: true }, false],
+      ["riichi", { isRiichi: true }, undefined],
+      ["double-riichi", { isDoubleRiichi: true }, undefined],
+    ] as const;
+
+    for (const [name, flags, tsumo] of cases) {
+      const result = generate({ yaku: [name] }, { seed: 7, budget: 3000 });
+      expect(result.status).toBe("ok");
+      if (result.status !== "ok") continue;
+      const state = result.hand.handInput.gameState;
+      expect(state).toMatchObject(flags);
+      if (tsumo !== undefined) {
+        expect(Boolean(result.hand.handInput.winningTile.isTsumo)).toBe(tsumo);
+      }
+      expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual([name]);
+    }
+  });
+
+  it("reveals matching ura indicators for riichi", () => {
+    const result = generate(
+      { yaku: ["riichi"], doraIndicatorCount: 3 },
+      { seed: 7, budget: 3000 },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    const state = result.hand.handInput.gameState;
+    expect(state.doraIndicators).toHaveLength(3);
+    expect(state.uradoraIndicators).toHaveLength(3);
+  });
+
+  it("requires enough visible indicators for kans in the winner's hand", () => {
+    expect(generate({ doraIndicatorCount: 0 }).status).toBe("unsatisfiable");
+    expect(generate({ doraIndicatorCount: 6 }).status).toBe("unsatisfiable");
+    expect(generate({ kanCount: 1 }).status).toBe("unsatisfiable");
+    expect(generate({ kanCount: 2, doraIndicatorCount: 2 }).status).toBe(
+      "unsatisfiable",
+    );
+    expect(
+      generate({ kanCount: 1, doraIndicatorCount: 2 }, { seed: 7, budget: 3000 })
+        .status,
+    ).toBe("ok");
+    expect(
+      generate({ kanCount: 0, doraIndicatorCount: 4 }, { seed: 7, budget: 3000 })
+        .status,
+    ).toBe("ok");
+  });
+
+  it("requires riichi alongside ippatsu", () => {
+    expect(generate({ yaku: ["ippatsu"] }).status).toBe("unsatisfiable");
+    const result = generate(
+      { yaku: ["riichi", "ippatsu"] },
+      { seed: 7, budget: 3000 },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.hand.handInput.gameState.isIppatsu).toBe(true);
+    expect(result.hand.canonical.yaku.map((yaku) => yaku.name).sort()).toEqual([
+      "ippatsu",
+      "riichi",
+    ]);
+  });
 });
 
 describe("dora", () => {
@@ -341,6 +406,14 @@ describe("dora", () => {
     );
     // But runs stack, so three overlapping runs can supply three of one tile.
     expect(generate({ yaku: ["pinfu"], han: 4 }, { seed: 9, budget: 3000 }).status).toBe("ok");
+    // A pair can combine with overlapping runs, reaching four copies without a
+    // kan; a block-local maximum would wrongly prove this impossible.
+    expect(
+      generate(
+        { yaku: ["iipeiko"], waitType: "shanpon", han: 5 },
+        { seed: 9, budget: 3000 },
+      ).status,
+    ).not.toBe("unsatisfiable");
   });
 
   it("requires riichi for ura dora", () => {
@@ -372,7 +445,7 @@ describe("static soundness", () => {
       { fu: 40, closed: true, winMethod: "tsumo" },
       { fu: 30, winMethod: "tsumo", openMeldCount: 0 },
       // Four called kans is still suukantsu.
-      { yaku: ["suukantsu"], closed: false },
+       { yaku: ["suukantsu"], closed: false, doraIndicatorCount: 5 },
       // Runs stack: 234m/345m/456m puts three 4m in an all-runs hand.
       { yaku: ["pinfu"], han: 4 },
       { fu: 25 },

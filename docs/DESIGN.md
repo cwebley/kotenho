@@ -619,8 +619,8 @@ well under 1% of the verifier call that dominates each attempt.
    They are rendered as clearly-marked invalid examples (tiles + the one
    violation), never as returnable hands.
 3. **`analyze` probe:** the identical loop with `stopOnFirstSuccess: false`
-   and budget K — acceptance rate, histogram, and distinct-hand ratio fall out
-   of the same counters (§8). Adaptive bias tightening is **frozen** for the
+   and budget K — acceptance rate, rejection histogram, and distinct-hand ratio
+   fall out of the same counters (§8). Adaptive bias tightening is **frozen** for the
    probe: across K ≈ 50–100 attempts the loop would otherwise adapt in ways a
    two-attempt production call never reaches, and `estimatedYield` would then
    describe a slightly different system than the one it is predicting.
@@ -663,12 +663,12 @@ versioned.
   with `count: n` dedupes within the batch; if the space is too small it
   returns what it found plus an explicit shortfall reason — never silent
   repeats (SPEC §7.6).
-- **`analyze` as the variety instrument:** static counts (feasible skeletons,
-  feasible fu vectors) plus a seeded Monte-Carlo probe (K ≈ 50–100 budgeted
-  attempts — the §7.1 loop with `stopOnFirstSuccess: false`): report
-  acceptance rate and distinct-hand ratio. A lesson-authoring
-  UI renders that as "this drill has ~4 materially different hands" — the
-  silent-failure detector SPEC §5.2 asks for.
+- **`analyze` as the variety instrument:** a seeded Monte-Carlo probe (K ≈
+  50–100 budgeted attempts — the §7.1 loop with `stopOnFirstSuccess: false`)
+  reports acceptance rate, rejection histogram, and distinct-hand ratio. A
+  lesson-authoring UI renders that as "this drill has ~4 materially different
+  hands" — the silent-failure detector SPEC §5.2 asks for. Static solution-space
+  counts remain a later enhancement rather than a promise of the v1 result.
 
 ---
 

@@ -13,8 +13,8 @@ import { generate } from "riichi-hand-generator";
 
 const SPECS = [
   ["menzen-tsumo only", { yaku: ["menzen-tsumo"], closed: true, winMethod: "tsumo" }],
-  ["riichi only", { yaku: ["riichi"], riichi: true, closed: true, winMethod: "ron" }],
-  ["riichi + menzen-tsumo", { yaku: ["riichi", "menzen-tsumo"], riichi: true, closed: true, winMethod: "tsumo" }],
+  ["riichi only", { yaku: ["riichi"], closed: true, winMethod: "ron" }],
+  ["riichi + menzen-tsumo", { yaku: ["riichi", "menzen-tsumo"], closed: true, winMethod: "tsumo" }],
 ];
 
 const SEEDS = 400;

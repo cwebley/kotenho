@@ -31,14 +31,12 @@ export interface GenerateSpec {
   dora?: number;
   /**
    * Indicators face up. A property of the TABLE, not the hand — any player's
-   * kan flips one, so a kan-free hand can still face several. Defaults to 1.
+   * kan flips one, so a kan-free hand can still face several. Includes the
+   * initial indicator; valid values are 1 through 5. Defaults to 1.
    */
   doraIndicatorCount?: number;
   /** Ura dora. Requires riichi, which is what reveals the ura indicators. */
   uraDora?: number;
-  /** Declared, never accidental. */
-  riichi?: boolean;
-  ippatsu?: boolean;
   /** Constrain the winning shape. */
   handShape?: "standard" | "chiitoitsu" | "kokushi";
   /** Rounded fu, exactly. */
@@ -98,6 +96,8 @@ export interface AnalyzeResult {
   distinctRatio: number;
   /** Actual candidate attempts made by the probe. */
   sampleSize: number;
+  /** All rejection causes observed during the probe. */
+  rejections: Record<string, number>;
 }
 
 /** Which dimensions the score-tied top readings disagree on. Diagnostic only. */

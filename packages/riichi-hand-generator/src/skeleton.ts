@@ -307,6 +307,29 @@ const FILTERS: {
       `no hand shape has exactly ${spec.kanCount} kan(s) alongside the other constraints`,
   },
   {
+    // The first omote indicator exists before any calls. Every kan in the
+    // winner's hand has revealed one more, though extra indicators may belong
+    // to other players' kans and therefore do not constrain this hand.
+    name: "kanDoraIndicators",
+    applies: () => true,
+    keep: (s, spec) => s.kanCount < (spec.doraIndicatorCount ?? 1),
+    reason: (spec) => {
+      const indicators = spec.doraIndicatorCount ?? 1;
+      return `${indicators} face-up dora indicator(s) allow at most ${indicators - 1} kan(s) in the winner's hand`;
+    },
+  },
+  {
+    // One omote indicator is present from the start; each kan in the winner's
+    // hand must therefore have revealed one additional indicator.
+    name: "kanDoraIndicators",
+    applies: () => true,
+    keep: (s, spec) => s.kanCount < (spec.doraIndicatorCount ?? 1),
+    reason: (spec) => {
+      const indicators = spec.doraIndicatorCount ?? 1;
+      return `${indicators} face-up dora indicator(s) allow at most ${indicators - 1} kan(s) in the winner's hand`;
+    },
+  },
+  {
     name: "waitType",
     applies: (spec) => spec.waitType !== undefined,
     keep: (s, spec) => s.wait === spec.waitType,

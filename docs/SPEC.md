@@ -277,7 +277,8 @@ Dora are bonus han. They are **not yaku**.
 - **Kan dora** — each kan declared *by any player at the table* flips an
   additional indicator. **The number of indicators is a property of the table,
   not of the winner's hand.** A hand with no kans can still face several
-  indicators.
+  indicators. The total includes one initial indicator, so a winner with `K`
+  kans needs at least `1 + K` visible indicators; extras can belong to others.
 - **Ura dora** — a parallel set of indicators revealed only if the winner
   declared riichi. Same count as the regular indicators.
 - **Aka dora** — designated red 5s, each worth 1 han. Structurally identical to

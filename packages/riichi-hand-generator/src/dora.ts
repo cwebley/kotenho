@@ -59,17 +59,17 @@ export function doraReachable(
   // appears exactly once and 1 is unreachable at any number of slots.
   if (!hasRuns && dora === 1) return false;
 
-  // Runs stack. 234m/345m/456m all contain 4m, so R runs can put up to R copies
-  // of one tile in the hand (capped at four). Counting a run as contributing
-  // only 1 would wrongly declare "pinfu with 3 dora" impossible.
-  const runCount = skeleton.blocks.filter((block) => block.kind === "run").length;
-  const largest = Math.max(
-    2, // the pair
-    runCount ? Math.min(runCount, 4) : 0,
-    ...skeleton.blocks.map((block) =>
-      block.kind === "kan" ? 4 : block.kind === "triplet" ? 3 : 0,
-    ),
-  );
+  // Runs can overlap with each other and with the pair. A 3-run skeleton may
+  // carry four copies through two occurrences in its runs plus the pair, so
+  // block-local maxima are not a sound upper bound. Four is the physical limit.
+  const largest = skeleton.blocks.some((block) => block.kind === "run")
+    ? 4
+    : Math.max(
+        2, // the pair
+        ...skeleton.blocks.map((block) =>
+          block.kind === "kan" ? 4 : block.kind === "triplet" ? 3 : 0,
+        ),
+      );
   return dora <= slots * largest;
 }
 

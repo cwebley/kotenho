@@ -40,7 +40,7 @@ const SPECS = [
   ],
   ["chiitoitsu", { handShape: "chiitoitsu" }],
   ["40 fu, one called meld", { fu: 40, openMeldCount: 1 }],
-  ["50 fu, one kan", { fu: 50, kanCount: 1 }],
+  ["50 fu, one kan", { fu: 50, kanCount: 1, doraIndicatorCount: 2 }],
 ];
 
 const RUNS = 300;

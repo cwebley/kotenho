@@ -9,7 +9,7 @@ import { placeDora } from "./dora.js";
 import { planTiles } from "./plan.js";
 import { createRng, type Rng } from "./rng.js";
 import type { Skeleton } from "./skeleton.js";
-import { requiredDora } from "./yaku/static.js";
+import { declaredGameState, hasRiichi, requiredDora } from "./yaku/static.js";
 import type {
   AmbiguityFlags,
   AttemptRecord,
@@ -143,10 +143,7 @@ export function runSearch(
         // Dora runs last: choosing indicators never changes the tiles, so it
         // cannot disturb anything decided above.
         const need = requiredDora(spec) ?? { dora: 0, ura: 0 };
-        const riichiDeclared =
-          Boolean(spec.riichi) ||
-          (spec.yaku ?? []).includes("riichi") ||
-          (spec.yaku ?? []).includes("double-riichi");
+        const declared = declaredGameState(spec);
         const slots = spec.doraIndicatorCount ?? 1;
         const input = assignment.handInput;
         const placement = placeDora(
@@ -157,7 +154,7 @@ export function runSearch(
           ],
           slots,
           need.dora,
-          riichiDeclared ? slots : 0,
+          hasRiichi(declared) ? slots : 0,
           need.ura,
           rng,
         );
@@ -175,8 +172,7 @@ export function runSearch(
         }
         input.gameState = {
           ...input.gameState!,
-          isRiichi: riichiDeclared,
-          isIppatsu: Boolean(spec.ippatsu),
+          ...declared,
           doraIndicators: placement.doraIndicators,
           uradoraIndicators: placement.uradoraIndicators,
         };
