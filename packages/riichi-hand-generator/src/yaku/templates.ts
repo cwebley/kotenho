@@ -148,7 +148,7 @@ export const TEMPLATES: YakuTemplate[] = [
     incompatibleWith: ["pinfu", "chiitoitsu", "sanankou"],
   }),
   T({ name: "sankantsu", shapeGuarantees: true, han: { closed: 2, open: 2 }, skeleton: { kanCount: 3 }, requestable: true, incompatibleWith: ["pinfu", "chiitoitsu"] }),
-  T({ name: "suukantsu", subsumes: ["sankantsu"], shapeGuarantees: true, han: { closed: 0, open: null }, limit: true, skeleton: { kanCount: 4 }, requestable: true, incompatibleWith: ["pinfu", "chiitoitsu", "sankantsu"] }),
+  T({ name: "suukantsu", subsumes: ["sankantsu"], shapeGuarantees: true, han: { closed: 0, open: 0 }, limit: true, skeleton: { kanCount: 4 }, requestable: true, incompatibleWith: ["pinfu", "chiitoitsu", "sankantsu"] }),
 
   // ── tile predicates ──
   T({
@@ -181,13 +181,13 @@ export const TEMPLATES: YakuTemplate[] = [
 
   // ── yakuman: excludable, not yet placeable ──
   T({ name: "kokushi-musou", shapeGuarantees: true, skeleton: { shape: "kokushi" }, han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chiitoitsu"] }),
-  T({ name: "daisangen", subsumes: ["shousangen"], han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
+  T({ name: "daisangen", subsumes: ["shousangen"], han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
   T({ name: "shousangen", han: { closed: 2, open: 2 }, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
-  T({ name: "shousuushii", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
-  T({ name: "daisuushii", subsumes: ["shousuushii"], han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
-  T({ name: "tsuuiisou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
-  T({ name: "chinroutou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "honitsu"] }),
-  T({ name: "ryuuiisou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu"] }),
+  T({ name: "shousuushii", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
+  T({ name: "daisuushii", subsumes: ["shousuushii"], han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
+  T({ name: "tsuuiisou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
+  T({ name: "chinroutou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "honitsu"] }),
+  T({ name: "ryuuiisou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu"] }),
   T({ name: "chuuren-poutou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "chiitoitsu", "honitsu"] }),
 ];
 

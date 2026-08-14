@@ -396,9 +396,15 @@ export interface SkeletonQuery {
  * Structural constraints are exactly invertible — they are looked up, never
  * searched. An empty result is a proof of impossibility, not a failed search.
  */
-export function selectSkeletons(spec: GenerateSpec): SkeletonQuery {
+const INFERRED_FILTERS = new Set(["yaku", "excludedYaku", "doraReachable"]);
+
+export function selectSkeletons(
+  spec: GenerateSpec,
+  skipInferred = false,
+): SkeletonQuery {
   let candidates = allSkeletons();
   for (const filter of FILTERS) {
+    if (skipInferred && INFERRED_FILTERS.has(filter.name)) continue;
     if (!filter.applies(spec)) continue;
     const next = candidates.filter((s) => filter.keep(s, spec));
     if (!next.length) return { candidates: [], reason: filter.reason(spec) };

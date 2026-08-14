@@ -70,6 +70,15 @@ export interface GenerateOptions {
    * which makes such a hand unusable for a "name the wait" exercise.
    */
   requireUnambiguousWait?: boolean;
+  /**
+   * TEST ONLY. Skips every *inferred* static claim — yaku incompatibility,
+   * shape exclusion, dora reachability — leaving the definitional skeleton
+   * filters in place. Exists so the soundness fuzz can challenge an
+   * "unsatisfiable" verdict: claim it is impossible, then be given 50,000
+   * attempts to prove otherwise. Never use it in production; the static engine
+   * is what makes impossibility a proof rather than a timeout.
+   */
+  __unsafeSkipInferredChecks?: boolean;
 }
 
 /** Which dimensions the score-tied top readings disagree on. Diagnostic only. */

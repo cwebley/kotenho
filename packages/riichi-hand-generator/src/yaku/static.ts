@@ -80,7 +80,10 @@ export function checkYakuFeasibility(spec: GenerateSpec): Feasibility {
     return no("ippatsu requires riichi");
   }
 
-  if (exact) {
+  // Only meaningful when the caller actually pinned a yaku list. With no list
+  // there is nothing to be exhaustive about, and "closed tsumo" is an ordinary
+  // spec rather than a contradiction.
+  if (exact && requested.length) {
     for (const { name, why } of forcedYaku(spec)) {
       if (!requested.includes(name)) {
         return no(

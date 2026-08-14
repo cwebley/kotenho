@@ -357,3 +357,43 @@ describe("dora", () => {
     expect(result.reason).toContain("at least");
   });
 });
+
+describe("static soundness", () => {
+  /**
+   * An "unsatisfiable" verdict is a proof, and nothing downstream can correct
+   * it — the engine returns before a hand exists. Three surfaces can produce
+   * one (incompatibility table, shape exclusion, dora reachability) and each
+   * has had a real bug. This challenges every claim: prove it by searching.
+   */
+  it("never claims impossible a spec the search can satisfy", () => {
+    const specs: GenerateSpec[] = [
+      // Fired wrongly when no yaku list was given at all.
+      { closed: true, winMethod: "tsumo" },
+      { fu: 40, closed: true, winMethod: "tsumo" },
+      { fu: 30, winMethod: "tsumo", openMeldCount: 0 },
+      // Four called kans is still suukantsu.
+      { yaku: ["suukantsu"], closed: false },
+      // Runs stack: 234m/345m/456m puts three 4m in an all-runs hand.
+      { yaku: ["pinfu"], han: 4 },
+      { fu: 25 },
+      { handShape: "kokushi" },
+    ];
+    for (const spec of specs) {
+      const result = generate(spec, { seed: 5, budget: 3000 });
+      expect(result.status).not.toBe("unsatisfiable");
+    }
+  });
+
+  it("still refuses the genuinely impossible", () => {
+    // Four CONCEALED triplets cannot include a called one.
+    expect(generate({ yaku: ["suuankou"], closed: false }).status).toBe(
+      "unsatisfiable",
+    );
+    expect(generate({ yaku: ["pinfu"], openMeldCount: 1 }).status).toBe(
+      "unsatisfiable",
+    );
+    expect(
+      generate({ handShape: "chiitoitsu", dora: 1 }).status,
+    ).toBe("unsatisfiable");
+  });
+});

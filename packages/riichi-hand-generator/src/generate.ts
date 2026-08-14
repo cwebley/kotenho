@@ -66,12 +66,15 @@ export function generate(
 ): GenerateResult {
   // Yaku contradictions are decided from the templates alone, before any shape
   // is considered — they produce the most actionable reasons.
-  const yakuCheck = checkYakuFeasibility(spec);
-  if (!yakuCheck.ok) {
-    return { status: "unsatisfiable", reason: yakuCheck.reason! };
+  const skipInferred = options.__unsafeSkipInferredChecks ?? false;
+  if (!skipInferred) {
+    const yakuCheck = checkYakuFeasibility(spec);
+    if (!yakuCheck.ok) {
+      return { status: "unsatisfiable", reason: yakuCheck.reason! };
+    }
   }
 
-  const { candidates, reason } = selectSkeletons(spec);
+  const { candidates, reason } = selectSkeletons(spec, skipInferred);
   if (!candidates.length) {
     return {
       status: "unsatisfiable",
