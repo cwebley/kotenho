@@ -5,9 +5,9 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-256 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+259 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
-30 of 41 yaku requestable; all 41 enforceable as exclusions
+32 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
 **In one sentence:** `riichi-score` is correct and complete, and the generator
@@ -115,15 +115,16 @@ The M3 spike found healthy diversity across the supported lesson matrix.
 `chanta + sanshoku` 98.0% (p10 90.0%), `honroutou + toitoi` 76.2%
 (p10 69.0%), and `junchan + chinitsu` 40.9% (p10 18.0%). `tanyao + 1 aka`
 yields 74.0% (p10 51.0%). `shousangen + haku + hatsu` yields 31.1%
-(p10 14.0%) and `daisangen` 83.0% (p10 68.0%). Rejection histograms identify no-yaku, assignment, and
+(p10 14.0%), `daisangen` 86.5% (p10 74.0%), and both wind yakuman 100.0%.
+Rejection histograms identify no-yaku, assignment, and
 dora-placement pressure, validating the histogram as the authoring signal for
 low-yield specs.
 
-### 3.2 Eleven yaku are excludable but not requestable
+### 3.2 Nine yaku are excludable but not requestable
 
-Rinshan/chankan, tenhou/chiihou, kokushi, and the remaining yakuman templates
-have no placer, so requesting one is refused with a reason. They are fully
-policed as exclusions.
+Rinshan/chankan, tenhou/chiihou, kokushi, and the remaining color/terminal
+yakuman templates have no placer, so requesting one is refused with a reason.
+They are fully policed as exclusions.
 
 `chanta` and `junchan` are requestable, and **neither has a placer**. Their
 skeleton constraints (terminal runs, terminal-or-honor groups) plus their domain
@@ -146,6 +147,10 @@ without a placer. `yakuPolicy: "atLeast"` may request `honroutou` alone.
 default exact policy, such as `generate({ yaku: ["shousangen", "haku", "hatsu"] })`.
 `daisangen` pins all three dragon triplets and, as a yakuman, suppresses the
 ordinary dragon yaku automatically.
+
+`shousuushii` pins three wind triplets and the fourth wind pair;
+`daisuushii` pins all four wind triplets. Both are requestable yakuman. The
+default ruleset deliberately keeps daisuushii at single yakuman.
 
 ### 3.3 M8 — batches *(done)*
 

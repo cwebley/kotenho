@@ -173,6 +173,7 @@ function pairOptions(
   const restrict = (tiles: MahjongTile[]): MahjongTile[] =>
     tiles.filter((tile) => {
       if (domain.pair === "any") return true;
+      if (domain.pair === "numbered") return !tile.endsWith("z");
       if (tile.endsWith("z")) return domain.pair === "yaochu";
       const rank = Number(tile[0]);
       return rank === 1 || rank === 9;

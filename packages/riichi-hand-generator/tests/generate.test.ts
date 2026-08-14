@@ -267,6 +267,8 @@ describe("generate", () => {
     ["honroutou + toitoi", { yaku: ["honroutou", "toitoi"] }],
     ["shousangen + haku + hatsu", { yaku: ["shousangen", "haku", "hatsu"] }],
     ["daisangen", { yaku: ["daisangen"] }],
+    ["shousuushii", { yaku: ["shousuushii"] }],
+    ["daisuushii", { yaku: ["daisuushii"] }],
   ];
 
   for (const [label, spec] of yakuSpecs) {
@@ -339,7 +341,7 @@ describe("generate", () => {
   });
 
   it("refuses yaku it cannot deliberately construct", () => {
-    const result = generate({ yaku: ["shousuushii"] }, { seed: 1 });
+    const result = generate({ yaku: ["chuuren-poutou"] }, { seed: 1 });
     expect(result.status).toBe("unsatisfiable");
     if (result.status !== "unsatisfiable") return;
     expect(result.reason).toContain("not requested");
@@ -558,6 +560,30 @@ describe("generate", () => {
         .filter((tile) => ["5z", "6z", "7z"].includes(tile));
       expect(new Set(dragons)).toEqual(new Set(["5z", "6z", "7z"]));
       expect(large.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["daisangen"]);
+    }
+  });
+
+  it("constructs wind yakuman without upgrading shousuushii", () => {
+    const small = generate({ yaku: ["shousuushii"] }, { seed: 7, budget: 3000 });
+    expect(small.status).toBe("ok");
+    if (small.status === "ok" && small.hand.canonical.isStandardHand) {
+      const winds = small.hand.canonical.groups
+        .filter((group) => group.type !== "run")
+        .map((group) => group.tiles[0])
+        .filter((tile) => ["1z", "2z", "3z", "4z"].includes(tile));
+      expect(winds).toHaveLength(3);
+      expect(small.hand.canonical.pair.tiles[0]).toMatch(/^[1-4]z$/);
+    }
+
+    const large = generate({ yaku: ["daisuushii"] }, { seed: 7, budget: 3000 });
+    expect(large.status).toBe("ok");
+    if (large.status === "ok" && large.hand.canonical.isStandardHand) {
+      const winds = large.hand.canonical.groups
+        .filter((group) => group.type !== "run")
+        .map((group) => group.tiles[0])
+        .filter((tile) => ["1z", "2z", "3z", "4z"].includes(tile));
+      expect(new Set(winds)).toEqual(new Set(["1z", "2z", "3z", "4z"]));
+      expect(large.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["daisuushii"]);
     }
   });
 

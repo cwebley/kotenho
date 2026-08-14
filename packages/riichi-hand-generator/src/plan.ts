@@ -13,6 +13,7 @@ const WIND_TILES: Record<Direction, MahjongTile> = {
   north: "4z",
 };
 const DRAGONS: MahjongTile[] = ["5z", "6z", "7z"];
+const WINDS: MahjongTile[] = ["1z", "2z", "3z", "4z"];
 const HONORS: MahjongTile[] = ["1z", "2z", "3z", "4z", ...DRAGONS];
 
 const suited = (rank: number, suit: string): MahjongTile =>
@@ -29,7 +30,7 @@ export interface Domain {
   maxRank: number;
   honorsAllowed: boolean;
   requireHonor: boolean;
-  pair: "any" | "yaochu" | "terminal";
+  pair: "any" | "yaochu" | "terminal" | "numbered";
   /**
    * Avoid repeating a run unless a duplicate-run yaku was asked for. Worth more
    * than the composition strategy itself: it took the worst measured spec from
@@ -94,6 +95,8 @@ const PLACER_ORDER: Record<string, number> = {
   yakuhai: 4,
   shousangen: 5,
   daisangen: 5,
+  shousuushii: 5,
+  daisuushii: 5,
 };
 
 export function planTiles(
@@ -118,7 +121,9 @@ export function planTiles(
     }
     if (constraints.honorsAllowed === false) domain.honorsAllowed = false;
     if (constraints.requireHonor) domain.requireHonor = true;
-    if (constraints.pair === "terminal") domain.pair = "terminal";
+    if (constraints.pair === "terminal" || constraints.pair === "numbered") {
+      domain.pair = constraints.pair;
+    }
     else if (constraints.pair === "yaochu" && domain.pair === "any") {
       domain.pair = "yaochu";
     }
@@ -138,8 +143,13 @@ export function planTiles(
     ["haku", "5z"], ["hatsu", "6z"], ["chun", "7z"],
     ["round-wind", WIND_TILES[roundWind]], ["seat-wind", WIND_TILES[seatWind]],
   ];
+  const wantsWindYakuman =
+    yaku.includes("shousuushii") || yaku.includes("daisuushii");
   for (const [name, tile] of YAKUHAI) {
-    if (!yaku.includes(name as YakuName)) domain.forbiddenTriplets.push(tile);
+    const isWind = name === "round-wind" || name === "seat-wind";
+    if (!yaku.includes(name as YakuName) && !(wantsWindYakuman && isWind)) {
+      domain.forbiddenTriplets.push(tile);
+    }
   }
 
   const fixed = new Map<number, MahjongTile[]>();
@@ -246,6 +256,31 @@ export function planTiles(
     } else if (kind === "daisangen") {
       if (freeTriplets.length < DRAGONS.length) return null;
       for (const tile of rng.shuffled(DRAGONS)) {
+        const index = freeTriplets.shift()!;
+        const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
+        fixed.set(index, Array.from({ length: size }, () => tile));
+      }
+    } else if (kind === "shousuushii") {
+      const windTriplets = [...fixed.values()]
+        .map((tiles) => tiles[0])
+        .filter((tile): tile is MahjongTile => WINDS.includes(tile));
+      if (windTriplets.length > 3) return null;
+      const selected = rng
+        .shuffled(WINDS.filter((tile) => !windTriplets.includes(tile)))
+        .slice(0, 3 - windTriplets.length);
+      if (freeTriplets.length < selected.length) return null;
+      for (const tile of selected) {
+        const index = freeTriplets.shift()!;
+        const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
+        fixed.set(index, Array.from({ length: size }, () => tile));
+      }
+      pair = WINDS.find((tile) => ![...windTriplets, ...selected].includes(tile));
+      if (!pair) return null;
+      // The fourth wind would upgrade this hand to daisuushii.
+      domain.forbiddenTriplets.push(...WINDS);
+    } else if (kind === "daisuushii") {
+      if (freeTriplets.length < WINDS.length) return null;
+      for (const tile of rng.shuffled(WINDS)) {
         const index = freeTriplets.shift()!;
         const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
         fixed.set(index, Array.from({ length: size }, () => tile));

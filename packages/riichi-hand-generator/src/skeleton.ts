@@ -405,9 +405,7 @@ const FILTERS: {
       (spec.yaku?.length ?? 0) > 0 && (spec.yakuPolicy ?? "exact") === "exact",
     keep: (s, spec) => {
       const requested = new Set(spec.yaku ?? []);
-      // A yakuman suppresses ordinary yaku entirely, so nothing else can
-      // contaminate the answer key and no shape needs excluding on its behalf.
-      if ([...requested].some((name) => templateFor(name)?.limit)) return true;
+      const requestsYakuman = [...requested].some((name) => templateFor(name)?.limit);
       const subsumed = new Set<string>();
       for (const name of requested) {
         for (const child of templateFor(name)?.subsumes ?? []) {
@@ -419,6 +417,9 @@ const FILTERS: {
           t.shapeGuarantees &&
           !requested.has(t.name) &&
           !subsumed.has(t.name) &&
+          // A requested yakuman suppresses ordinary yaku, but a second named
+          // yakuman still changes the answer key and must be excluded in exact mode.
+          (!requestsYakuman || t.limit) &&
           t.skeleton &&
           skeletonSatisfies(s, t.skeleton),
       );

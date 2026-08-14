@@ -40,7 +40,7 @@ export interface DomainConstraints {
   /** At least one honor must appear (honitsu). */
   requireHonor?: boolean;
   /** Restrict the pair independently of its fu class. */
-  pair?: "yaochu" | "terminal";
+  pair?: "yaochu" | "terminal" | "numbered";
 }
 
 export type PlacerKind =
@@ -50,7 +50,9 @@ export type PlacerKind =
   | "ryanpeikou"
   | "yakuhai"
   | "shousangen"
-  | "daisangen";
+  | "daisangen"
+  | "shousuushii"
+  | "daisuushii";
 
 export interface YakuTemplate {
   name: YakuName;
@@ -233,8 +235,26 @@ export const TEMPLATES: YakuTemplate[] = [
     requestable: true,
     incompatibleWith: ["tanyao", "pinfu", "chinitsu", "daisangen"],
   }),
-  T({ name: "shousuushii", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
-  T({ name: "daisuushii", subsumes: ["shousuushii"], han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
+  T({
+    name: "shousuushii",
+    han: { closed: 0, open: 0 },
+    limit: true,
+    skeleton: { minTriplets: 3 },
+    placer: "shousuushii",
+    requestable: true,
+    incompatibleWith: ["tanyao", "pinfu", "chinitsu", "daisuushii"],
+  }),
+  T({
+    name: "daisuushii",
+    subsumes: ["shousuushii"],
+    han: { closed: 0, open: 0 },
+    limit: true,
+    skeleton: { minTriplets: 4, pair: ["plain"] },
+    domain: { pair: "numbered" },
+    placer: "daisuushii",
+    requestable: true,
+    incompatibleWith: ["tanyao", "pinfu", "chinitsu", "shousuushii"],
+  }),
   T({ name: "tsuuiisou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
   T({ name: "chinroutou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "honitsu"] }),
   T({ name: "ryuuiisou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu"] }),
