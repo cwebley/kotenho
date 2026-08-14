@@ -43,6 +43,19 @@ const suited = (rank: number, suit: string): MahjongTile =>
   `${rank}${suit}` as MahjongTile;
 const isHonor = (tile: MahjongTile): boolean => tile.endsWith("z");
 
+/** Keep returned tile arrays readable without depending on scorer build output. */
+const sortTiles = (tiles: readonly MahjongTile[]): MahjongTile[] => {
+  const suits = { m: 0, p: 1, s: 2, z: 3 } as const;
+  return [...tiles].sort((a, b) => {
+    const suitDiff = suits[a[1] as keyof typeof suits] - suits[b[1] as keyof typeof suits];
+    if (suitDiff) return suitDiff;
+    const rawA = Number(a[0]);
+    const rawB = Number(b[0]);
+    const rankDiff = (rawA || 5) - (rawB || 5);
+    return rankDiff || rawA - rawB;
+  });
+};
+
 export const groupSignature = (tiles: readonly string[]): string =>
   [...tiles].sort().join("");
 
@@ -74,7 +87,7 @@ function assignKokushi(
 
   return {
     handInput: {
-      closedTiles,
+      closedTiles: sortTiles(closedTiles),
       openMelds: [],
       winningTile: skeleton.tsumo
         ? { tile: winningTile, isTsumo: true }
@@ -201,7 +214,7 @@ function assignChiitoitsu(
 
   return {
     handInput: {
-      closedTiles,
+      closedTiles: sortTiles(closedTiles),
       openMelds: [],
       winningTile: skeleton.tsumo
         ? { tile: winningTile, isTsumo: true }
@@ -324,7 +337,7 @@ function tryAssign(
     if (block.called || block.kind === "kan") {
       openMelds.push({
         type: meldTypeFor(block),
-        tiles: [...tiles],
+          tiles: sortTiles(tiles),
         from: block.called
           ? rng.pick(DIRECTIONS.filter((d) => d !== seatWind))
           : seatWind,
@@ -341,7 +354,7 @@ function tryAssign(
 
   return {
     handInput: {
-      closedTiles,
+      closedTiles: sortTiles(closedTiles),
       openMelds,
       winningTile: skeleton.tsumo
         ? { tile: winningTile, isTsumo: true }

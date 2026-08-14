@@ -1,5 +1,6 @@
 export { calculate } from "./calculate.js";
 export { createGameState } from "./models/game-state.js";
+export { formatTiles, parseTiles, sortTiles } from "./utils/tile-notation.js";
 
 // Consumers build HandInput values and read HandAnalysis back, so the types are
 // part of the public contract, not internals.

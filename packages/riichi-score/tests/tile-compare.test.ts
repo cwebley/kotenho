@@ -18,6 +18,14 @@ describe("tileCompare", () => {
     expect(tileCompare("7z", "5z")).toBeGreaterThan(0);
     expect(tileCompare("2z", "6z")).toBeLessThan(0);
   });
+  it("places a red five in the five position before an ordinary five", () => {
+    expect(["6p", "5p", "0p", "4p"].sort(tileCompare)).toEqual([
+      "4p",
+      "0p",
+      "5p",
+      "6p",
+    ]);
+  });
   it("compares suits by sorting manzu tiles first", () => {
     expect(tileCompare("9m", "1p")).toBeLessThan(0);
     expect(tileCompare("8m", "9p")).toBeLessThan(0);

@@ -5,6 +5,17 @@ import { normalizedHandSignature } from "../src/identity.js";
 import { allSkeletons, selectSkeletons } from "../src/skeleton.js";
 import type { GenerateSpec } from "../src/types.js";
 
+const sortForDisplay = (tiles: string[]): string[] => {
+  const suits = { m: 0, p: 1, s: 2, z: 3 } as const;
+  return [...tiles].sort((a, b) => {
+    const suitDiff = suits[a[1] as keyof typeof suits] - suits[b[1] as keyof typeof suits];
+    if (suitDiff) return suitDiff;
+    const rawA = Number(a[0]);
+    const rawB = Number(b[0]);
+    return (rawA || 5) - (rawB || 5) || rawA - rawB;
+  });
+};
+
 describe("skeleton space", () => {
   it("is small enough to enumerate and index", () => {
     const skeletons = allSkeletons();
@@ -119,6 +130,20 @@ describe("generate", () => {
       seen.add([...result.hand.handInput.closedTiles].sort().join(""));
     }
     expect(seen.size).toBeGreaterThan(30);
+  });
+
+  it("returns generated tile arrays in display order", () => {
+    const result = generate(
+      { fu: 40, openMeldCount: 1 },
+      { seed: 7, budget: 3000 },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    const input = result.hand.handInput;
+    expect(input.closedTiles).toEqual(sortForDisplay(input.closedTiles));
+    for (const meld of input.openMelds ?? []) {
+      expect(meld.tiles).toEqual(sortForDisplay(meld.tiles));
+    }
   });
 
   /**

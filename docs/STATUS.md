@@ -5,7 +5,7 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-222 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+228 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 38 commits          ·   9/9 generator specs at 100% answer-key agreement
 25 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
@@ -43,10 +43,16 @@ generate({ handShape: "chiitoitsu" })
 generate({ kanCount: 1, fu: 50, doraIndicatorCount: 2 })
 generate({ fu: 30, closed: true, winMethod: "ron" }, { count: 10, seed: 7 })
 analyze({ yaku: ["pinfu"], han: 4 }, { seed: 7 })
+formatTiles(parseTiles("4056p123z"))                  // "4056p123z"
 ```
 
 Deterministic from a seed. Impossible specs return **proofs with reasons**, not
 timeouts. Typical convergence is 1–4 attempts.
+
+Generated tile arrays are returned in display order (manzu, pinzu, souzu,
+honors; red fives in the five position before ordinary fives). `riichi-score`
+exports `sortTiles`, `formatTiles`, and `parseTiles` for array and compact
+Tenhou-style notation conversion.
 
 ### The architectural bet, and why it held
 

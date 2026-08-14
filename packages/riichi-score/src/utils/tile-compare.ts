@@ -9,8 +9,11 @@ export function tileCompare(a: string, b: string): number {
   // ranks: 1-9 for suits, 1-7 for honors (z)
   // We can map them to numeric order for sorting
   const suitOrder = { m: 0, p: 1, s: 2, z: 3 };
-  const rankA = parseInt(a);
-  const rankB = parseInt(b);
+  const rawRankA = parseInt(a);
+  const rawRankB = parseInt(b);
+  // Red fives display in the five position, before an ordinary five.
+  const rankA = rawRankA === 0 ? 5 : rawRankA;
+  const rankB = rawRankB === 0 ? 5 : rawRankB;
 
   const suitA = a[a.length - 1] as Suit;
   const suitB = b[b.length - 1] as Suit;
@@ -20,6 +23,7 @@ export function tileCompare(a: string, b: string): number {
     return suitOrder[suitA] - suitOrder[suitB];
   }
 
-  // If same suit, compare rank
-  return rankA - rankB;
+  // If same suit, compare display rank, breaking a five tie red-first.
+  if (rankA !== rankB) return rankA - rankB;
+  return rawRankA - rawRankB;
 }

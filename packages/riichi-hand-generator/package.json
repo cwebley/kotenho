@@ -18,7 +18,8 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "example:30-fu": "npm run build && node examples/generate-30-fu.mjs"
+    "example:30-fu": "npm run build && node examples/generate-30-fu.mjs",
+    "example:batch": "npm run build -w riichi-score && npm run build && node examples/generate-batch.mjs"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
