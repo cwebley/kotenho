@@ -34,6 +34,12 @@ export interface Domain {
    * 31% to 88%.
    */
   avoidDuplicateRuns: boolean;
+  /**
+   * Keep dragons and the round/seat winds out of triplets. A value triplet is a
+   * yaku on its own, so it contaminates any exact spec that did not ask for it —
+   * measured at ~70% of the residue once shape-level exclusion was in place.
+   */
+  forbiddenTriplets: MahjongTile[];
 }
 
 export interface TilePlan {
@@ -61,6 +67,7 @@ function baseDomain(): Domain {
     honorsAllowed: true,
     requireHonor: false,
     avoidDuplicateRuns: true,
+    forbiddenTriplets: [],
   };
 }
 
@@ -103,6 +110,14 @@ export function planTiles(
   if (domain.requireHonor && !domain.honorsAllowed) return null;
   if (yaku.includes("iipeiko") || yaku.includes("ryanpeikou")) {
     domain.avoidDuplicateRuns = false;
+  }
+
+  const YAKUHAI: [string, MahjongTile][] = [
+    ["haku", "5z"], ["hatsu", "6z"], ["chun", "7z"],
+    ["round-wind", WIND_TILES[roundWind]], ["seat-wind", WIND_TILES[seatWind]],
+  ];
+  for (const [name, tile] of YAKUHAI) {
+    if (!yaku.includes(name as YakuName)) domain.forbiddenTriplets.push(tile);
   }
 
   const starts = runStarts(domain);

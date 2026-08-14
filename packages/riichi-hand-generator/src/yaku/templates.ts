@@ -7,6 +7,8 @@ import type { HandShape, PairClass, Skeleton } from "../skeleton.js";
  */
 export interface SkeletonConstraints {
   shape?: HandShape;
+  /** Constrain the win method — menzen tsumo and haitei need a self-draw. */
+  tsumo?: boolean;
   /** Every triplet/kan must be of simples — tanyao cannot use a yaochu block. */
   allSimpleBlocks?: boolean;
   allRuns?: boolean;
@@ -52,8 +54,22 @@ export interface YakuTemplate {
   domain?: DomainConstraints;
   /** Fixes specific blocks. Absent means the yaku needs no active placement. */
   placer?: PlacerKind;
+  /**
+   * The shape alone forces this yaku. Such skeletons are filtered OUT when the
+   * yaku is not requested — the measurement that motivated it: sanankou and
+   * suuankou were 65% of all contamination for a declared-only spec, and no
+   * tile-level bias can help, because the shape decides it before any tile is
+   * placed.
+   */
+  shapeGuarantees?: true;
   /** Comes from game state, never from tiles. */
   declared?: true;
+  /**
+   * Yaku this one replaces rather than stacks with. Requesting suuankou must
+   * not exclude shapes on sanankou's behalf — four concealed triplets satisfies
+   * both, and only the greater one scores.
+   */
+  subsumes?: YakuName[];
   /** True when the generator can deliberately produce it. */
   requestable: boolean;
   incompatibleWith?: YakuName[];
@@ -75,8 +91,8 @@ export const TEMPLATES: YakuTemplate[] = [
   T({ name: "riichi", han: { closed: 1, open: null }, declared: true, requestable: true, skeleton: { menzen: true } }),
   T({ name: "double-riichi", han: { closed: 2, open: null }, declared: true, requestable: true, skeleton: { menzen: true }, incompatibleWith: ["riichi"] }),
   T({ name: "ippatsu", han: { closed: 1, open: null }, declared: true, requestable: true, skeleton: { menzen: true } }),
-  T({ name: "haitei", han: { closed: 1, open: 1 }, declared: true, requestable: true }),
-  T({ name: "houtei", han: { closed: 1, open: 1 }, declared: true, requestable: true }),
+  T({ name: "haitei", han: { closed: 1, open: 1 }, declared: true, requestable: true, skeleton: { tsumo: true } }),
+  T({ name: "houtei", han: { closed: 1, open: 1 }, declared: true, requestable: true, skeleton: { tsumo: false } }),
   T({ name: "rinshan-kaihou", han: { closed: 1, open: 1 }, declared: true, requestable: false }),
   T({ name: "chankan", han: { closed: 1, open: 1 }, declared: true, requestable: false }),
   T({ name: "tenhou", han: { closed: 0, open: null }, limit: true, declared: true, requestable: false }),
@@ -85,12 +101,14 @@ export const TEMPLATES: YakuTemplate[] = [
   // ── shape alone: satisfied by picking the right skeleton ──
   T({
     name: "menzen-tsumo",
+    shapeGuarantees: true,
     han: { closed: 1, open: null },
-    skeleton: { menzen: true },
+    skeleton: { menzen: true, tsumo: true },
     requestable: true,
   }),
   T({
     name: "pinfu",
+    shapeGuarantees: true,
     han: { closed: 1, open: null },
     skeleton: { allRuns: true, menzen: true, wait: ["ryanmen"], pair: ["plain"] },
     requestable: true,
@@ -98,6 +116,7 @@ export const TEMPLATES: YakuTemplate[] = [
   }),
   T({
     name: "chiitoitsu",
+    shapeGuarantees: true,
     han: { closed: 2, open: null },
     skeleton: { shape: "chiitoitsu" },
     requestable: true,
@@ -105,6 +124,7 @@ export const TEMPLATES: YakuTemplate[] = [
   }),
   T({
     name: "toitoi",
+    shapeGuarantees: true,
     han: { closed: 2, open: 2 },
     skeleton: { noRuns: true, wait: ["shanpon", "tanki"] },
     requestable: true,
@@ -112,21 +132,23 @@ export const TEMPLATES: YakuTemplate[] = [
   }),
   T({
     name: "sanankou",
+    shapeGuarantees: true,
     han: { closed: 2, open: 2 },
     skeleton: { minConcealedTriplets: 3 },
     requestable: true,
     incompatibleWith: ["pinfu", "chiitoitsu"],
   }),
   T({
-    name: "suuankou",
+    name: "suuankou", subsumes: ["sanankou"],
+    shapeGuarantees: true,
     han: { closed: 0, open: null },
     limit: true,
     skeleton: { noRuns: true, menzen: true, minConcealedTriplets: 4 },
     requestable: true,
     incompatibleWith: ["pinfu", "chiitoitsu", "sanankou"],
   }),
-  T({ name: "sankantsu", han: { closed: 2, open: 2 }, skeleton: { kanCount: 3 }, requestable: true, incompatibleWith: ["pinfu", "chiitoitsu"] }),
-  T({ name: "suukantsu", han: { closed: 0, open: null }, limit: true, skeleton: { kanCount: 4 }, requestable: true, incompatibleWith: ["pinfu", "chiitoitsu", "sankantsu"] }),
+  T({ name: "sankantsu", shapeGuarantees: true, han: { closed: 2, open: 2 }, skeleton: { kanCount: 3 }, requestable: true, incompatibleWith: ["pinfu", "chiitoitsu"] }),
+  T({ name: "suukantsu", subsumes: ["sankantsu"], shapeGuarantees: true, han: { closed: 0, open: null }, limit: true, skeleton: { kanCount: 4 }, requestable: true, incompatibleWith: ["pinfu", "chiitoitsu", "sankantsu"] }),
 
   // ── tile predicates ──
   T({
@@ -141,9 +163,9 @@ export const TEMPLATES: YakuTemplate[] = [
   T({ name: "sanshoku", han: { closed: 2, open: 1 }, skeleton: { minRuns: 3 }, placer: "sanshoku", requestable: true, incompatibleWith: ["toitoi", "honitsu", "chinitsu", "chiitoitsu"] }),
   T({ name: "ittsuu", han: { closed: 2, open: 1 }, skeleton: { minRuns: 3 }, placer: "ittsuu", requestable: true, incompatibleWith: ["toitoi", "tanyao", "chiitoitsu"] }),
   T({ name: "iipeiko", han: { closed: 1, open: null }, skeleton: { minRuns: 2, menzen: true }, placer: "iipeiko", requestable: true, incompatibleWith: ["toitoi", "chiitoitsu", "ryanpeikou"] }),
-  T({ name: "ryanpeikou", han: { closed: 3, open: null }, skeleton: { allRuns: true, menzen: true }, placer: "ryanpeikou", requestable: true, incompatibleWith: ["toitoi", "iipeiko", "chiitoitsu", "sanankou"] }),
+  T({ name: "ryanpeikou", subsumes: ["iipeiko"], han: { closed: 3, open: null }, skeleton: { allRuns: true, menzen: true }, placer: "ryanpeikou", requestable: true, incompatibleWith: ["toitoi", "iipeiko", "chiitoitsu", "sanankou"] }),
   T({ name: "honitsu", han: { closed: 3, open: 2 }, domain: { singleSuit: true, requireHonor: true }, requestable: true, incompatibleWith: ["tanyao", "chinitsu", "sanshoku", "chinroutou", "junchan"] }),
-  T({ name: "chinitsu", han: { closed: 6, open: 5 }, domain: { singleSuit: true, honorsAllowed: false }, requestable: true, incompatibleWith: ["honitsu", "sanshoku", "tsuuiisou", "honroutou", "chanta", "haku", "hatsu", "chun", "round-wind", "seat-wind"] }),
+  T({ name: "chinitsu", subsumes: ["honitsu"], han: { closed: 6, open: 5 }, domain: { singleSuit: true, honorsAllowed: false }, requestable: true, incompatibleWith: ["honitsu", "sanshoku", "tsuuiisou", "honroutou", "chanta", "haku", "hatsu", "chun", "round-wind", "seat-wind"] }),
 
   // ── yakuhai ──
   T({ name: "haku", han: { closed: 1, open: 1 }, skeleton: { minTriplets: 1 }, placer: "yakuhai", requestable: true, incompatibleWith: ["tanyao", "chinitsu", "pinfu"] }),
@@ -154,15 +176,15 @@ export const TEMPLATES: YakuTemplate[] = [
 
   // ── terminal/honor families: excludable, not yet placeable ──
   T({ name: "chanta", han: { closed: 2, open: 1 }, requestable: false, incompatibleWith: ["tanyao", "junchan", "honroutou", "chinitsu"] }),
-  T({ name: "junchan", han: { closed: 3, open: 2 }, requestable: false, incompatibleWith: ["tanyao", "chanta", "honroutou", "honitsu"] }),
-  T({ name: "honroutou", han: { closed: 2, open: 2 }, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chanta", "junchan", "chinitsu"] }),
+  T({ name: "junchan", subsumes: ["chanta"], han: { closed: 3, open: 2 }, requestable: false, incompatibleWith: ["tanyao", "chanta", "honroutou", "honitsu"] }),
+  T({ name: "honroutou", subsumes: ["chanta", "junchan"], han: { closed: 2, open: 2 }, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chanta", "junchan", "chinitsu"] }),
 
   // ── yakuman: excludable, not yet placeable ──
-  T({ name: "kokushi-musou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chiitoitsu"] }),
-  T({ name: "daisangen", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
+  T({ name: "kokushi-musou", shapeGuarantees: true, skeleton: { shape: "kokushi" }, han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chiitoitsu"] }),
+  T({ name: "daisangen", subsumes: ["shousangen"], han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
   T({ name: "shousangen", han: { closed: 2, open: 2 }, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
   T({ name: "shousuushii", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
-  T({ name: "daisuushii", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
+  T({ name: "daisuushii", subsumes: ["shousuushii"], han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
   T({ name: "tsuuiisou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
   T({ name: "chinroutou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "honitsu"] }),
   T({ name: "ryuuiisou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu"] }),
@@ -181,10 +203,6 @@ export function skeletonSatisfies(
 ): boolean {
   const runs = skeleton.blocks.filter((b) => b.kind === "run").length;
   const triplets = skeleton.blocks.filter((b) => b.kind !== "run").length;
-  const concealedTriplets = skeleton.blocks.filter(
-    (b) => b.kind !== "run" && !b.called,
-  ).length;
-
   if (constraints.shape && skeleton.shape !== constraints.shape) return false;
   if (constraints.shape === undefined && skeleton.shape !== "standard") {
     // Shape-specific yaku aside, every other constraint assumes blocks exist.
@@ -211,12 +229,13 @@ export function skeletonSatisfies(
   if (constraints.minTriplets !== undefined && triplets < constraints.minTriplets) return false;
   if (
     constraints.minConcealedTriplets !== undefined &&
-    concealedTriplets < constraints.minConcealedTriplets
+    skeleton.concealedTriplets < constraints.minConcealedTriplets
   ) {
     return false;
   }
   if (constraints.kanCount !== undefined && skeleton.kanCount !== constraints.kanCount) return false;
   if (constraints.menzen !== undefined && skeleton.menzen !== constraints.menzen) return false;
+  if (constraints.tsumo !== undefined && skeleton.tsumo !== constraints.tsumo) return false;
   if (constraints.wait && !constraints.wait.includes(skeleton.wait)) return false;
   if (constraints.pair && !constraints.pair.includes(skeleton.pair)) return false;
   return true;

@@ -1,6 +1,6 @@
 import type { WaitType } from "riichi-score";
 import type { GenerateSpec } from "./types.js";
-import { skeletonSatisfies, templateFor } from "./yaku/templates.js";
+import { skeletonSatisfies, templateFor, TEMPLATES } from "./yaku/templates.js";
 
 /**
  * A skeleton is a hand with every tile identity removed, keeping only the
@@ -36,6 +36,13 @@ export interface Skeleton {
   calledMelds: number;
   kanCount: number;
   pinfuShape: boolean;
+  /**
+   * Concealed triplets *after* the ron demotion — a triplet completed by ron is
+   * a minko. Computing it here rather than counting raw blocks keeps the
+   * sanankou filter exact in both directions: it neither misses hands nor
+   * offers shapes that cannot deliver.
+   */
+  concealedTriplets: number;
 }
 
 const BLOCK_TYPES: Block[] = [
@@ -182,8 +189,14 @@ export function allSkeletons(): Skeleton[] {
               waitHost,
               tsumo,
             );
+            const rawConcealed = blocks.filter(
+              (b) => b.kind !== "run" && !b.called,
+            ).length;
+            const demoted =
+              !tsumo && wait === "shanpon" && waitHost >= 0 ? 1 : 0;
             out.push({
               shape: "standard",
+              concealedTriplets: rawConcealed - demoted,
               blocks,
               pair,
               wait,
@@ -209,6 +222,7 @@ export function allSkeletons(): Skeleton[] {
   for (const tsumo of [false, true]) {
     out.push({
       shape: "chiitoitsu",
+      concealedTriplets: 0,
       blocks: [],
       pair: "plain",
       wait: "tanki",
@@ -229,6 +243,7 @@ export function allSkeletons(): Skeleton[] {
   for (const tsumo of [false, true]) {
     out.push({
       shape: "kokushi",
+      concealedTriplets: 0,
       blocks: [],
       pair: "plain",
       wait: "tanki",
@@ -314,6 +329,37 @@ const FILTERS: {
       }),
     reason: (spec) =>
       `no hand shape supports ${(spec.yaku ?? []).join(" + ")} together with the other constraints`,
+  },
+  {
+    // Exclusion is a shape-level operation too. Some yaku are forced by the
+    // skeleton alone — four concealed triplets IS suuankou — so no tile-level
+    // bias can avoid them. Dropping those shapes up front removed 65% of the
+    // contamination on a declared-only spec.
+    name: "excludedYaku",
+    applies: (spec) =>
+      (spec.yaku?.length ?? 0) > 0 && (spec.yakuPolicy ?? "exact") === "exact",
+    keep: (s, spec) => {
+      const requested = new Set(spec.yaku ?? []);
+      // A yakuman suppresses ordinary yaku entirely, so nothing else can
+      // contaminate the answer key and no shape needs excluding on its behalf.
+      if ([...requested].some((name) => templateFor(name)?.limit)) return true;
+      const subsumed = new Set<string>();
+      for (const name of requested) {
+        for (const child of templateFor(name)?.subsumes ?? []) {
+          subsumed.add(child);
+        }
+      }
+      return !TEMPLATES.some(
+        (t) =>
+          t.shapeGuarantees &&
+          !requested.has(t.name) &&
+          !subsumed.has(t.name) &&
+          t.skeleton &&
+          skeletonSatisfies(s, t.skeleton),
+      );
+    },
+    reason: () =>
+      "every remaining hand shape forces a yaku the exact list excludes",
   },
 ];
 

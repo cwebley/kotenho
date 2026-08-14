@@ -120,7 +120,10 @@ function tripletOptions(block: Block, domain: Domain): MahjongTile[] {
     return out;
   });
   if (block.edge === "simple") return numbered;
-  return domain.honorsAllowed ? [...numbered, ...HONORS] : numbered;
+  const honors = domain.honorsAllowed
+    ? HONORS.filter((tile) => !domain.forbiddenTriplets.includes(tile))
+    : [];
+  return [...numbered, ...honors];
 }
 
 function pairOptions(
