@@ -223,8 +223,8 @@ export const TEMPLATES: YakuTemplate[] = [
     incompatibleWith: ["tanyao", "pinfu", "chanta", "junchan", "chinitsu"],
   }),
 
-  // ── yakuman: excludable, not yet placeable ──
-  T({ name: "kokushi-musou", shapeGuarantees: true, skeleton: { shape: "kokushi" }, han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chiitoitsu"] }),
+  // ── yakuman ──
+  T({ name: "kokushi-musou", shapeGuarantees: true, skeleton: { shape: "kokushi" }, han: { closed: 0, open: null }, limit: true, requestable: true, incompatibleWith: ["tanyao", "pinfu", "chiitoitsu"] }),
   T({
     name: "daisangen",
     subsumes: ["shousangen"],

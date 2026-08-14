@@ -273,6 +273,7 @@ describe("generate", () => {
     ["tsuuiisou", { yaku: ["tsuuiisou"] }],
     ["ryuuiisou", { yaku: ["ryuuiisou"] }],
     ["chuuren-poutou", { yaku: ["chuuren-poutou"] }],
+    ["kokushi-musou", { yaku: ["kokushi-musou"] }],
   ];
 
   for (const [label, spec] of yakuSpecs) {
@@ -674,15 +675,22 @@ describe("generate", () => {
     }
   });
 
-  it("does not call kokushi impossible", () => {
-    // Same soundness bug as chiitoitsu: a shape missing from the model turns
-    // into a false proof of impossibility.
-    const result = generate({ handShape: "kokushi" }, { seed: 4 });
-    expect(result.status).toBe("ok");
-    if (result.status !== "ok") return;
-    expect(
-      result.hand.canonical.yaku.map((yaku) => yaku.name),
-    ).toContain("kokushi-musou");
+  it("constructs ordinary and 13-sided kokushi as single yakuman", () => {
+    let ordinary = false;
+    let thirteenSided = false;
+    for (let seed = 0; seed < 100 && (!ordinary || !thirteenSided); seed++) {
+      const result = generate({ yaku: ["kokushi-musou"] }, { seed });
+      expect(result.status).toBe("ok");
+      if (result.status !== "ok") continue;
+      expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["kokushi-musou"]);
+      if (new Set(result.hand.handInput.closedTiles).size === 13) {
+        thirteenSided = true;
+      } else {
+        ordinary = true;
+      }
+    }
+    expect(ordinary).toBe(true);
+    expect(thirteenSided).toBe(true);
   });
 
   it("atLeast allows extra yaku that exact rejects", () => {

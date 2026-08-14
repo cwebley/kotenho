@@ -5,9 +5,9 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-268 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+269 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
-36 of 41 yaku requestable; all 41 enforceable as exclusions
+37 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
 **In one sentence:** `riichi-score` is correct and complete, and the generator
@@ -120,10 +120,10 @@ Rejection histograms identify no-yaku, assignment, and
 dora-placement pressure, validating the histogram as the authoring signal for
 low-yield specs.
 
-### 3.2 Five yaku are excludable but not requestable
+### 3.2 Four yaku are excludable but not requestable
 
-Rinshan/chankan, tenhou/chiihou, and kokushi have no requestable template, so
-requesting one is refused with a reason. They are fully policed as exclusions.
+Rinshan/chankan and tenhou/chiihou have no requestable template, so requesting
+one is refused with a reason. They are fully policed as exclusions.
 
 `chanta` and `junchan` are requestable, and **neither has a placer**. Their
 skeleton constraints (terminal runs, terminal-or-honor groups) plus their domain
@@ -164,6 +164,10 @@ uses all seven honor pairs. Both shapes yield 100% in the M3 probe.
 `chuuren-poutou` is requestable as a closed, one-suit hand. The assigner emits
 the `1112345678999` base plus a sampled winning tile, leaving decomposition to
 the scorer. Its M3 yield is 100.0% (p10 100.0%).
+
+`kokushi-musou` is requestable with both ordinary and 13-sided waits. Both score
+as a single yakuman under the default ruleset. Its M3 yield is 100.0% (p10
+100.0%).
 
 ### 3.3 M8 — batches *(done)*
 
