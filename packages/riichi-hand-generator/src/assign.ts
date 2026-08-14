@@ -128,7 +128,7 @@ const ALL_TILES: MahjongTile[] = [
 
 /** Tiles a triplet or kan may use, given its edge class and the domain. */
 function tripletOptions(block: Block, domain: Domain): MahjongTile[] {
-  const numbered = domain.suits.flatMap((suit) => {
+  const numbered = domain.honorsOnly ? [] : domain.suits.flatMap((suit) => {
     const out: MahjongTile[] = [];
     for (let rank = domain.minRank; rank <= domain.maxRank; rank++) {
       const terminal = rank === 1 || rank === 9;
@@ -231,6 +231,7 @@ function assignChiitoitsu(
 ): Assignment | null {
   const pool = ALL_TILES.filter((tile) => {
     if (isHonor(tile)) return domain.honorsAllowed;
+    if (domain.honorsOnly) return false;
     if (!domain.suits.includes(tile[1] as (typeof SUITS)[number])) return false;
     const rank = Number(tile[0]);
     return rank >= domain.minRank && rank <= domain.maxRank;

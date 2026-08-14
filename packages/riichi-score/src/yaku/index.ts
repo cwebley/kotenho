@@ -33,6 +33,11 @@ export function detectStandardYaku(
       detectHonitsu(handInterpretation);
       detectChanta(handInterpretation);
       detectPurity(handInterpretation);
+      if (handInterpretation.yaku.some((yaku) => yaku.limit)) {
+        handInterpretation.yaku = handInterpretation.yaku.filter(
+          (yaku) => yaku.limit,
+        );
+      }
     }
     return handInterpretation;
   }

@@ -270,6 +270,7 @@ describe("generate", () => {
     ["shousuushii", { yaku: ["shousuushii"] }],
     ["daisuushii", { yaku: ["daisuushii"] }],
     ["chinroutou", { yaku: ["chinroutou"] }],
+    ["tsuuiisou", { yaku: ["tsuuiisou"] }],
   ];
 
   for (const [label, spec] of yakuSpecs) {
@@ -599,6 +600,25 @@ describe("generate", () => {
     ];
     expect(tiles.every((tile) => tile[0] === "1" || tile[0] === "9")).toBe(true);
     expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["chinroutou"]);
+  });
+
+  it("constructs all-honor tsuuiisou in standard and chiitoitsu shapes", () => {
+    for (const handShape of ["standard", "chiitoitsu"] as const) {
+      const result = generate(
+        { yaku: ["tsuuiisou"], handShape },
+        { seed: 7, budget: 3000 },
+      );
+      expect(result.status).toBe("ok");
+      if (result.status !== "ok") continue;
+      const tiles = [
+        ...result.hand.handInput.closedTiles,
+        result.hand.handInput.winningTile.tile,
+        ...(result.hand.handInput.openMelds ?? []).flatMap((meld) => meld.tiles),
+      ];
+      expect(tiles.every((tile) => tile.endsWith("z"))).toBe(true);
+      expect(result.hand.canonical.isStandardHand).toBe(handShape === "standard");
+      expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["tsuuiisou"]);
+    }
   });
 
   it("uses the correct open and closed terminal-family han", () => {

@@ -15,6 +15,8 @@ export interface SkeletonConstraints {
   allTerminalOrHonorBlocks?: boolean;
   /** Every run is 123 or 789. */
   allTerminalRuns?: boolean;
+  /** A no-runs constraint may include chiitoitsu's seven-pair shape. */
+  allowChiitoitsu?: boolean;
   allRuns?: boolean;
   noRuns?: boolean;
   minRuns?: number;
@@ -39,6 +41,8 @@ export interface DomainConstraints {
   singleSuit?: boolean;
   /** At least one honor must appear (honitsu). */
   requireHonor?: boolean;
+  /** Every tile identity must be an honor. */
+  honorsOnly?: boolean;
   /** Restrict the pair independently of its fu class. */
   pair?: "yaochu" | "terminal" | "numbered";
 }
@@ -52,7 +56,8 @@ export type PlacerKind =
   | "shousangen"
   | "daisangen"
   | "shousuushii"
-  | "daisuushii";
+  | "daisuushii"
+  | "tsuuiisou";
 
 export interface YakuTemplate {
   name: YakuName;
@@ -255,7 +260,16 @@ export const TEMPLATES: YakuTemplate[] = [
     requestable: true,
     incompatibleWith: ["tanyao", "pinfu", "chinitsu", "shousuushii"],
   }),
-  T({ name: "tsuuiisou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
+  T({
+    name: "tsuuiisou",
+    han: { closed: 0, open: 0 },
+    limit: true,
+    skeleton: { noRuns: true, allowChiitoitsu: true },
+    domain: { honorsOnly: true },
+    placer: "tsuuiisou",
+    requestable: true,
+    incompatibleWith: ["tanyao", "pinfu", "chinitsu"],
+  }),
   T({
     name: "chinroutou",
     han: { closed: 0, open: 0 },
@@ -288,7 +302,8 @@ export function skeletonSatisfies(
         constraints.allRuns ||
         constraints.allTerminalOrHonorBlocks ||
         constraints.allTerminalRuns ||
-      constraints.noRuns ||
+        (constraints.noRuns &&
+          !(skeleton.shape === "chiitoitsu" && constraints.allowChiitoitsu)) ||
       constraints.minRuns !== undefined ||
       constraints.minTriplets !== undefined ||
       constraints.minConcealedTriplets !== undefined ||

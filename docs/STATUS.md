@@ -5,9 +5,9 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-261 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+264 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
-33 of 41 yaku requestable; all 41 enforceable as exclusions
+34 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
 **In one sentence:** `riichi-score` is correct and complete, and the generator
@@ -120,7 +120,7 @@ Rejection histograms identify no-yaku, assignment, and
 dora-placement pressure, validating the histogram as the authoring signal for
 low-yield specs.
 
-### 3.2 Eight yaku are excludable but not requestable
+### 3.2 Seven yaku are excludable but not requestable
 
 Rinshan/chankan, tenhou/chiihou, kokushi, and the remaining color/terminal
 yakuman templates have no placer, so requesting one is refused with a reason.
@@ -154,6 +154,10 @@ default ruleset deliberately keeps daisuushii at single yakuman.
 
 `chinroutou` is requestable as a terminal-only yakuman: no runs, no honors, and
 only 1/9 tiles. Its M3 mean yield is 69.4% (p10 63.0%).
+
+`tsuuiisou` is requestable in both standard and chiitoitsu shapes. Standard
+hands use a controlled wind/dragon mix to avoid a second yakuman; chiitoitsu
+uses all seven honor pairs. Both shapes yield 100% in the M3 probe.
 
 ### 3.3 M8 — batches *(done)*
 

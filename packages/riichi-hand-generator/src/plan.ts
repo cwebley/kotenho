@@ -29,6 +29,7 @@ export interface Domain {
   minRank: number;
   maxRank: number;
   honorsAllowed: boolean;
+  honorsOnly: boolean;
   requireHonor: boolean;
   pair: "any" | "yaochu" | "terminal" | "numbered";
   /**
@@ -76,6 +77,7 @@ function baseDomain(): Domain {
     minRank: 1,
     maxRank: 9,
     honorsAllowed: true,
+    honorsOnly: false,
     requireHonor: false,
     pair: "any",
     avoidDuplicateRuns: true,
@@ -97,6 +99,7 @@ const PLACER_ORDER: Record<string, number> = {
   daisangen: 5,
   shousuushii: 5,
   daisuushii: 5,
+  tsuuiisou: 5,
 };
 
 export function planTiles(
@@ -120,6 +123,7 @@ export function planTiles(
       domain.maxRank = Math.min(domain.maxRank, constraints.maxRank);
     }
     if (constraints.honorsAllowed === false) domain.honorsAllowed = false;
+    if (constraints.honorsOnly) domain.honorsOnly = true;
     if (constraints.requireHonor) domain.requireHonor = true;
     if (constraints.pair === "terminal" || constraints.pair === "numbered") {
       domain.pair = constraints.pair;
@@ -130,6 +134,7 @@ export function planTiles(
     if (constraints.singleSuit) domain.suits = [rng.pick(domain.suits)];
   }
   if (domain.requireHonor && !domain.honorsAllowed) return null;
+  if (domain.honorsOnly && !domain.honorsAllowed) return null;
   if (
     yaku.includes("iipeiko") ||
     yaku.includes("ryanpeikou") ||
@@ -285,6 +290,18 @@ export function planTiles(
         const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
         fixed.set(index, Array.from({ length: size }, () => tile));
       }
+    } else if (kind === "tsuuiisou") {
+      if (skeleton.shape === "chiitoitsu") continue;
+      if (freeTriplets.length < 4) return null;
+      const winds = rng.shuffled(WINDS).slice(0, 2);
+      const dragons = rng.shuffled(DRAGONS).slice(0, 2);
+      for (const tile of [...winds, ...dragons]) {
+        const index = freeTriplets.shift()!;
+        const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
+        fixed.set(index, Array.from({ length: size }, () => tile));
+      }
+      pair = DRAGONS.find((tile) => !dragons.includes(tile));
+      if (!pair) return null;
     }
   }
 

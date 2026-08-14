@@ -93,4 +93,18 @@ describe("ruleset", () => {
     expect(analysis.handInterpretations[0].akadora).toBe(1);
     expect(analysis.handInterpretations[0].yaku.map((yaku) => yaku.name)).toContain("tanyao");
   });
+
+  it("suppresses chiitoitsu's ordinary yaku when it is tsuuiisou", () => {
+    const analysis = calculate({
+      closedTiles: [
+        "1z", "1z", "2z", "2z", "3z", "3z", "4z", "4z", "5z", "5z", "6z", "6z", "7z",
+      ],
+      winningTile: { tile: "7z", isTsumo: true },
+      gameState: createGameState(),
+    });
+
+    expect(analysis.handInterpretations[0].yaku.map((yaku) => yaku.name)).toEqual([
+      "tsuuiisou",
+    ]);
+  });
 });
