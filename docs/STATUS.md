@@ -5,7 +5,7 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-249 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+251 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
 27 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
@@ -154,6 +154,10 @@ tiles, so nothing in it needs to know aka exists.
 `GenerateSpec.akaDora` requests an exact number of aka han. The allocator swaps
 selected physical fives for red fives before dora-indicator placement, so the
 shared four-copy budget is enforced across the hand and its indicators.
+
+When `han` leaves bonus han unspecified, generation samples a legal omote/aka
+split, and includes ura when riichi or double-riichi reveals it. Explicit
+`dora`, `uraDora`, or `akaDora` pin that source instead.
 
 ### 3.5 Ruleset configuration object *(partly done)*
 

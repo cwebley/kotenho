@@ -157,12 +157,38 @@ export function runSearch(
         // Dora runs last: choosing indicators never changes the tiles, so it
         // cannot disturb anything decided above.
         const need =
-          requiredDora(spec, !skeleton.menzen) ?? { dora: 0, ura: 0, aka: 0 };
+          requiredDora(spec, !skeleton.menzen) ?? {
+            dora: 0,
+            ura: 0,
+            aka: 0,
+            flexibleBonus: 0,
+          };
         const declared = declaredGameState(spec);
         const slots = spec.doraIndicatorCount ?? 1;
         const input = assignment.handInput;
         input.gameState = { ...input.gameState!, ...declared };
-        if (!placeAka(input, need.aka, declared.ruleset, rng)) {
+        const bonusSplits: { dora: number; ura: number; aka: number }[] = [];
+        if (need.flexibleBonus === 0) {
+          bonusSplits.push(need);
+        } else {
+          const maxAka = Math.min(
+            need.flexibleBonus,
+            Object.values(declared.ruleset.akaDora).reduce((sum, n) => sum + n, 0),
+          );
+          for (let aka = 0; aka <= maxAka; aka++) {
+            const maxUra = hasRiichi(declared) ? need.flexibleBonus - aka : 0;
+            for (let ura = 0; ura <= maxUra; ura++) {
+              bonusSplits.push({
+                dora: need.flexibleBonus - aka - ura,
+                ura,
+                aka,
+              });
+            }
+          }
+        }
+        const bonus =
+          need.flexibleBonus > 0 ? rng.pick(bonusSplits) : bonusSplits[0];
+        if (!placeAka(input, bonus.aka, declared.ruleset, rng)) {
           record({
             attempt: attempts,
             stage: "assignment",
@@ -180,9 +206,9 @@ export function runSearch(
             ...(input.openMelds ?? []).flatMap((meld) => meld.tiles),
           ],
           slots,
-          need.dora,
+          bonus.dora,
           hasRiichi(declared) ? slots : 0,
-          need.ura,
+          bonus.ura,
           rng,
         );
         if (!placement) {

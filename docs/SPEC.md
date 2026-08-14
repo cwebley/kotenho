@@ -383,7 +383,7 @@ hand, only what it must be true of.
 |---|---|
 | `yaku` | The yaku the hand must have |
 | `yakuPolicy` | `"exact"` (default) — the hand has these and **no others**; `"atLeast"` — these plus anything |
-| `han` | Exact value, or a `{min, max}` range |
+| `han` | Exact value, or a `{min, max}` range; unspecified bonus sources may be omote, aka, or riichi-gated ura dora |
 | `fu` | Exact value, or a `{min, max}` range |
 | `handShape` | standard / chiitoitsu / kokushi, if constrained |
 

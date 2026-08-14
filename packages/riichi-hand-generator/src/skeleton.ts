@@ -386,8 +386,8 @@ const FILTERS: {
       if (!need) return true;
       const slots = spec.doraIndicatorCount ?? 1;
       return (
-        doraReachable(s, slots, need.dora) &&
-        doraReachable(s, slots, need.ura)
+        (need.flexibleBonus > 0 || doraReachable(s, slots, need.dora)) &&
+        (need.flexibleBonus > 0 || doraReachable(s, slots, need.ura))
       );
     },
     reason: (spec) => {

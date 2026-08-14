@@ -242,9 +242,14 @@ function checkDoraFeasibility(
 export function requiredDora(
   spec: GenerateSpec,
   open?: boolean,
-): { dora: number; ura: number; aka: number } | null {
+): { dora: number; ura: number; aka: number; flexibleBonus: number } | null {
   if (spec.dora !== undefined || spec.uraDora !== undefined || spec.akaDora !== undefined) {
-    return { dora: spec.dora ?? 0, ura: spec.uraDora ?? 0, aka: spec.akaDora ?? 0 };
+    return {
+      dora: spec.dora ?? 0,
+      ura: spec.uraDora ?? 0,
+      aka: spec.akaDora ?? 0,
+      flexibleBonus: 0,
+    };
   }
   if (spec.han === undefined) return null;
   const templates = (spec.yaku ?? [])
@@ -260,7 +265,15 @@ export function requiredDora(
     0,
   );
   const needed = spec.han - yakuHan;
-  return needed >= 0 ? { dora: needed, ura: 0, aka: 0 } : null;
+  if (needed < 0) return null;
+  return {
+    dora: needed,
+    ura: 0,
+    aka: 0,
+    // A bare han target asks for total bonus han, not a particular dora source.
+    // Search samples omote, ura (when riichi reveals it), and aka later.
+    flexibleBonus: needed,
+  };
 }
 
 /** Yaku the situation forces, so the planner can request them implicitly. */

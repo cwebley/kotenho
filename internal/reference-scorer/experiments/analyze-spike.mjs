@@ -32,6 +32,8 @@ const SPECS = [
   ],
   ["pinfu + 3 dora", { yaku: ["pinfu"], han: 4 }],
   ["tanyao + 1 aka", { yaku: ["tanyao"], akaDora: 1 }],
+  ["tanyao, 2 han bonus mix", { yaku: ["tanyao"], han: 2 }],
+  ["riichi + tanyao, 3 han bonus mix", { yaku: ["riichi", "tanyao"], han: 3 }],
   ["chanta", { yaku: ["chanta"] }],
   ["junchan", { yaku: ["junchan"] }],
   ["chanta + sanshoku", { yaku: ["chanta", "sanshoku"] }],

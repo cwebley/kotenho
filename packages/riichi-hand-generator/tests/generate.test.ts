@@ -444,6 +444,51 @@ describe("generate", () => {
     expect(generate({ yaku: ["tanyao"], akaDora: 4 }).status).toBe("unsatisfiable");
   });
 
+  it("varies inferred bonus han between omote and aka dora", () => {
+    const result = generate(
+      { yaku: ["tanyao"], han: 2 },
+      { count: 20, seed: 7, budget: 3000 },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      const sources = new Set(
+        result.hands.map(({ canonical }) => `${canonical.dora}/${canonical.akadora}`),
+      );
+      expect(sources).toContain("1/0");
+      expect(sources).toContain("0/1");
+      for (const hand of result.hands) expect(hand.canonical.han).toBe(2);
+    }
+
+    const omoteOnly = generate(
+      { yaku: ["tanyao"], han: 2, dora: 1 },
+      { count: 5, seed: 7, budget: 3000 },
+    );
+    expect(omoteOnly.status).toBe("ok");
+    if (omoteOnly.status === "ok") {
+      for (const hand of omoteOnly.hands) {
+        expect(hand.canonical.dora).toBe(1);
+        expect(hand.canonical.akadora).toBe(0);
+      }
+    }
+  });
+
+  it("uses ura dora as an inferred bonus source after riichi", () => {
+    const result = generate(
+      { yaku: ["riichi", "tanyao"], han: 3 },
+      { count: 30, seed: 7, budget: 5000 },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    const sources = new Set(
+      result.hands.map(
+        ({ canonical }) => `${canonical.dora}/${canonical.uradora}/${canonical.akadora}`,
+      ),
+    );
+    expect(sources).toContain("1/0/0");
+    expect(sources).toContain("0/1/0");
+    expect(sources).toContain("0/0/1");
+  });
+
   it("keeps junchan honor-free and rejects terminal-family contradictions", () => {
     for (let seed = 0; seed < 20; seed++) {
       const result = generate({ yaku: ["junchan"] }, { seed, budget: 3000 });
@@ -594,7 +639,7 @@ describe("dora", () => {
     // The dora needed depends on the hand, not the spec: most yaku are worth a
     // han less open, so an open chinitsu closes the gap to 8 with three dora
     // where a closed one needs two.
-    for (const [spec, closedDora, openDora] of [
+    for (const [spec, closedBonus, openBonus] of [
       [{ yaku: ["tanyao"], han: 3 } as GenerateSpec, 2, 2],
       [{ yaku: ["pinfu"], han: 4 } as GenerateSpec, 3, 3],
       [{ yaku: ["chinitsu"], han: 8 } as GenerateSpec, 2, 3],
@@ -610,7 +655,9 @@ describe("dora", () => {
         canonical.isStandardHand !== true ||
         canonical.groups.every((group) => !group.open);
       expect(canonical.han).toBe(spec.han);
-      expect(canonical.dora).toBe(menzen ? closedDora : openDora);
+      expect(canonical.dora + canonical.uradora + canonical.akadora).toBe(
+        menzen ? closedBonus : openBonus,
+      );
     }
   });
 
