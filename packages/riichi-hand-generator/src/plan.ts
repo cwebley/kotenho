@@ -92,6 +92,8 @@ const PLACER_ORDER: Record<string, number> = {
   sanshoku: 2,
   iipeiko: 3,
   yakuhai: 4,
+  shousangen: 5,
+  daisangen: 5,
 };
 
 export function planTiles(
@@ -169,6 +171,7 @@ export function planTiles(
 
   const freeRuns = [...runBlocks];
   const freeTriplets = [...tripletBlocks];
+  let pair: MahjongTile | undefined;
 
   for (const name of placers) {
     const kind = templateFor(name)!.placer!;
@@ -223,6 +226,30 @@ export function planTiles(
       const index = freeTriplets.shift()!;
       const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
       fixed.set(index, Array.from({ length: size }, () => tile as MahjongTile));
+    } else if (kind === "shousangen") {
+      const dragonTriplets = [...fixed.values()]
+        .map((tiles) => tiles[0])
+        .filter((tile): tile is MahjongTile => DRAGONS.includes(tile));
+      if (dragonTriplets.length > 2) return null;
+      const needed = 2 - dragonTriplets.length;
+      const selected = rng
+        .shuffled(DRAGONS.filter((tile) => !dragonTriplets.includes(tile)))
+        .slice(0, needed);
+      if (freeTriplets.length < selected.length) return null;
+      for (const tile of selected) {
+        const index = freeTriplets.shift()!;
+        const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
+        fixed.set(index, Array.from({ length: size }, () => tile));
+      }
+      pair = DRAGONS.find((tile) => ![...dragonTriplets, ...selected].includes(tile));
+      if (!pair) return null;
+    } else if (kind === "daisangen") {
+      if (freeTriplets.length < DRAGONS.length) return null;
+      for (const tile of rng.shuffled(DRAGONS)) {
+        const index = freeTriplets.shift()!;
+        const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
+        fixed.set(index, Array.from({ length: size }, () => tile));
+      }
     }
   }
 
@@ -231,5 +258,5 @@ export function planTiles(
   //    the same spot. The assigner samples honors per block and rejects a hand
   //    that ends up with none, which satisfies the same rule while leaving the
   //    count free to vary.
-  return { domain, fixed };
+  return { domain, fixed, pair };
 }

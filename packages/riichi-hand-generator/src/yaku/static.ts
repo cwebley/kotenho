@@ -135,6 +135,16 @@ export function checkYakuFeasibility(spec: GenerateSpec): Feasibility {
         "honroutou has no runs, so its standard-hand construction also scores toitoi — an exact yaku list must include toitoi",
       );
     }
+    if (requested.includes("shousangen")) {
+      const dragons = requested.filter((name) =>
+        (["haku", "hatsu", "chun"] as YakuName[]).includes(name),
+      );
+      if (dragons.length !== 2) {
+        return no(
+          "shousangen has two dragon triplets, so an exact yaku list must include exactly two of haku, hatsu and chun",
+        );
+      }
+    }
     for (const { name, why } of forcedYaku(spec)) {
       if (!requested.includes(name)) {
         return no(

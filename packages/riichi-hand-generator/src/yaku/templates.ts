@@ -48,7 +48,9 @@ export type PlacerKind =
   | "ittsuu"
   | "iipeiko"
   | "ryanpeikou"
-  | "yakuhai";
+  | "yakuhai"
+  | "shousangen"
+  | "daisangen";
 
 export interface YakuTemplate {
   name: YakuName;
@@ -213,8 +215,24 @@ export const TEMPLATES: YakuTemplate[] = [
 
   // ── yakuman: excludable, not yet placeable ──
   T({ name: "kokushi-musou", shapeGuarantees: true, skeleton: { shape: "kokushi" }, han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chiitoitsu"] }),
-  T({ name: "daisangen", subsumes: ["shousangen"], han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
-  T({ name: "shousangen", han: { closed: 2, open: 2 }, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
+  T({
+    name: "daisangen",
+    subsumes: ["shousangen"],
+    han: { closed: 0, open: 0 },
+    limit: true,
+    skeleton: { minTriplets: 3 },
+    placer: "daisangen",
+    requestable: true,
+    incompatibleWith: ["tanyao", "pinfu", "chinitsu"],
+  }),
+  T({
+    name: "shousangen",
+    han: { closed: 2, open: 2 },
+    skeleton: { minTriplets: 2, pair: ["yakuhai"] },
+    placer: "shousangen",
+    requestable: true,
+    incompatibleWith: ["tanyao", "pinfu", "chinitsu", "daisangen"],
+  }),
   T({ name: "shousuushii", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
   T({ name: "daisuushii", subsumes: ["shousuushii"], han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
   T({ name: "tsuuiisou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),

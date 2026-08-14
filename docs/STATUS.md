@@ -5,9 +5,9 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-253 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+256 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
-28 of 41 yaku requestable; all 41 enforceable as exclusions
+30 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
 **In one sentence:** `riichi-score` is correct and complete, and the generator
@@ -114,14 +114,16 @@ The M3 spike found healthy diversity across the supported lesson matrix.
 `chanta` yields 84.6% (p10 77.0%), `junchan` 89.9% (p10 82.0%),
 `chanta + sanshoku` 98.0% (p10 90.0%), `honroutou + toitoi` 76.2%
 (p10 69.0%), and `junchan + chinitsu` 40.9% (p10 18.0%). `tanyao + 1 aka`
-yields 74.0% (p10 51.0%). Rejection histograms identify no-yaku, assignment, and
+yields 74.0% (p10 51.0%). `shousangen + haku + hatsu` yields 31.1%
+(p10 14.0%) and `daisangen` 83.0% (p10 68.0%). Rejection histograms identify no-yaku, assignment, and
 dora-placement pressure, validating the histogram as the authoring signal for
 low-yield specs.
 
-### 3.2 Fifteen yaku are excludable but not requestable
+### 3.2 Eleven yaku are excludable but not requestable
 
-`shousangen` and the yakuman family have templates but no placer, so requesting
-one is refused with a reason. They are fully policed as exclusions.
+Rinshan/chankan, tenhou/chiihou, kokushi, and the remaining yakuman templates
+have no placer, so requesting one is refused with a reason. They are fully
+policed as exclusions.
 
 `chanta` and `junchan` are requestable, and **neither has a placer**. Their
 skeleton constraints (terminal runs, terminal-or-honor groups) plus their domain
@@ -139,6 +141,11 @@ group, 41% two, 7% three (§3.9).
 default exact policy: `generate({ yaku: ["honroutou", "toitoi"] })`. Its
 terminal-or-honor, no-run skeleton and yaochu pair domain describe the hand
 without a placer. `yakuPolicy: "atLeast"` may request `honroutou` alone.
+
+`shousangen` is requestable with exactly two dragon yakuhai entries under the
+default exact policy, such as `generate({ yaku: ["shousangen", "haku", "hatsu"] })`.
+`daisangen` pins all three dragon triplets and, as a yakuman, suppresses the
+ordinary dragon yaku automatically.
 
 ### 3.3 M8 — batches *(done)*
 

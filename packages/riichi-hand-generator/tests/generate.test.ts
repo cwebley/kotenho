@@ -265,6 +265,8 @@ describe("generate", () => {
     ["chanta + haku", { yaku: ["chanta", "haku"] }],
     ["junchan + chinitsu", { yaku: ["junchan", "chinitsu"] }],
     ["honroutou + toitoi", { yaku: ["honroutou", "toitoi"] }],
+    ["shousangen + haku + hatsu", { yaku: ["shousangen", "haku", "hatsu"] }],
+    ["daisangen", { yaku: ["daisangen"] }],
   ];
 
   for (const [label, spec] of yakuSpecs) {
@@ -305,6 +307,7 @@ describe("generate", () => {
         "menzen-tsumo",
       ],
       [{ yaku: ["honroutou"] }, "also scores toitoi"],
+      [{ yaku: ["shousangen"] }, "exactly two of haku, hatsu and chun"],
     ];
     for (const [spec, fragment] of cases) {
       const result = generate(spec, { seed: 1 });
@@ -336,7 +339,7 @@ describe("generate", () => {
   });
 
   it("refuses yaku it cannot deliberately construct", () => {
-    const result = generate({ yaku: ["daisangen"] }, { seed: 1 });
+    const result = generate({ yaku: ["shousuushii"] }, { seed: 1 });
     expect(result.status).toBe("unsatisfiable");
     if (result.status !== "unsatisfiable") return;
     expect(result.reason).toContain("not requested");
@@ -533,6 +536,28 @@ describe("generate", () => {
         "honroutou",
         "toitoi",
       ]);
+    }
+  });
+
+  it("constructs dragon triplets and applies yakuman suppression", () => {
+    const small = generate(
+      { yaku: ["shousangen", "haku", "hatsu"] },
+      { seed: 7, budget: 3000 },
+    );
+    expect(small.status).toBe("ok");
+    if (small.status === "ok" && small.hand.canonical.isStandardHand) {
+      expect(small.hand.canonical.pair.tiles[0]).toBe("7z");
+    }
+
+    const large = generate({ yaku: ["daisangen"] }, { seed: 7, budget: 3000 });
+    expect(large.status).toBe("ok");
+    if (large.status === "ok" && large.hand.canonical.isStandardHand) {
+      const dragons = large.hand.canonical.groups
+        .filter((group) => group.type !== "run")
+        .map((group) => group.tiles[0])
+        .filter((tile) => ["5z", "6z", "7z"].includes(tile));
+      expect(new Set(dragons)).toEqual(new Set(["5z", "6z", "7z"]));
+      expect(large.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["daisangen"]);
     }
   });
 

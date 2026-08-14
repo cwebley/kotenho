@@ -38,6 +38,8 @@ const SPECS = [
   ["junchan", { yaku: ["junchan"] }],
   ["chanta + sanshoku", { yaku: ["chanta", "sanshoku"] }],
   ["honroutou + toitoi", { yaku: ["honroutou", "toitoi"] }],
+  ["shousangen + two dragons", { yaku: ["shousangen", "haku", "hatsu"] }],
+  ["daisangen", { yaku: ["daisangen"] }],
   ["junchan + chinitsu", { yaku: ["junchan", "chinitsu"] }],
   ["chiitoitsu + 1 dora", { handShape: "chiitoitsu", dora: 1 }],
   ["haitei", { yaku: ["haitei"] }],
