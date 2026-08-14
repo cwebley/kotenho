@@ -200,9 +200,11 @@ Implemented switches: kuitan, double-wind pair 2 vs 4 fu, open-pinfu 20 vs 30
 fu, kiriage mangan, kazoe yakuman versus sanbaiman cap, and per-suit aka
 availability. Defaults are Tenhou-flavored.
 
-Still open: local single-hand double yakuman variants and Kansai-style
-chiitoitsu, which permits two identical pairs made from all four copies of a
-tile. The default remains standard seven-distinct-pairs chiitoitsu.
+Still open: a local double-yakuman ruleset switch for daisuushii, kokushi's
+13-sided wait, suuankou tanki, and junsei chuuren's nine-sided wait. The default
+flattens each to single yakuman. Also open is Kansai-style chiitoitsu, which
+permits two identical pairs made from all four copies of a tile; the default
+remains standard seven-distinct-pairs chiitoitsu.
 Chiitoitsu/ryanpeikou overlap follows the standard higher-scoring ryanpeikou
 interpretation; no configuration surface is planned for that convention.
 
