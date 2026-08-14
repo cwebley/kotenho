@@ -5,9 +5,9 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-259 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+261 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
-32 of 41 yaku requestable; all 41 enforceable as exclusions
+33 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
 **In one sentence:** `riichi-score` is correct and complete, and the generator
@@ -120,7 +120,7 @@ Rejection histograms identify no-yaku, assignment, and
 dora-placement pressure, validating the histogram as the authoring signal for
 low-yield specs.
 
-### 3.2 Nine yaku are excludable but not requestable
+### 3.2 Eight yaku are excludable but not requestable
 
 Rinshan/chankan, tenhou/chiihou, kokushi, and the remaining color/terminal
 yakuman templates have no placer, so requesting one is refused with a reason.
@@ -151,6 +151,9 @@ ordinary dragon yaku automatically.
 `shousuushii` pins three wind triplets and the fourth wind pair;
 `daisuushii` pins all four wind triplets. Both are requestable yakuman. The
 default ruleset deliberately keeps daisuushii at single yakuman.
+
+`chinroutou` is requestable as a terminal-only yakuman: no runs, no honors, and
+only 1/9 tiles. Its M3 mean yield is 69.4% (p10 63.0%).
 
 ### 3.3 M8 — batches *(done)*
 

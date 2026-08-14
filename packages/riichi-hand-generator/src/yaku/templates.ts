@@ -256,7 +256,15 @@ export const TEMPLATES: YakuTemplate[] = [
     incompatibleWith: ["tanyao", "pinfu", "chinitsu", "shousuushii"],
   }),
   T({ name: "tsuuiisou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "chinitsu"] }),
-  T({ name: "chinroutou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu", "honitsu"] }),
+  T({
+    name: "chinroutou",
+    han: { closed: 0, open: 0 },
+    limit: true,
+    skeleton: { noRuns: true, allTerminalOrHonorBlocks: true, pair: ["plain"] },
+    domain: { honorsAllowed: false, pair: "terminal" },
+    requestable: true,
+    incompatibleWith: ["tanyao", "pinfu", "honitsu"],
+  }),
   T({ name: "ryuuiisou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu"] }),
   T({ name: "chuuren-poutou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "chiitoitsu", "honitsu"] }),
 ];
