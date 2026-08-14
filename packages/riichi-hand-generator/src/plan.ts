@@ -30,6 +30,7 @@ export interface Domain {
   maxRank: number;
   honorsAllowed: boolean;
   honorsOnly: boolean;
+  greenOnly: boolean;
   requireHonor: boolean;
   pair: "any" | "yaochu" | "terminal" | "numbered";
   /**
@@ -66,6 +67,7 @@ export function runStarts(domain: Domain): number[] {
 /** Starts allowed for this structural run class. */
 export function runStartsFor(block: Block, domain: Domain): number[] {
   const starts = runStarts(domain);
+  if (domain.greenOnly) return block.kind === "run" ? [2] : [];
   return block.edge === "terminalRun"
     ? starts.filter((start) => start === 1 || start === 7)
     : starts;
@@ -78,6 +80,7 @@ function baseDomain(): Domain {
     maxRank: 9,
     honorsAllowed: true,
     honorsOnly: false,
+    greenOnly: false,
     requireHonor: false,
     pair: "any",
     avoidDuplicateRuns: true,
@@ -124,6 +127,12 @@ export function planTiles(
     }
     if (constraints.honorsAllowed === false) domain.honorsAllowed = false;
     if (constraints.honorsOnly) domain.honorsOnly = true;
+    if (constraints.greenOnly) {
+      domain.greenOnly = true;
+      domain.suits = ["s"];
+      domain.minRank = 2;
+      domain.maxRank = 8;
+    }
     if (constraints.requireHonor) domain.requireHonor = true;
     if (constraints.pair === "terminal" || constraints.pair === "numbered") {
       domain.pair = constraints.pair;
@@ -139,7 +148,8 @@ export function planTiles(
     yaku.includes("iipeiko") ||
     yaku.includes("ryanpeikou") ||
     yaku.includes("chanta") ||
-    yaku.includes("junchan")
+    yaku.includes("junchan") ||
+    yaku.includes("ryuuiisou")
   ) {
     domain.avoidDuplicateRuns = false;
   }

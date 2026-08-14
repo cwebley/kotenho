@@ -5,9 +5,9 @@
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
-264 tests passing   ·   36 curated fixtures, 36/36 cross-checked
+266 tests passing   ·   36 curated fixtures, 36/36 cross-checked
 44 commits          ·   9/9 generator specs at 100% answer-key agreement
-34 of 41 yaku requestable; all 41 enforceable as exclusions
+35 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
 **In one sentence:** `riichi-score` is correct and complete, and the generator
@@ -120,7 +120,7 @@ Rejection histograms identify no-yaku, assignment, and
 dora-placement pressure, validating the histogram as the authoring signal for
 low-yield specs.
 
-### 3.2 Seven yaku are excludable but not requestable
+### 3.2 Six yaku are excludable but not requestable
 
 Rinshan/chankan, tenhou/chiihou, kokushi, and the remaining color/terminal
 yakuman templates have no placer, so requesting one is refused with a reason.
@@ -159,6 +159,9 @@ only 1/9 tiles. Its M3 mean yield is 69.4% (p10 63.0%).
 hands use a controlled wind/dragon mix to avoid a second yakuman; chiitoitsu
 uses all seven honor pairs. Both shapes yield 100% in the M3 probe.
 
+`ryuuiisou` is requestable as a standard-shape green yakuman using only
+`23468s` and hatsu. Its M3 mean yield is 53.5% (p10 31.0%).
+
 ### 3.3 M8 — batches *(done)*
 
 `generate(spec, { count })` uses a single global batch budget and independent
@@ -194,8 +197,11 @@ Implemented switches: kuitan, double-wind pair 2 vs 4 fu, open-pinfu 20 vs 30
 fu, kiriage mangan, kazoe yakuman versus sanbaiman cap, and per-suit aka
 availability. Defaults are Tenhou-flavored.
 
-Still open: local single-hand double yakuman variants. Chiitoitsu/ryanpeikou overlap follows the standard
-higher-scoring ryanpeikou interpretation; no configuration surface is planned.
+Still open: local single-hand double yakuman variants and Kansai-style
+chiitoitsu, which permits two identical pairs made from all four copies of a
+tile. The default remains standard seven-distinct-pairs chiitoitsu.
+Chiitoitsu/ryanpeikou overlap follows the standard higher-scoring ryanpeikou
+interpretation; no configuration surface is planned for that convention.
 
 ### 3.6 Declared yaku and indicator state *(done)*
 

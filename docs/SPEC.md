@@ -358,6 +358,8 @@ library must eventually accommodate:
 - Double yakuman: recognised or flattened to single
 - Aka dora count
 - Chiitoitsu vs. ryanpeikou precedence conventions
+- Chiitoitsu pair uniqueness: standard seven distinct pairs versus the Kansai
+  variant that permits two identical pairs from four copies of one tile
 
 **Requirement:** ruleset differences must be expressed as a configuration
 object, not scattered through the code. v1 may hardcode one ruleset, but the

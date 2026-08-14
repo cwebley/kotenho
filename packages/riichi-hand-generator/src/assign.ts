@@ -39,6 +39,7 @@ const WIND_TILES: Record<Direction, MahjongTile> = {
 };
 const DRAGONS: MahjongTile[] = ["5z", "6z", "7z"];
 const HONORS: MahjongTile[] = ["1z", "2z", "3z", "4z", "5z", "6z", "7z"];
+const GREEN_TILES = new Set<MahjongTile>(["2s", "3s", "4s", "6s", "8s", "6z"]);
 
 const suited = (rank: number, suit: string): MahjongTile =>
   `${rank}${suit}` as MahjongTile;
@@ -138,11 +139,14 @@ function tripletOptions(block: Block, domain: Domain): MahjongTile[] {
     }
     return out;
   });
-  if (block.edge === "simple") return numbered;
+  if (block.edge === "simple") {
+    return domain.greenOnly ? numbered.filter((tile) => GREEN_TILES.has(tile)) : numbered;
+  }
   const honors = domain.honorsAllowed
     ? HONORS.filter((tile) => !domain.forbiddenTriplets.includes(tile))
     : [];
-  return [...numbered, ...honors];
+  const options = [...numbered, ...honors];
+  return domain.greenOnly ? options.filter((tile) => GREEN_TILES.has(tile)) : options;
 }
 
 /**
@@ -197,7 +201,8 @@ function pairOptions(
   const honors = domain.honorsAllowed
     ? HONORS.filter((tile) => !excluded.has(tile))
     : [];
-  return restrict([...numbered, ...honors]);
+  const options = restrict([...numbered, ...honors]);
+  return domain.greenOnly ? options.filter((tile) => GREEN_TILES.has(tile)) : options;
 }
 
 /** Where the winning tile sits in a run, given the wait. */

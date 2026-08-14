@@ -43,6 +43,8 @@ export interface DomainConstraints {
   requireHonor?: boolean;
   /** Every tile identity must be an honor. */
   honorsOnly?: boolean;
+  /** Every tile identity must be one of ryuuiisou's green tiles. */
+  greenOnly?: boolean;
   /** Restrict the pair independently of its fu class. */
   pair?: "yaochu" | "terminal" | "numbered";
 }
@@ -279,7 +281,15 @@ export const TEMPLATES: YakuTemplate[] = [
     requestable: true,
     incompatibleWith: ["tanyao", "pinfu", "honitsu"],
   }),
-  T({ name: "ryuuiisou", han: { closed: 0, open: 0 }, limit: true, requestable: false, incompatibleWith: ["tanyao", "pinfu"] }),
+  T({
+    name: "ryuuiisou",
+    han: { closed: 0, open: 0 },
+    limit: true,
+    skeleton: { shape: "standard", allSimpleBlocks: true, pair: ["plain"] },
+    domain: { greenOnly: true },
+    requestable: true,
+    incompatibleWith: ["tanyao", "pinfu"],
+  }),
   T({ name: "chuuren-poutou", han: { closed: 0, open: null }, limit: true, requestable: false, incompatibleWith: ["tanyao", "chiitoitsu", "honitsu"] }),
 ];
 

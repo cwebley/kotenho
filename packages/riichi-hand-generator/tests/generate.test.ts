@@ -271,6 +271,7 @@ describe("generate", () => {
     ["daisuushii", { yaku: ["daisuushii"] }],
     ["chinroutou", { yaku: ["chinroutou"] }],
     ["tsuuiisou", { yaku: ["tsuuiisou"] }],
+    ["ryuuiisou", { yaku: ["ryuuiisou"] }],
   ];
 
   for (const [label, spec] of yakuSpecs) {
@@ -619,6 +620,19 @@ describe("generate", () => {
       expect(result.hand.canonical.isStandardHand).toBe(handShape === "standard");
       expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["tsuuiisou"]);
     }
+  });
+
+  it("constructs green-only ryuuiisou", () => {
+    const result = generate({ yaku: ["ryuuiisou"] }, { seed: 7, budget: 3000 });
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    const tiles = [
+      ...result.hand.handInput.closedTiles,
+      result.hand.handInput.winningTile.tile,
+      ...(result.hand.handInput.openMelds ?? []).flatMap((meld) => meld.tiles),
+    ];
+    expect(tiles.every((tile) => ["2s", "3s", "4s", "6s", "8s", "6z"].includes(tile))).toBe(true);
+    expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["ryuuiisou"]);
   });
 
   it("uses the correct open and closed terminal-family han", () => {
