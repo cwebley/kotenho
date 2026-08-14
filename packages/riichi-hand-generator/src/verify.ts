@@ -33,6 +33,7 @@ export type VerifyResult =
  * still giving the controller a single deterministic decision.
  */
 const CAUSE_PRIORITY: RejectionCause[] = [
+  "yaku-mismatch",
   "fu-mismatch",
   "wait-mismatch",
   "ambiguous-wait",
@@ -109,6 +110,23 @@ export function verify(
   }
 
   const causes: RejectionCause[] = [];
+
+  // Exclusivity. Compared across the whole tied-top set, not just index 0 —
+  // when readings tie on score they are all equally correct, so a stray yaku in
+  // any of them is a stray yaku in the answer key.
+  if (spec.yaku?.length) {
+    const policy = spec.yakuPolicy ?? "exact";
+    const names = (hi: HandInterpretation): string[] =>
+      hi.yaku.map((yaku) => yaku.name).sort();
+    const want = [...spec.yaku].sort();
+    const satisfied =
+      policy === "exact"
+        ? (hi: HandInterpretation) => names(hi).join("+") === want.join("+")
+        : (hi: HandInterpretation) =>
+            want.every((name) => names(hi).includes(name));
+    if (tied.some((hi) => !satisfied(hi))) causes.push("yaku-mismatch");
+  }
+
   if (spec.fu !== undefined && tied.some((hi) => hi.fu !== spec.fu)) {
     causes.push("fu-mismatch");
   }

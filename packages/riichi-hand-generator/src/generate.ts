@@ -1,7 +1,9 @@
 import type { Direction } from "riichi-score";
 import { assignTiles } from "./assign.js";
+import { planTiles } from "./plan.js";
 import { createRng } from "./rng.js";
 import { selectSkeletons, type Skeleton } from "./skeleton.js";
+import { checkYakuFeasibility } from "./yaku/static.js";
 import type {
   AttemptRecord,
   GenerateOptions,
@@ -61,6 +63,13 @@ export function generate(
   spec: GenerateSpec = {},
   options: GenerateOptions = {},
 ): GenerateResult {
+  // Yaku contradictions are decided from the templates alone, before any shape
+  // is considered — they produce the most actionable reasons.
+  const yakuCheck = checkYakuFeasibility(spec);
+  if (!yakuCheck.ok) {
+    return { status: "unsatisfiable", reason: yakuCheck.reason! };
+  }
+
   const { candidates, reason } = selectSkeletons(spec);
   if (!candidates.length) {
     return {
@@ -117,12 +126,23 @@ export function generate(
       if (!winds) break;
 
       attempts++;
-      const assignment = assignTiles(
+      const plan = planTiles(
         skeleton,
+        spec.yaku ?? [],
         winds.roundWind,
         winds.seatWind,
         rng,
       );
+      const assignment = plan
+        ? assignTiles(skeleton, plan, winds.roundWind, winds.seatWind, rng)
+        : null;
+      if (assignment && (spec.riichi || spec.ippatsu)) {
+        assignment.handInput.gameState = {
+          ...assignment.handInput.gameState!,
+          isRiichi: Boolean(spec.riichi),
+          isIppatsu: Boolean(spec.ippatsu),
+        };
+      }
       if (!assignment) {
         const cause: RejectionCause = "assignment-failed";
         record({

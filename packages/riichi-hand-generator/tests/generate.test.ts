@@ -182,6 +182,98 @@ describe("generate", () => {
     expect(defects).toBe(0);
   });
 
+  const yakuSpecs: [string, GenerateSpec][] = [
+    ["tanyao + pinfu", { yaku: ["tanyao", "pinfu"] }],
+    ["tanyao + pinfu + sanshoku", { yaku: ["tanyao", "pinfu", "sanshoku"] }],
+    ["pinfu + ittsuu", { yaku: ["pinfu", "ittsuu"] }],
+    ["honitsu + pinfu", { yaku: ["honitsu", "pinfu"] }],
+    ["chinitsu", { yaku: ["chinitsu"] }],
+    ["toitoi + sanankou", { yaku: ["toitoi", "sanankou"] }],
+    ["chun", { yaku: ["chun"] }],
+    ["chiitoitsu + tanyao", { yaku: ["chiitoitsu", "tanyao"] }],
+    ["suuankou", { yaku: ["suuankou"] }],
+    ["iipeiko + pinfu", { yaku: ["iipeiko", "pinfu"] }],
+  ];
+
+  for (const [label, spec] of yakuSpecs) {
+    it(`produces exactly the requested yaku: ${label}`, () => {
+      const want = [...(spec.yaku ?? [])].sort().join("+");
+      let produced = 0;
+      for (let seed = 0; seed < 15; seed++) {
+        const result = generate(spec, { seed });
+        if (result.status !== "ok") continue;
+        produced++;
+        // Exclusivity holds across the whole tied-top set, not just index 0.
+        const analysis = calculate(result.hand.handInput);
+        const best = analysis.handInterpretations[0].basicPoints;
+        for (const hi of analysis.handInterpretations) {
+          if (hi.basicPoints !== best) continue;
+          expect(
+            hi.yaku
+              .map((yaku) => yaku.name)
+              .sort()
+              .join("+"),
+          ).toBe(want);
+        }
+      }
+      expect(produced).toBeGreaterThan(10);
+    });
+  }
+
+  it("proves yaku contradictions rather than searching for them", () => {
+    const cases: [GenerateSpec, string][] = [
+      // ittsuu needs 1-2-3 and 7-8-9 runs; both carry a terminal.
+      [{ yaku: ["tanyao", "ittsuu"] }, "cannot occur"],
+      [{ yaku: ["pinfu", "toitoi"] }, "cannot occur"],
+      [{ yaku: ["pinfu"], openMeldCount: 1 }, "concealed"],
+      [{ yaku: ["ippatsu"] }, "requires riichi"],
+      // A concealed tsumo always carries menzen tsumo, so an exact list must say so.
+      [
+        { yaku: ["tanyao"], closed: true, winMethod: "tsumo" },
+        "menzen-tsumo",
+      ],
+    ];
+    for (const [spec, fragment] of cases) {
+      const result = generate(spec, { seed: 1 });
+      expect(result.status).toBe("unsatisfiable");
+      if (result.status !== "unsatisfiable") continue;
+      expect(result.reason).toContain(fragment);
+    }
+  });
+
+  it("refuses yaku it cannot deliberately construct", () => {
+    const result = generate({ yaku: ["daisangen"] }, { seed: 1 });
+    expect(result.status).toBe("unsatisfiable");
+    if (result.status !== "unsatisfiable") return;
+    expect(result.reason).toContain("not requested");
+  });
+
+  it("does not call kokushi impossible", () => {
+    // Same soundness bug as chiitoitsu: a shape missing from the model turns
+    // into a false proof of impossibility.
+    const result = generate({ handShape: "kokushi" }, { seed: 4 });
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(
+      result.hand.canonical.yaku.map((yaku) => yaku.name),
+    ).toContain("kokushi-musou");
+  });
+
+  it("atLeast allows extra yaku that exact rejects", () => {
+    let exactOk = 0;
+    let atLeastOk = 0;
+    for (let seed = 0; seed < 30; seed++) {
+      if (generate({ yaku: ["pinfu"] }, { seed }).status === "ok") exactOk++;
+      if (
+        generate({ yaku: ["pinfu"], yakuPolicy: "atLeast" }, { seed }).status ===
+        "ok"
+      ) {
+        atLeastOk++;
+      }
+    }
+    expect(atLeastOk).toBeGreaterThanOrEqual(exactOk);
+  });
+
   it("honours requireUnambiguousWait", () => {
     for (let seed = 0; seed < 25; seed++) {
       const result = generate(

@@ -4,14 +4,32 @@ import type {
   HandInput,
   HandInterpretation,
   WaitType,
+  YakuName,
 } from "riichi-score";
 
 export type WinMethod = "ron" | "tsumo";
 
+/**
+ * `"exact"` — the hand has these yaku and no others. This is the default
+ * because it is what a drill needs: a learner practising tanyao should not keep
+ * tripping over sanshoku. It is also the cheaper mode, since a pinned yaku set
+ * makes han an equation rather than a search.
+ *
+ * `"atLeast"` — these yaku plus whatever else turns up.
+ */
+export type YakuPolicy = "exact" | "atLeast";
+
 /** A lesson description. Every field is optional; omitted means "generator's choice". */
 export interface GenerateSpec {
-  /** Constrain the winning shape. Kokushi is not modelled yet. */
-  handShape?: "standard" | "chiitoitsu";
+  /** The yaku the hand must have. */
+  yaku?: YakuName[];
+  /** Defaults to `"exact"`. */
+  yakuPolicy?: YakuPolicy;
+  /** Declared, never accidental. */
+  riichi?: boolean;
+  ippatsu?: boolean;
+  /** Constrain the winning shape. */
+  handShape?: "standard" | "chiitoitsu" | "kokushi";
   /** Rounded fu, exactly. */
   fu?: number;
   waitType?: WaitType;
@@ -70,6 +88,7 @@ export interface GeneratedHand {
 export type RejectionCause =
   | "invalid-hand"
   | "no-yaku"
+  | "yaku-mismatch"
   | "fu-mismatch"
   | "wait-mismatch"
   | "ambiguous-wait"

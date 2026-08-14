@@ -1,5 +1,6 @@
 import type { WaitType } from "riichi-score";
 import type { GenerateSpec } from "./types.js";
+import { skeletonSatisfies, templateFor } from "./yaku/templates.js";
 
 /**
  * A skeleton is a hand with every tile identity removed, keeping only the
@@ -18,7 +19,7 @@ export interface Block {
   edge: EdgeClass;
 }
 
-export type HandShape = "standard" | "chiitoitsu";
+export type HandShape = "standard" | "chiitoitsu" | "kokushi";
 
 export interface Skeleton {
   shape: HandShape;
@@ -222,6 +223,26 @@ export function allSkeletons(): Skeleton[] {
     });
   }
 
+  // Kokushi musou: thirteen orphans plus a duplicate, always concealed. Fu is
+  // recorded as 0 because it is meaningless for a yakuman and varies with the
+  // pair — which also means a fu-constrained spec never selects it, correctly.
+  for (const tsumo of [false, true]) {
+    out.push({
+      shape: "kokushi",
+      blocks: [],
+      pair: "plain",
+      wait: "tanki",
+      waitHost: -1,
+      tsumo,
+      fu: 0,
+      rawFu: 0,
+      menzen: true,
+      calledMelds: 0,
+      kanCount: 0,
+      pinfuShape: false,
+    });
+  }
+
   cache = out;
   return out;
 }
@@ -280,6 +301,19 @@ const FILTERS: {
     keep: (s, spec) => s.fu === spec.fu,
     reason: (spec) =>
       `no hand shape scores exactly ${spec.fu} fu under the other constraints`,
+  },
+  {
+    // Tier-1 yaku are decided by shape alone, so they filter the table rather
+    // than being aimed at during tile assignment.
+    name: "yaku",
+    applies: (spec) => (spec.yaku?.length ?? 0) > 0,
+    keep: (s, spec) =>
+      (spec.yaku ?? []).every((name) => {
+        const constraints = templateFor(name)?.skeleton;
+        return !constraints || skeletonSatisfies(s, constraints);
+      }),
+    reason: (spec) =>
+      `no hand shape supports ${(spec.yaku ?? []).join(" + ")} together with the other constraints`,
   },
 ];
 
