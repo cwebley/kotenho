@@ -285,3 +285,75 @@ describe("generate", () => {
     }
   });
 });
+
+describe("dora", () => {
+  it("reaches an exact han target by placing dora", () => {
+    for (const [spec, dora] of [
+      [{ yaku: ["tanyao"], han: 3 } as GenerateSpec, 2],
+      [{ yaku: ["pinfu"], han: 4 } as GenerateSpec, 3],
+      [{ yaku: ["chinitsu"], han: 8 } as GenerateSpec, 2],
+    ] as const) {
+      const result = generate(spec, { seed: 9, budget: 3000 });
+      expect(result.status).toBe("ok");
+      if (result.status !== "ok") continue;
+      expect(result.hand.canonical.han).toBe(spec.han);
+      expect(result.hand.canonical.dora).toBe(dora);
+    }
+  });
+
+  it("counts indicators against the four-copy limit", () => {
+    // Indicators are physical tiles: hand + omote + kan dora + ura all draw
+    // from the same 136.
+    for (let seed = 0; seed < 40; seed++) {
+      const result = generate(
+        { dora: 2, doraIndicatorCount: 2 },
+        { seed, budget: 2000 },
+      );
+      if (result.status !== "ok") continue;
+      const input = result.hand.handInput;
+      const counts = new Map<string, number>();
+      for (const tile of [
+        ...input.closedTiles,
+        input.winningTile.tile,
+        ...(input.openMelds ?? []).flatMap((meld) => meld.tiles),
+        ...(input.gameState?.doraIndicators ?? []),
+        ...(input.gameState?.uradoraIndicators ?? []),
+      ]) {
+        counts.set(tile, (counts.get(tile) ?? 0) + 1);
+      }
+      for (const [, n] of counts) expect(n).toBeLessThanOrEqual(4);
+    }
+  });
+
+  it("proves dora reachability from the shape", () => {
+    // Every tile in a chiitoitsu hand appears exactly twice, so an indicator
+    // yields 0 or 2 and an odd total cannot happen at any number of indicators.
+    for (const slots of [1, 2, 3]) {
+      const odd = generate(
+        { handShape: "chiitoitsu", dora: 1, doraIndicatorCount: slots },
+        { seed: 1 },
+      );
+      expect(odd.status).toBe("unsatisfiable");
+    }
+    // All triplets and a pair: no tile appears exactly once.
+    expect(generate({ yaku: ["toitoi"], dora: 1 }, { seed: 1 }).status).toBe(
+      "unsatisfiable",
+    );
+    // But runs stack, so three overlapping runs can supply three of one tile.
+    expect(generate({ yaku: ["pinfu"], han: 4 }, { seed: 9, budget: 3000 }).status).toBe("ok");
+  });
+
+  it("requires riichi for ura dora", () => {
+    const result = generate({ uraDora: 1 }, { seed: 1 });
+    expect(result.status).toBe("unsatisfiable");
+    if (result.status !== "unsatisfiable") return;
+    expect(result.reason).toContain("riichi");
+  });
+
+  it("proves han targets below the yaku total impossible", () => {
+    const result = generate({ yaku: ["chinitsu"], han: 2 }, { seed: 1 });
+    expect(result.status).toBe("unsatisfiable");
+    if (result.status !== "unsatisfiable") return;
+    expect(result.reason).toContain("at least");
+  });
+});

@@ -25,6 +25,17 @@ export interface GenerateSpec {
   yaku?: YakuName[];
   /** Defaults to `"exact"`. */
   yakuPolicy?: YakuPolicy;
+  /** Total han, including dora. Needs dora to be reachable — see `dora`. */
+  han?: number;
+  /** Omote dora carried by the hand. */
+  dora?: number;
+  /**
+   * Indicators face up. A property of the TABLE, not the hand — any player's
+   * kan flips one, so a kan-free hand can still face several. Defaults to 1.
+   */
+  doraIndicatorCount?: number;
+  /** Ura dora. Requires riichi, which is what reveals the ura indicators. */
+  uraDora?: number;
   /** Declared, never accidental. */
   riichi?: boolean;
   ippatsu?: boolean;
@@ -89,6 +100,8 @@ export type RejectionCause =
   | "invalid-hand"
   | "no-yaku"
   | "yaku-mismatch"
+  | "dora-unplaceable"
+  | "han-mismatch"
   | "fu-mismatch"
   | "wait-mismatch"
   | "ambiguous-wait"

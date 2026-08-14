@@ -97,7 +97,107 @@ export function checkYakuFeasibility(spec: GenerateSpec): Feasibility {
     }
   }
 
+  const doraCheck = checkDoraFeasibility(spec, templates);
+  if (!doraCheck.ok) return doraCheck;
+
   return ok;
+}
+
+/**
+ * han = yaku han + dora + ura. With the yaku set pinned, the dora requirement
+ * is a subtraction rather than a search — which makes several impossibilities
+ * decidable without touching a tile.
+ */
+function checkDoraFeasibility(
+  spec: GenerateSpec,
+  templates: YakuTemplate[],
+): Feasibility {
+  const riichiDeclared =
+    Boolean(spec.riichi) ||
+    (spec.yaku ?? []).includes("riichi") ||
+    (spec.yaku ?? []).includes("double-riichi");
+
+  if ((spec.uraDora ?? 0) > 0 && !riichiDeclared) {
+    return no(
+      "ura dora requires riichi — the ura indicators are only revealed to a player who declared it",
+    );
+  }
+  if ((spec.dora ?? 0) < 0 || (spec.uraDora ?? 0) < 0) {
+    return no("dora counts cannot be negative");
+  }
+
+  const slots = spec.doraIndicatorCount ?? 1;
+  if ((spec.dora ?? 0) > 0 && slots === 0) {
+    return no("dora requires at least one indicator");
+  }
+
+  if (spec.han === undefined || !templates.length) return ok;
+  // A yakuman scores by limit rather than han, so the equation does not apply.
+  if (templates.some((t) => t.limit)) return ok;
+  if ((spec.yakuPolicy ?? "exact") !== "exact") return ok;
+
+  const openIsOpen =
+    spec.closed === false || (spec.openMeldCount ?? 0) > 0;
+  const openIsClosed =
+    spec.closed === true ||
+    spec.openMeldCount === 0 ||
+    templates.some((t) => t.han.open === null);
+
+  const closedTotal = templates.reduce((sum, t) => sum + t.han.closed, 0);
+  const openTotal = templates.reduce((sum, t) => sum + (t.han.open ?? 0), 0);
+
+  // When openness is not pinned the yaku total is one of two values. That is
+  // still enough to prove impossibility whenever the target is below both.
+  const possibleTotals = openIsOpen
+    ? [openTotal]
+    : openIsClosed
+      ? [closedTotal]
+      : [...new Set([closedTotal, openTotal])];
+
+  if (possibleTotals.every((total) => spec.han! < total)) {
+    const lowest = Math.min(...possibleTotals);
+    return no(
+      `${(spec.yaku ?? []).join(" + ")} is at least ${lowest} han, so a total of ${spec.han} is impossible`,
+    );
+  }
+  if (possibleTotals.length !== 1) return ok;
+  const yakuHan = possibleTotals[0];
+
+  const needed = spec.han - yakuHan;
+  if (spec.dora !== undefined && spec.dora + (spec.uraDora ?? 0) !== needed) {
+    return no(
+      `${(spec.yaku ?? []).join(" + ")} is ${yakuHan} han, so reaching ${spec.han} needs ${needed} dora, not ${spec.dora + (spec.uraDora ?? 0)}`,
+    );
+  }
+  if (needed > 4 * (slots + (riichiDeclared ? slots : 0))) {
+    return no(
+      `reaching ${spec.han} han needs ${needed} dora, which ${slots} indicator(s) cannot supply`,
+    );
+  }
+  return ok;
+}
+
+/** Dora the spec requires beyond the yaku, when that is determinable. */
+export function requiredDora(
+  spec: GenerateSpec,
+): { dora: number; ura: number } | null {
+  if (spec.dora !== undefined || spec.uraDora !== undefined) {
+    return { dora: spec.dora ?? 0, ura: spec.uraDora ?? 0 };
+  }
+  if (spec.han === undefined) return null;
+  const templates = (spec.yaku ?? [])
+    .map((name) => templateFor(name))
+    .filter((t): t is YakuTemplate => Boolean(t));
+  if (!templates.length || templates.some((t) => t.limit)) return null;
+  const open =
+    spec.closed === false ||
+    (spec.openMeldCount !== undefined && spec.openMeldCount > 0);
+  const yakuHan = templates.reduce(
+    (sum, t) => sum + (open ? (t.han.open ?? 0) : t.han.closed),
+    0,
+  );
+  const needed = spec.han - yakuHan;
+  return needed >= 0 ? { dora: needed, ura: 0 } : null;
 }
 
 /** Yaku the situation forces, so the planner can request them implicitly. */

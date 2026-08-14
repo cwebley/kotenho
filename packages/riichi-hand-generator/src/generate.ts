@@ -3,7 +3,8 @@ import { assignTiles } from "./assign.js";
 import { planTiles } from "./plan.js";
 import { createRng } from "./rng.js";
 import { selectSkeletons, type Skeleton } from "./skeleton.js";
-import { checkYakuFeasibility } from "./yaku/static.js";
+import { checkYakuFeasibility, requiredDora } from "./yaku/static.js";
+import { placeDora } from "./dora.js";
 import type {
   AttemptRecord,
   GenerateOptions,
@@ -136,11 +137,47 @@ export function generate(
       const assignment = plan
         ? assignTiles(skeleton, plan, winds.roundWind, winds.seatWind, rng)
         : null;
-      if (assignment && (spec.riichi || spec.ippatsu)) {
-        assignment.handInput.gameState = {
-          ...assignment.handInput.gameState!,
-          isRiichi: Boolean(spec.riichi),
+      if (assignment) {
+        // Dora runs last: choosing indicators never changes the tiles, so it
+        // cannot disturb anything decided above. A spec silent about dora still
+        // gets a realistic face-up indicator — one worth zero.
+        const need = requiredDora(spec) ?? { dora: 0, ura: 0 };
+        const riichiDeclared =
+          Boolean(spec.riichi) ||
+          (spec.yaku ?? []).includes("riichi") ||
+          (spec.yaku ?? []).includes("double-riichi");
+        const slots = spec.doraIndicatorCount ?? 1;
+        const input = assignment.handInput;
+        const placement = placeDora(
+          [
+            ...input.closedTiles,
+            input.winningTile.tile,
+            ...(input.openMelds ?? []).flatMap((meld) => meld.tiles),
+          ],
+          slots,
+          need.dora,
+          riichiDeclared ? slots : 0,
+          need.ura,
+          rng,
+        );
+        if (!placement) {
+          record({
+            attempt: attempts,
+            stage: "verification",
+            outcome: "rejected",
+            causes: ["dora-unplaceable"],
+            primaryCause: "dora-unplaceable",
+            skeletonId: id,
+            handInput: input,
+          });
+          continue;
+        }
+        input.gameState = {
+          ...input.gameState!,
+          isRiichi: riichiDeclared,
           isIppatsu: Boolean(spec.ippatsu),
+          doraIndicators: placement.doraIndicators,
+          uradoraIndicators: placement.uradoraIndicators,
         };
       }
       if (!assignment) {

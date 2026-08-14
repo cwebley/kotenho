@@ -1,6 +1,8 @@
 import type { WaitType } from "riichi-score";
 import type { GenerateSpec } from "./types.js";
 import { skeletonSatisfies, templateFor, TEMPLATES } from "./yaku/templates.js";
+import { doraReachable } from "./dora.js";
+import { requiredDora } from "./yaku/static.js";
 
 /**
  * A skeleton is a hand with every tile identity removed, keeping only the
@@ -329,6 +331,27 @@ const FILTERS: {
       }),
     reason: (spec) =>
       `no hand shape supports ${(spec.yaku ?? []).join(" + ")} together with the other constraints`,
+  },
+  {
+    // Dora reachability is a parity question decided by shape: every tile in a
+    // chiitoitsu hand appears exactly twice, so an odd dora count is impossible
+    // no matter how many indicators are flipped.
+    name: "doraReachable",
+    applies: (spec) =>
+      spec.dora !== undefined || spec.uraDora !== undefined || spec.han !== undefined,
+    keep: (s, spec) => {
+      const need = requiredDora(spec);
+      if (!need) return true;
+      const slots = spec.doraIndicatorCount ?? 1;
+      return (
+        doraReachable(s, slots, need.dora) &&
+        doraReachable(s, slots, need.ura)
+      );
+    },
+    reason: (spec) => {
+      const need = requiredDora(spec);
+      return `no hand shape can carry exactly ${need?.dora ?? spec.dora} dora with ${spec.doraIndicatorCount ?? 1} indicator(s) under the other constraints`;
+    },
   },
   {
     // Exclusion is a shape-level operation too. Some yaku are forced by the

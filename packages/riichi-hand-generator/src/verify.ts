@@ -34,6 +34,8 @@ export type VerifyResult =
  */
 const CAUSE_PRIORITY: RejectionCause[] = [
   "yaku-mismatch",
+  "han-mismatch",
+  "dora-unplaceable",
   "fu-mismatch",
   "wait-mismatch",
   "ambiguous-wait",
@@ -129,6 +131,17 @@ export function verify(
 
   if (spec.fu !== undefined && tied.some((hi) => hi.fu !== spec.fu)) {
     causes.push("fu-mismatch");
+  }
+  // Dora is interpretation-independent — every reading has the same tiles — so
+  // it can never be the source of a tied-set disagreement.
+  if (spec.han !== undefined && tied.some((hi) => hi.han !== spec.han)) {
+    causes.push("han-mismatch");
+  }
+  if (spec.dora !== undefined && tied.some((hi) => hi.dora !== spec.dora)) {
+    causes.push("dora-unplaceable");
+  }
+  if (spec.uraDora !== undefined && tied.some((hi) => hi.uradora !== spec.uraDora)) {
+    causes.push("dora-unplaceable");
   }
   if (
     spec.waitType !== undefined &&
