@@ -9,10 +9,12 @@ export function createChiitoiListing(): YakuListing {
 }
 
 /**
- * Takes an array of sorted MahjongTiles and returns true if chiitoitsu is detected
- * TODO: next update, handle kansai chiitoi through options potentially
+ * Kansai rules may count four identical concealed tiles as two pairs.
  */
-export function detectChiitoi(closedTiles: MahjongTile[]): boolean {
+export function detectChiitoi(
+  closedTiles: MahjongTile[],
+  kansaiChiitoitsu = false,
+): boolean {
   if (closedTiles.length !== 14) {
     return false;
   }
@@ -23,16 +25,8 @@ export function detectChiitoi(closedTiles: MahjongTile[]): boolean {
     freqMap.set(tile, (freqMap.get(tile) || 0) + 1);
   }
 
-  // check that we have exactly 7 distinct tiles
-  if (freqMap.size !== 7) {
-    return false;
-  }
-
-  // each distinct tile must appear exactly twice
-  for (const [_, count] of freqMap) {
-    if (count !== 2) {
-      return false;
-    }
-  }
-  return true;
+  if (!kansaiChiitoitsu && freqMap.size !== 7) return false;
+  return [...freqMap.values()].every(
+    (count) => count === 2 || (kansaiChiitoitsu && count === 4),
+  );
 }

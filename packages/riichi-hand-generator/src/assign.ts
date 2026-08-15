@@ -234,6 +234,7 @@ function assignChiitoitsu(
   roundWind: Direction,
   seatWind: Direction,
   rng: Rng,
+  kansaiChiitoitsu: boolean,
 ): Assignment | null {
   const pool = ALL_TILES.filter((tile) => {
     if (isHonor(tile)) return domain.honorsAllowed;
@@ -242,14 +243,21 @@ function assignChiitoitsu(
     const rank = Number(tile[0]);
     return rank >= domain.minRank && rank <= domain.maxRank;
   });
-  if (pool.length < 7) return null;
+  const quadCounts = (kansaiChiitoitsu ? [0, 1, 2, 3] : [0]).filter(
+    (quads) => pool.length >= 7 - quads,
+  );
+  if (!quadCounts.length) return null;
 
-  const pairs = rng.shuffled(pool).slice(0, 7);
+  const quads = rng.pick(quadCounts);
+  const pairs = rng.shuffled(pool).slice(0, 7 - quads);
   if (domain.requireHonor && !pairs.some(isHonor)) return null;
 
   const winningTile = rng.pick(pairs);
   const closedTiles: MahjongTile[] = [];
-  for (const tile of pairs) closedTiles.push(tile, tile);
+  for (let index = 0; index < pairs.length; index++) {
+    const copies = index < quads ? 4 : 2;
+    closedTiles.push(...Array.from({ length: copies }, () => pairs[index]));
+  }
   closedTiles.splice(closedTiles.indexOf(winningTile), 1);
 
   return {
@@ -330,13 +338,21 @@ function tryAssign(
   roundWind: Direction,
   seatWind: Direction,
   rng: Rng,
+  kansaiChiitoitsu: boolean,
 ): Assignment | null {
   const { domain } = plan;
   if (skeleton.shape === "kokushi") {
     return assignKokushi(skeleton, roundWind, seatWind, rng);
   }
   if (skeleton.shape === "chiitoitsu") {
-    return assignChiitoitsu(skeleton, domain, roundWind, seatWind, rng);
+    return assignChiitoitsu(
+      skeleton,
+      domain,
+      roundWind,
+      seatWind,
+      rng,
+      kansaiChiitoitsu,
+    );
   }
   if (plan.chuuren) {
     return assignChuuren(skeleton, domain, roundWind, seatWind, rng);
@@ -477,10 +493,18 @@ export function assignTiles(
   roundWind: Direction,
   seatWind: Direction,
   rng: Rng,
+  kansaiChiitoitsu = false,
   attempts = 12,
 ): Assignment | null {
   for (let i = 0; i < attempts; i++) {
-    const assignment = tryAssign(skeleton, plan, roundWind, seatWind, rng);
+    const assignment = tryAssign(
+      skeleton,
+      plan,
+      roundWind,
+      seatWind,
+      rng,
+      kansaiChiitoitsu,
+    );
     if (assignment) return assignment;
   }
   return null;

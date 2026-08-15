@@ -60,7 +60,7 @@ describe("detectChiitoi", () => {
     const isChiitoi = detectChiitoi(testHand);
     expect(isChiitoi).toBe(false);
   });
-  it("returns false for a kansai chiitoi hand that we're not yet handling", () => {
+  it("accepts Kansai pair partitions only when enabled", () => {
     const testHand: MahjongTile[] = [
       "1m",
       "1m",
@@ -77,7 +77,18 @@ describe("detectChiitoi", () => {
       "3z",
       "3z",
     ];
-    const isChiitoi = detectChiitoi(testHand);
-    expect(isChiitoi).toBe(false);
+    expect(detectChiitoi(testHand)).toBe(false);
+    expect(detectChiitoi(testHand, true)).toBe(true);
+  });
+
+  it("accepts every legal multi-quad Kansai partition", () => {
+    const partitions: MahjongTile[][] = [
+      ["1m", "1m", "1m", "1m", "2p", "2p", "2p", "2p", "3s", "3s", "4z", "4z", "5z", "5z"],
+      ["1m", "1m", "1m", "1m", "2p", "2p", "2p", "2p", "3s", "3s", "3s", "3s", "4z", "4z"],
+    ];
+    for (const hand of partitions) {
+      expect(detectChiitoi(hand)).toBe(false);
+      expect(detectChiitoi(hand, true)).toBe(true);
+    }
   });
 });

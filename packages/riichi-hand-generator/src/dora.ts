@@ -33,9 +33,9 @@ const tally = (tiles: readonly MahjongTile[]): Map<MahjongTile, number> => {
 /**
  * Can this shape carry exactly `dora` with `slots` indicators?
  *
- * Reachability is a parity question, not a magnitude one. Every tile in a
- * chiitoitsu hand appears exactly twice, so an indicator contributes 0 or 2 and
- * an odd total is *impossible* — no number of indicators helps. An all-triplet
+ * Reachability is a parity question, not a magnitude one. Chiitoitsu indicators
+ * contribute an even number; Kansai rules may permit four copies as two pairs.
+ * An all-triplet
  * hand has no tile appearing once, so it can never carry exactly 1.
  *
  * Deliberately permissive for standard shapes with runs: overlapping runs can
@@ -46,11 +46,12 @@ export function doraReachable(
   skeleton: Skeleton,
   slots: number,
   dora: number,
+  kansaiChiitoitsu = false,
 ): boolean {
   if (dora === 0) return true;
   if (slots === 0) return false;
   if (skeleton.shape === "chiitoitsu") {
-    return dora % 2 === 0 && dora <= 2 * slots;
+    return dora % 2 === 0 && dora <= (kansaiChiitoitsu ? 4 : 2) * slots;
   }
   if (skeleton.shape === "kokushi") {
     // Thirteen singles and one pair.

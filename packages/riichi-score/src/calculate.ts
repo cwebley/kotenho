@@ -159,7 +159,10 @@ export function calculate(handInput: HandInput): HandAnalysis {
       );
     }
 
-    const isChiitoi = detectChiitoi(sortedClosedTiles);
+    const isChiitoi = detectChiitoi(
+      sortedClosedTiles,
+      gameState.ruleset?.kansaiChiitoitsu,
+    );
     if (isChiitoi) {
       handAnalysis.handInterpretations.push(
         createHandInterpretation({

@@ -362,7 +362,8 @@ library must eventually accommodate:
 - Aka dora count
 - Chiitoitsu vs. ryanpeikou precedence conventions
 - Chiitoitsu pair uniqueness: standard seven distinct pairs versus the Kansai
-  variant that permits two identical pairs from four copies of one tile
+  variant. `Ruleset.kansaiChiitoitsu` permits any legal mix of two- and
+  four-copy concealed pairs; the default remains seven distinct pairs.
 
 **Requirement:** ruleset differences must be expressed as a configuration
 object, not scattered through the code. v1 may hardcode one ruleset, but the

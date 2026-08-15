@@ -10,6 +10,8 @@ export interface Ruleset {
   kiriageMangan: boolean;
   /** Treat 13+ naturally accumulated han as yakuman rather than sanbaiman. */
   kazoeYakuman: boolean;
+  /** Permit four matching concealed tiles to count as two chiitoitsu pairs. */
+  kansaiChiitoitsu: boolean;
   /** Local single-hand double-yakuman variants. */
   doubleYakuman: {
     daisuushii: boolean;
@@ -33,6 +35,7 @@ export const TENHOU_RULESET: Readonly<Ruleset> = Object.freeze({
   openPinfuMinimumFu: 30,
   kiriageMangan: false,
   kazoeYakuman: true,
+  kansaiChiitoitsu: false,
   doubleYakuman: Object.freeze({
     daisuushii: false,
     kokushi13Wait: false,

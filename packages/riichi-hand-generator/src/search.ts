@@ -104,6 +104,7 @@ export function runSearch(
   const diagnoses: Record<string, number> = {};
   const nearMisses: NearMiss[] = [];
   const accepted: AcceptedCandidate[] = [];
+  const declared = declaredGameState(spec);
 
   const record = (entry: AttemptRecord): void => {
     for (const cause of entry.causes) {
@@ -155,7 +156,14 @@ export function runSearch(
         rng,
       );
       const assignment = plan
-        ? assignTiles(skeleton, plan, winds.roundWind, winds.seatWind, rng)
+        ? assignTiles(
+            skeleton,
+            plan,
+            winds.roundWind,
+            winds.seatWind,
+            rng,
+            declared.ruleset.kansaiChiitoitsu,
+          )
         : null;
       if (assignment) {
         // Dora runs last: choosing indicators never changes the tiles, so it
@@ -167,7 +175,6 @@ export function runSearch(
             aka: 0,
             flexibleBonus: 0,
           };
-        const declared = declaredGameState(spec);
         const slots = spec.doraIndicatorCount ?? 1;
         const input = assignment.handInput;
         input.gameState = { ...input.gameState!, ...declared };

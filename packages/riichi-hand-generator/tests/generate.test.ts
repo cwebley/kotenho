@@ -64,6 +64,35 @@ describe("skeleton space", () => {
     ).toContain("chiitoitsu");
   });
 
+  it("keeps standard chiitoitsu distinct and samples Kansai pair partitions", () => {
+    const quadCounts = (result: ReturnType<typeof generate>): number => {
+      if (result.status !== "ok") return -1;
+      const counts = new Map<string, number>();
+      for (const tile of [
+        ...result.hand.handInput.closedTiles,
+        result.hand.handInput.winningTile.tile,
+      ]) {
+        counts.set(tile, (counts.get(tile) ?? 0) + 1);
+      }
+      return [...counts.values()].filter((count) => count === 4).length;
+    };
+
+    for (let seed = 0; seed < 20; seed++) {
+      expect(quadCounts(generate({ handShape: "chiitoitsu" }, { seed }))).toBe(0);
+    }
+
+    const seen = new Set<number>();
+    for (let seed = 0; seed < 100 && seen.size < 4; seed++) {
+      const result = generate(
+        { handShape: "chiitoitsu", ruleset: { kansaiChiitoitsu: true } },
+        { seed },
+      );
+      expect(result.status).toBe("ok");
+      seen.add(quadCounts(result));
+    }
+    expect(seen).toEqual(new Set([0, 1, 2, 3]));
+  });
+
   it("gives a reason a lesson author can act on", () => {
     const result = generate({ kanCount: 5 });
     expect(result.status).toBe("unsatisfiable");
@@ -641,6 +670,34 @@ describe("generate", () => {
     }
   });
 
+  it("allows a multi-quad all-honor Kansai chiitoitsu", () => {
+    let found = false;
+    for (let seed = 0; seed < 100 && !found; seed++) {
+      const result = generate(
+        {
+          yaku: ["tsuuiisou"],
+          handShape: "chiitoitsu",
+          ruleset: { kansaiChiitoitsu: true },
+        },
+        { seed, budget: 3000 },
+      );
+      expect(result.status).toBe("ok");
+      if (result.status !== "ok") continue;
+      const tiles = [
+        ...result.hand.handInput.closedTiles,
+        result.hand.handInput.winningTile.tile,
+      ];
+      const counts = new Map<string, number>();
+      for (const tile of tiles) counts.set(tile, (counts.get(tile) ?? 0) + 1);
+      found = [...counts.values()].some((count) => count === 4);
+      if (found) {
+        expect(tiles.every((tile) => tile.endsWith("z"))).toBe(true);
+        expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toEqual(["tsuuiisou"]);
+      }
+    }
+    expect(found).toBe(true);
+  });
+
   it("constructs green-only ryuuiisou", () => {
     const result = generate({ yaku: ["ryuuiisou"] }, { seed: 7, budget: 3000 });
     expect(result.status).toBe("ok");
@@ -869,6 +926,17 @@ describe("dora", () => {
       );
       expect(odd.status).toBe("unsatisfiable");
     }
+    expect(
+      generate(
+        {
+          handShape: "chiitoitsu",
+          dora: 4,
+          doraIndicatorCount: 1,
+          ruleset: { kansaiChiitoitsu: true },
+        },
+        { seed: 1, budget: 3000 },
+      ).status,
+    ).toBe("ok");
     // All triplets and a pair: no tile appears exactly once.
     expect(generate({ yaku: ["toitoi"], dora: 1 }, { seed: 1 }).status).toBe(
       "unsatisfiable",

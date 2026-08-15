@@ -375,9 +375,8 @@ const FILTERS: {
       `no hand shape supports ${(spec.yaku ?? []).join(" + ")} together with the other constraints`,
   },
   {
-    // Dora reachability is a parity question decided by shape: every tile in a
-    // chiitoitsu hand appears exactly twice, so an odd dora count is impossible
-    // no matter how many indicators are flipped.
+    // Dora reachability is a parity question decided by shape: a chiitoitsu
+    // hand carries only even dora, including its Kansai four-copy pairs.
     name: "doraReachable",
     applies: (spec) =>
       spec.dora !== undefined || spec.uraDora !== undefined || spec.han !== undefined,
@@ -385,9 +384,10 @@ const FILTERS: {
       const need = requiredDora(spec, !s.menzen);
       if (!need) return true;
       const slots = spec.doraIndicatorCount ?? 1;
+      const kansaiChiitoitsu = createRuleset(spec.ruleset).kansaiChiitoitsu;
       return (
-        (need.flexibleBonus > 0 || doraReachable(s, slots, need.dora)) &&
-        (need.flexibleBonus > 0 || doraReachable(s, slots, need.ura))
+        (need.flexibleBonus > 0 || doraReachable(s, slots, need.dora, kansaiChiitoitsu)) &&
+        (need.flexibleBonus > 0 || doraReachable(s, slots, need.ura, kansaiChiitoitsu))
       );
     },
     reason: (spec) => {

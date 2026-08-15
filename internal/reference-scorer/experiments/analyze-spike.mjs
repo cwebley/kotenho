@@ -21,6 +21,7 @@ const SPECS = [
     { requireUnambiguousWait: true },
   ],
   ["chiitoitsu", { handShape: "chiitoitsu" }],
+  ["Kansai chiitoitsu", { handShape: "chiitoitsu", ruleset: { kansaiChiitoitsu: true } }],
   ["40 fu one called meld", { fu: 40, openMeldCount: 1 }],
   ["50 fu one kan", { fu: 50, kanCount: 1, doraIndicatorCount: 2 }],
   ["tanyao + pinfu, 3 han", { yaku: ["tanyao", "pinfu"], han: 3 }],

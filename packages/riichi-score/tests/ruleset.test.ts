@@ -109,6 +109,22 @@ describe("ruleset", () => {
     ]);
   });
 
+  it("scores a multi-quad Kansai chiitoitsu at 25 fu without a kan", () => {
+    const analysis = calculate({
+      closedTiles: [
+        "1m", "1m", "1m", "1m", "2p", "2p", "2p", "2p", "3s", "3s", "3s", "3s", "4z",
+      ],
+      winningTile: { tile: "4z", isTsumo: true },
+      gameState: createGameState({ ruleset: { kansaiChiitoitsu: true } }),
+    });
+    const kansai = analysis.handInterpretations.find((hand) =>
+      hand.yaku.some((yaku) => yaku.name === "chiitoitsu"),
+    );
+
+    expect(kansai?.fu).toBe(25);
+    expect(kansai?.yaku.map((yaku) => yaku.name)).toContain("chiitoitsu");
+  });
+
   it("applies configured single-hand double yakuman variants", () => {
     const cases: {
       name: "daisuushii" | "kokushi-musou" | "suuankou" | "chuuren-poutou";
