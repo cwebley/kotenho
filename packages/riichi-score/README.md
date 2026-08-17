@@ -1,177 +1,72 @@
 # riichi-score
 
-A JavaScript/TypeScript library for calculating riichi mahjong hand scores.
+Score completed riichi mahjong hands in JavaScript or TypeScript. The scorer
+returns every valid interpretation, ordered by kōtenhō (highest basic points
+first), with yaku, fu, dora, basic points, and payment breakdowns.
 
-## Features
+Requires Node.js 20 or later.
 
-- Automatically calculates fu (hand points), han (hand value), and final basic points.
-- Handles standard and non-standard hands, open and closed melds, seat winds, dora indicators, and more.
-- Returns details such as fu breakdown, yaku list, and seat payments.
+## Install
 
-## Installation
-
-```bash
+```sh
 npm install riichi-score
 ```
 
-## Usage
+## Score A Hand
 
-```js
+```ts
 import { calculate, createGameState } from "riichi-score";
 
-// 1. Create or structure your hand data
-const handData = {
-  closedTiles: ["1m", "2m", "3m", "9p", "9p", "9p", "4z", "4z", "4z", "7z"],
-  openMelds: [
-    {
-      type: "set",
-      tiles: ["6z", "6z", "6z"],
-      from: "north",
-    },
+const analysis = calculate({
+  closedTiles: [
+    "2m", "3m", "4m", "3p", "4p", "5p", "4s", "5s", "6s", "6m", "7m", "8m", "5z",
   ],
-  winningTile: {
-    tile: "7z",
-    from: "north", // ron
-    // for tsumo, you can set isTsumo: true and omit `from`.
-  },
+  openMelds: [],
+  winningTile: { tile: "5z", from: "west" },
   gameState: createGameState({
     roundWind: "east",
-    seatWind: "east",
-    doraIndicators: ["1m"],
-    uradoraIndicators: ["6z"],
+    seatWind: "south",
+    doraIndicators: ["4p"],
+    isRiichi: true,
   }),
-};
+});
 
-// 2. Calculate the hand result
-const result = calculate(handData);
+if (!analysis.valid) throw new Error(analysis.errors.join("\n"));
 
-/*
-{
-    "valid": true,
-    "errors": [],
-    "handInterpretations": [
-        {
-            "isStandardHand": true,
-            "waitType": "tanki",
-            "pair": {
-                "tiles": [
-                    "7z",
-                    "7z"
-                ],
-                "isFinalWait": true
-            },
-            "groups": [
-                {
-                    "tiles": [
-                        "1m",
-                        "2m",
-                        "3m"
-                    ],
-                    "type": "run",
-                    "open": false,
-                    "isFinalWait": false
-                },
-                {
-                    "tiles": [
-                        "9p",
-                        "9p",
-                        "9p"
-                    ],
-                    "type": "set",
-                    "open": false,
-                    "isFinalWait": false
-                },
-                {
-                    "tiles": [
-                        "4z",
-                        "4z",
-                        "4z"
-                    ],
-                    "type": "set",
-                    "open": false,
-                    "isFinalWait": false
-                },
-                {
-                    "tiles": [
-                        "6z",
-                        "6z",
-                        "6z"
-                    ],
-                    "type": "set",
-                    "open": true,
-                    "from": "north",
-                    "isFinalWait": false
-                }
-            ],
-            "winningTile": {
-                "tile": "7z",
-                "from": "north"
-            },
-            "gameState": {
-                "roundWind": "east",
-                "seatWind": "east",
-                "doraIndicators": [
-                    "1m"
-                ],
-                "uradoraIndicators": [
-                    "6z"
-                ],
-                "isRiichi": false,
-                "honbaCount": 0
-            },
-            "basicPoints": 2000,
-            "seatPayments": [
-                {
-                    "seat": "north",
-                    "value": 12000
-                }
-            ],
-            "totalWinnings": 12000,
-            "isTsumo": false,
-            "yaku": [
-                {
-                    "name": "hatsu",
-                    "han": 1
-                }
-            ],
-            "fuList": [
-                {
-                    "reason": "base",
-                    "value": 20
-                },
-                {
-                    "reason": "yakuhai pair",
-                    "value": 2
-                },
-                {
-                    "reason": "tanki wait",
-                    "value": 2
-                },
-                {
-                    "reason": "closed triplet of terminals/honors",
-                    "value": 8
-                },
-                {
-                    "reason": "closed triplet of terminals/honors",
-                    "value": 8
-                },
-                {
-                    "reason": "open triplet of terminals/honors",
-                    "value": 4
-                }
-            ],
-            "rawFu": 44,
-            "fu": 50,
-            "han": 4,
-            "dora": 1,
-            "akadora": 0,
-            "uradora": 2
-        }
-    ]
-}
-*/
+const score = analysis.handInterpretations[0];
+console.log(score.yaku, score.fu, score.han, score.basicPoints, score.seatPayments);
 ```
 
+Use `{ tile, isTsumo: true }` for a self-drawn winning tile. For ron, set the
+source seat with `{ tile, from }`.
+
+## Rulesets
+
+`createGameState({ ruleset })` accepts `RulesetOptions`. Defaults are
+Tenhou-flavored and exported as `TENHOU_RULESET`.
+
+Supported switches include open tanyao, double-wind pair fu, open-pinfu floor,
+kiriage mangan, kazoe yakuman, red-five supply, Kansai chiitoitsu, and the four
+local double-yakuman variants.
+
+```ts
+createGameState({
+  ruleset: {
+    openTanyao: false,
+    doubleYakuman: { daisuushii: true },
+    kansaiChiitoitsu: true,
+  },
+});
 ```
 
-```
+## Results
+
+Each `HandInterpretation` contains the winning grouping, yaku, itemized fu,
+dora/ura/aka counts, `basicPoints`, `seatPayments`, and `totalWinnings`.
+
+Named yakuman use the `limit` field. Consumers should use `limit` and
+`basicPoints` for limit hands; `han` remains the accumulated numeric han field
+and is not the limit payout.
+
+`calculate`, `createGameState`, `createRuleset`, tile notation helpers, and the
+public input/result types are exported from the package entry point.

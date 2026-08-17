@@ -51,7 +51,7 @@ drift, or publish something we explicitly never want consumed at runtime.
 
 ### Why not one merged package
 
-Rejected. `riichi-score` is independently useful, already published at v1.0.6,
+Rejected. `riichi-score` is independently useful and independently published,
 and has an audience the generator does not. Merging would force scoring
 consumers to take a hand generator they do not want, and — more importantly —
 would dissolve the package boundary that currently enforces `DESIGN.md` §8.3's
@@ -156,7 +156,7 @@ the whole design is built to prevent.
 - **Independent versions.** The two packages version separately. They are
   released together only when a change genuinely spans both.
 - **Internal dependency uses an ordinary semver range** (`"riichi-score":
-  "^1.0.6"`). npm does **not** support the `workspace:*` protocol — that is
+  "^2.0.0"`). npm does **not** support the `workspace:*` protocol — that is
   pnpm/yarn-berry only, and npm 10 fails with `EUNSUPPORTEDPROTOCOL`.
 
   npm workspaces link a workspace package **by name, regardless of whether the
@@ -167,7 +167,7 @@ the whole design is built to prevent.
 
   It matters at **publish** time, because it is what consumers resolve. If
   `riichi-score` moves to 2.0.0 while the generator still publishes
-  `^1.0.6`, published consumers get a version we never developed against.
+  `^2.0.0`, published consumers get a version we never developed against.
   Bumping the range is a release-checklist item, not an install concern.
 
 - **A workspace package's own lockfile is ignored.** npm consolidates to a
@@ -181,9 +181,11 @@ the whole design is built to prevent.
 
 ---
 
-## Migration
+## Migration History
 
-1. Rename the root directory; `git init` (it is not yet a repository).
+The following migration is complete and retained as historical context.
+
+1. Rename the root directory; initialize the repository.
 2. Move the existing docs into `docs/`.
 3. Import `riichi-score` with its history preserved:
    ```
@@ -192,8 +194,7 @@ the whole design is built to prevent.
    Dry-run against a scratch clone first and confirm history survives.
 4. Add the workspace root `package.json` and the `internal/` packages.
 5. Archive the standalone `riichi-score` repository, pointing its README here.
-6. Publish `riichi-score` once from the new location to confirm the pipeline
-   before any code changes land.
+6. Publish `riichi-score` from the new location to confirm the pipeline.
 
 Package names do not change, so existing `riichi-score` installs are unaffected.
 

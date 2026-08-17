@@ -389,8 +389,8 @@ hand, only what it must be true of.
 |---|---|
 | `yaku` | The yaku the hand must have |
 | `yakuPolicy` | `"exact"` (default) — the hand has these and **no others**; `"atLeast"` — these plus anything |
-| `han` | Exact value, or a `{min, max}` range; unspecified bonus sources may be omote, aka, or riichi-gated ura dora |
-| `fu` | Exact value, or a `{min, max}` range |
+| `han` | Exact numeric total, including yaku and dora; unspecified bonus sources may be omote, aka, or riichi-gated ura dora |
+| `fu` | Exact rounded fu value |
 | `handShape` | standard / chiitoitsu / kokushi, if constrained |
 
 **Spec inputs — structure**
@@ -398,7 +398,7 @@ hand, only what it must be true of.
 | Field | Meaning |
 |---|---|
 | `closed` / `openMeldCount` | Whether and how much the hand is opened |
-| `kans` | Count and types (ankan / daiminkan / shouminkan) |
+| `kanCount` | Total kan count; ankan and called kans are sampled where compatible |
 | `waitType` | ryanmen / kanchan / penchan / shanpon / tanki |
 | `winMethod` | ron / tsumo |
 
@@ -407,10 +407,10 @@ hand, only what it must be true of.
 | Field | Meaning |
 |---|---|
 | `roundWind`, `seatWind` | A fixed direction or allowed direction list; omitted rounds sample East/South, omitted seats sample all four winds |
-| `doraCount` | Total dora han in the hand |
+| `dora` | Exact omote dora han in the hand |
 | `doraIndicatorCount` | How many indicators are face up — **independent of the hand's own kan count** |
 | `uraDora`, `akaDora` | Exact ura and red dora han; ura requires riichi |
-| `riichi`, `ippatsu`, `haitei`, … | Declared and situational flags |
+| `yaku` | Declared and situational yaku, including riichi, ippatsu, haitei, houtei, rinshan, chankan, tenhou, and chiihou |
 | `ruleset` | `RulesetOptions` overrides for the scoring variant |
 
 **Options**
@@ -540,7 +540,7 @@ timeout.
 
 Dora are bounded by tile multiplicity and indicator count.
 
-- `doraCount ≤ doraIndicatorCount` is trivially satisfiable.
+- `dora ≤ doraIndicatorCount` is trivially satisfiable.
 - Beyond that, the hand needs repeated tiles. Every standard hand has a pair, so
   up to `2 × doraIndicatorCount` is nearly always reachable.
 - Higher targets require a tile appearing three or four times — a triplet, a
@@ -616,19 +616,12 @@ adapter layer or second scoring implementation is required.
 - **The generator never reports a score it derived itself.** One source of rules
   truth, no drift.
 
-### 8.4 Known dependency: yaku coverage
+### 8.4 Yaku coverage
 
-`riichi-score` currently implements a subset of the standard yaku. This directly
-bounds what this library can promise: **an exclusivity guarantee is only as
-strong as the scorer's ability to detect the yaku being excluded.** If the
-scorer cannot see sanshoku, a hand requested as "tanyao only" may contain
-sanshoku and be accepted, and the coach app will mark a correct learner answer
-as wrong.
-
-Extending `riichi-score`'s yaku coverage is therefore a **prerequisite for the
-`"exact"` yaku policy**, not an incremental enhancement. Structural constraints
-(fu, wait, openness, kans) are unaffected and can be honoured before coverage is
-complete.
+`riichi-score` detects the supported standard yaku set, excluding only nagashi
+mangan. This makes the generator's default `"exact"` yaku policy meaningful:
+every accepted hand is re-scored by `riichi-score`, and the whole tied-top set
+must contain exactly the requested yaku.
 
 ---
 
@@ -637,7 +630,6 @@ complete.
 - Multiple simultaneous rulesets in a single call — one configurable ruleset at
   a time
 - Nagashi mangan
-- Tenhou / chiihou (situational yakuman)
 - Three-player riichi variants
 - Generating *tenpai* (13-tile in-progress) hands — winning hands only
 - Efficiency, safety, or discard-choice exercises — scoring only
@@ -647,34 +639,35 @@ complete.
 
 ---
 
-## 10. Open Design Decisions
+## 10. Resolved API Decisions
 
-1. **Yakuhai naming.** The scorer emits five distinct yakuhai names
-   (`round-wind`, `seat-wind`, `haku`, `hatsu`, `chun`), and a double-wind
-   triplet emits two entries. What does `yaku: ["yakuhai"]` mean in a spec, and
-   what is the canonical form used for exclusivity comparison?
+1. **Yakuhai naming.** The scorer emits explicit `round-wind`, `seat-wind`,
+   `haku`, `hatsu`, and `chun` names. There is no aggregate `"yakuhai"` request
+   sugar; a double wind can emit both wind entries.
 
-2. **Default ruleset.** Which variant is v1's baseline — Tenhou, WRC, EMA?
+2. **Default ruleset.** `TENHOU_RULESET` is the default: open tanyao, 4-fu
+   double-wind pair, 30-fu open-pinfu floor, no kiriage mangan, and kazoe
+   yakuman. `RulesetOptions` exposes supported local variation, including aka
+   supply, independent double-yakuman variants, and Kansai chiitoitsu.
 
-3. **Yakuman han representation.** Is a yakuman `han: 13`, or a distinct value
-   type? How are double yakuman and kazoe yakuman expressed in a spec?
+3. **Yakuman representation.** Named yakuman use `limit`; double variants are
+   enabled through `Ruleset.doubleYakuman`. Kazoe remains a separate han-based
+   payout path. Consumers use `limit` and `basicPoints` for limit hands.
 
-4. **Ranges vs. exact values.** Should `han` and `fu` accept ranges from day
-   one, given ranges are far easier to satisfy and pedagogically adequate?
+4. **Exact values.** `han`, `fu`, `dora`, `uraDora`, and `akaDora` currently
+   accept exact numeric values. Ranges are not part of the published API.
 
-5. **Situational yaku as first-class constraints.** Should ippatsu, haitei,
-   houtei, rinshan, and chankan be requestable in v1, or only modelled well
-   enough to be *excluded*?
+5. **Situational yaku.** Declared and event yaku are requestable through `yaku`.
+   The generator carries the matching scorer `GameState` facts.
 
-6. **Ura and aka dora.** First-class spec constraints in v1, or modelled by the
-   scorer but not requestable?
+6. **Dora.** Omote, ura, and aka dora are first-class exact constraints. Ura
+   requires riichi; physical aka supply follows the selected ruleset.
 
-7. **Batch semantics.** For `count: 20`, should the library guarantee 20
-   *distinct* hands, and what does distinct mean — different tiles, or
-   structurally different?
+7. **Batches.** `count` requests normalized-distinct hands. Generation returns
+   an explicit shortfall rather than silently repeating a hand.
 
-8. **Variety metric.** What exactly does `analyze` report about solution-space
-   size, and how should a lesson-authoring UI use it?
+8. **Variety.** `analyze()` returns static feasibility, a seeded empirical yield,
+   distinct ratio, sample size, and rejection histogram.
 
 ---
 

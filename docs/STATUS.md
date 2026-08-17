@@ -1,12 +1,12 @@
 # Status and Open Items
 
-**Last updated:** 2026-08-14
+**Last updated:** 2026-08-16
 **Purpose:** a durable register of what is done and what is not. `DESIGN.md` is
 the plan; this is the ledger. When the two disagree, this file is newer.
 
 ```
 280 tests passing   ·   36 curated fixtures, 36/36 cross-checked
-44 commits          ·   9/9 generator specs at 100% answer-key agreement
+60 commits          ·   9/9 generator specs at 100% answer-key agreement
 41 of 41 yaku requestable; all 41 enforceable as exclusions
 ```
 
@@ -19,16 +19,16 @@ produces verified practice hands for structural, yaku and dora constraints.
 
 | | Milestone | State |
 |---|---|---|
-| M0 | Scorer conformance | **done** — except the ruleset config object (§3.5) |
+| M0 | Scorer conformance | **done** |
 | M1 | Convergence spike | **done** — verdict **go** |
 | M2 | Core library, structural | **done** |
 | M3 | Static engine v2 + `analyze()` | **done** — static proofs + seeded 100-attempt yield probe |
 | M4 | Yaku templates + exact policy | **done** |
 | M5 | Scorer yaku extension | **done** — full standard set bar nagashi mangan |
-| M6 | Dora planner | **done** — aka deferred (§3.4) |
+| M6 | Dora planner | **done** — omote, ura, and aka allocation |
 | M7 | Ambiguity machinery | `requireUnambiguousWait` + diagnostic flags done |
 | M8 | Variety and batches | **done** — deterministic distinct batches and explicit shortfall |
-| M9 | Ruleset config, docs, perf | **in progress** — ruleset plumbing, scorer switches, and aka allocation delivered |
+| M9 | Ruleset config, docs, perf | **in progress** — release documentation and package validation remain |
 
 ---
 
@@ -86,9 +86,9 @@ it. That has now bitten seven times (§4).
   iipeiko/ryanpeikou, sanankou/suuankou, honitsu/chinitsu, chanta/junchan/
   honroutou. The lesser one alone turns a missing yaku into a confidently wrong
   one.
-- Composite yakuman stack at `8000 × N`. Single-hand doubles (kokushi 13-wait,
-  suuankou tanki) are deliberately **not** applied — those are local rules, so
-  leaving them single is the correct default.
+- Composite yakuman stack at `8000 × N`. The default leaves local single-hand
+  doubles at one yakuman, while `Ruleset.doubleYakuman` independently enables
+  daisuushii, kokushi 13-wait, suuankou tanki, and junsei chuuren.
 - **Convergence speed says nothing about correctness.** The fastest spec once
   had the worst answer keys, precisely because the scorer was not scrutinising
   it.
@@ -138,7 +138,7 @@ triplet by picking each tile independently, so `1z 2z 4z` was a common "triplet"
 and `invalid-hand` was 43% of all rejections; and by injecting exactly one honor
 it pinned every hand to the minimum. Removing it took the yield from 47.6% to
 84.6% and let the honor-group count vary — roughly 51% of hands carry one honor
-group, 41% two, 7% three (§3.9).
+group, 41% two, 7% three (§3.10).
 
 `honroutou` is requestable with its required `toitoi` companion under the
 default exact policy: `generate({ yaku: ["honroutou", "toitoi"] })`. Its
@@ -200,7 +200,7 @@ When `han` leaves bonus han unspecified, generation samples a legal omote/aka
 split, and includes ura when riichi or double-riichi reveals it. Explicit
 `dora`, `uraDora`, or `akaDora` pin that source instead.
 
-### 3.5 Ruleset configuration object *(partly done)*
+### 3.5 Ruleset configuration object *(done for supported switches)*
 
 `riichi-score` exports `TENHOU_RULESET`, `createRuleset()`, `Ruleset`, and
 `RulesetOptions`. The resolved ruleset is carried in `GameState`; callers can
@@ -227,13 +227,45 @@ not the generator, emits the yaku. Haitei/rinshan require tsumo; houtei/chankan
 require ron; tenhou/chiihou additionally enforce dealer/non-dealer first-turn
 conditions.
 
+### 3.7 M9 publication readiness *(in progress)*
+
+Before publishing the completed ruleset matrix, perform a performance and public
+API review. There is currently no latency benchmark harness; M3 measures yield
+and diversity, not execution cost.
+
+Release decisions made:
+
+- `riichi-score` will publish as `2.0.0`.
+- `riichi-hand-generator` will publish as `0.0.1` against `riichi-score ^2.0.0`.
+- The generator entry point exposes only `generate`, `analyze`, and public
+  result/spec types. Planning, assignment, verification, skeleton, and RNG
+  helpers are internal.
+
+Deferred work:
+
+- Add CI for build, both test suites, typecheck, lint/import boundaries,
+  soundness fuzz, package artifact checks, and packed-tarball import validation.
+- Add deterministic private benchmarks for `generate()` and `analyze()` across
+  structural, low-yield fu/wait, compound-yaku, yakuman, batch, Kansai
+  chiitoitsu, double-yakuman, and static-impossibility workloads. Record warmup,
+  median, p95, attempts per accepted hand, and heap-growth deltas.
+- Establish a checked-in baseline before setting regression thresholds. Profile
+  before optimizing, preserving seeded determinism, exact-policy correctness,
+  and sound static proofs.
+- Expand curated fixtures for yakuman, event yaku, double yakuman, and Kansai
+  ruleset paths. Document whether the reference scorer remains temporary test
+  infrastructure or receives an explicit expiry.
+- Revisit named-yakuman `han` semantics before the coach consumes score results.
+  Today consumers should use `limit` and `basicPoints`; `han` remains accumulated
+  numeric han rather than the limit payout.
+
 `doraIndicatorCount` is the total visible count, including the initial
 indicator. It is an integer from 1 to 5, and must be at least `1 + kanCount` for
 kans in the winner's hand. Extra indicators remain valid to model other players'
 kans. Omote indicators are always returned in `handInput.gameState`; ura
 indicators are returned at the same count for riichi and double-riichi.
 
-### 3.7 The incompatibility table is hand-written
+### 3.8 The incompatibility table is hand-written
 
 ~80 declared pairs. The soundness fuzz (§4) now covers this surface, but only
 for specs it happens to sample.
@@ -247,7 +279,7 @@ Related: the lists are **asymmetric** — pinfu names chanta, chanta does not na
 pinfu. Behaviour is right because the check tests both directions, but reading
 one entry tells you nothing. Worth normalising at build time.
 
-### 3.8 The reference scorer needs a written expiry
+### 3.9 The reference scorer needs a written expiry
 
 `internal/reference-scorer` is a **temporary measurement instrument**, not
 permanent infrastructure — agreed but never written into its README.
@@ -256,7 +288,7 @@ Caveat: the yakuman detectors were written into *both* scorers in one sitting
 from the same understanding, which weakens the independence argument for that
 batch. Fixture coverage for yakuman is thin — 4 fixtures, 12 yaku.
 
-### 3.9 How many honor groups a chanta hand carries — shape decides the ceiling
+### 3.10 How many honor groups a chanta hand carries — shape decides the ceiling
 
 Honors can only sit in the pair or in a triplet/kan, never in a run, so a hand's
 *capacity* for honor groups is `1 + triplets`. Chanta needs at least one run, so
@@ -280,7 +312,7 @@ Pushing this toward a flat 25/25/25/25 would need per-hand honor targets and
 batch-level quotas, and would spend most of its effort chasing a bucket the
 shape space barely contains. Not worth it.
 
-### 3.10 Dora is priced against the hand, not the spec *(fixed)*
+### 3.11 Dora is priced against the hand, not the spec *(fixed)*
 
 `requiredDora` inferred open/closed from the spec alone, so it charged every
 skeleton the **closed** han price. `{ yaku: ["chanta"], han: 3 }` therefore asked
@@ -296,15 +328,15 @@ Visible behaviour change: specs that pin `han` now return open hands where the
 han arithmetic works out, instead of only closed ones. Add `closed: true` to get
 the old behaviour.
 
-### 3.11 Smaller items
+### 3.12 Smaller items
 
 - Unsatisfiable reasons blame whichever filter emptied the set, not the
   interaction: `{fu:30, closed, ron, kanchan}` says "no shape scores 30 fu" when
   the real cause is that 30-fu closed ron forces pinfu, which forces ryanmen.
 - `"test": "vitest"` in `riichi-score` is watch mode by default; `vitest run` is
   the explicit form.
-- `riichi-score@1.0.7` unpublished from the monorepo, so `prepack` is unverified
-  against a real publish. The standalone GitHub repo is still live.
+- `riichi-score@2.0.0` and `riichi-hand-generator@0.0.1` remain unpublished from
+  the monorepo. Validate packed artifacts in an external consumer before publish.
 - `nagashi mangan` unimplemented (out of scope per `SPEC.md` §9).
 
 ---

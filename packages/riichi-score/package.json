@@ -1,6 +1,7 @@
 {
   "name": "riichi-score",
-  "version": "1.0.6",
+  "version": "2.0.0",
+  "description": "Score riichi mahjong hands with yaku, fu, dora, payments, and configurable rulesets.",
   "type": "module",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -13,11 +14,11 @@
     }
   },
   "scripts": {
-    "build:cjs": "tsc --project tsconfig.cjs.json",
+    "build:cjs": "tsc --project tsconfig.cjs.json && node scripts/write-cjs-package.cjs",
     "build:esm": "tsc --project tsconfig.esm.json",
     "build": "npm run build:cjs && npm run build:esm",
     "dev": "tsc --watch",
-    "test": "vitest",
+    "test": "vitest run",
     "prepack": "npm run build"
   },
   "repository": {
@@ -25,14 +26,31 @@
     "url": "https://github.com/cwebley/kotenho.git",
     "directory": "packages/riichi-score"
   },
-  "author": "Cameron Webley cameron.webley@gmail.com",
+  "bugs": {
+    "url": "https://github.com/cwebley/kotenho/issues"
+  },
+  "homepage": "https://github.com/cwebley/kotenho#readme",
+  "author": "Cameron Webley <cameron.webley@gmail.com>",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "riichi",
+    "mahjong",
+    "japanese-mahjong",
+    "scoring",
+    "score-calculator"
+  ],
   "devDependencies": {
     "prettier": "^3.5.1",
     "typescript": "^5.0.0",
     "vitest": "^3.0.4"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ]
 }

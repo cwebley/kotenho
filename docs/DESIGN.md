@@ -1,7 +1,8 @@
 # riichi-hand-generator — Design & Implementation Plan
 
-**Status:** v3 · M0, M1 and M5 delivered; architecture validated by measurement
-rather than argument. Changes listed in Appendix B.
+**Status:** historical design record. M0-M9 implementation has substantially
+overtaken this plan; architecture was validated by measurement rather than
+argument. Changes are listed in Appendix B.
 
 > **Read `STATUS.md` first.** It is the live ledger of what is done and what is
 > open. This document is the plan and the reasoning behind it; where the two
@@ -185,7 +186,7 @@ a handful of attempts rather than one (estimate in §7).
 
 **Han** is an accounting identity: `han = Σ yaku han (openness-dependent) +
 dora + ura + aka`. With the yaku set fixed (exact policy), the required dora
-count is forced: `D = hanTarget − yakuHan`. If the spec also pins `doraCount`,
+count is forced: `D = hanTarget − yakuHan`. If the spec also pins `dora`,
 the two must agree or the static engine rejects. With `atLeast` or unspecified
 yaku, the planner samples a yaku combination from the compatibility catalog
 (§3.3) whose han sum leaves a reachable dora remainder.
@@ -909,10 +910,10 @@ condition, not permanent infrastructure.
    verdict is challenged by a large-budget generate — must never be beaten);
    completeness corpus of known-satisfiable specs (must never be called
    impossible); reason-string snapshot tests since they're UI-facing.
-   **This fuzz is not yet built, and it would already be failing:** kokushi is
-   missing from the skeleton model, so those specs are wrongly proved
-   impossible. Worth building precisely because it catches that whole class —
-   a shape omitted from the model silently becomes a false impossibility claim.
+    **[DELIVERED]** The soundness fuzz now samples random specs and challenges
+    every inferred impossibility with static checks bypassed. Kokushi and
+    chiitoitsu are modeled as dedicated skeleton shapes; the current run reports
+    zero false impossibility claims over 1,500 sampled specs.
 4. **The always-on invariant:** every hand `generate` returns is re-checked
    against its spec via a fresh `calculate()` before leaving the library
    (cheap — one extra call), and CI soak-tests 10k+ seeds nightly across the
@@ -985,7 +986,7 @@ plus honest yield reporting in `analyze`.
    milestone.
 3. **The spec's §4.10 worked example doesn't reproduce on the current scorer**
    (finding 2) — worth turning into a normative test the day it's fixed.
-4. **`doraCount` needs a definition:** recommend it mean omote dora only, with
+4. **`dora` needs a definition:** it means omote dora only, with
    `uraDoraCount`/`akaDoraCount` separate and no combined convenience field in
    v1 — ranges accepted on all three.
 5. **Result should carry search telemetry** (attempts, rejection histogram) —
@@ -1024,29 +1025,21 @@ plus honest yield reporting in `analyze`.
      double — is already handled above. That ruleset fork is cheaper than it
      looks.
 
-   **Still open: what `han` should report on a limit hand.** Today it carries
-   dora, so a kokushi with two dora reports `han: 1, limit: "yakuman"`. The
-   payout is right; the number is misleading for a learner. Options: zero `han`
-   when `limit` is set; leave it and document that consumers ignore `han` on
-   limit hands; or make han a union (`number | "yakuman" | "double-yakuman" |
-   "triple-yakuman"`). Needs research into how the common rulesets and scoring
-   UIs present this, and there is little urgency while only kokushi is detected.
+    **Current release position:** `han` remains accumulated numeric han, including
+    dora, while `limit` and `basicPoints` describe named yakuman payout. This is
+    documented for consumers and remains a coach-facing presentation decision.
 
    **Deadline:** before the coach app renders a scoring result. Nothing consumes
    `han` yet, which is the only reason this is deferrable — the moment the UI
    reads it, changing its meaning is a breaking change across two repos.
-4. **Ranges:** yes, from day one, for han/fu/dora alike — near-zero comparator
-   cost, large yield and pedagogy win; exact remains a degenerate range.
-5. **Situational yaku:** v1 models all of them well enough to *exclude*
-   (statics + flags); *requestable*: riichi/ippatsu/double-riichi only
-   (declared, trivial). Haitei/houtei/rinshan/chankan requestability deferred —
-   rinshan and chankan drag kan-interaction correctness with them.
+4. **[SUPERSEDED] Ranges:** the published API accepts exact numeric han, fu, and
+    dora values. Range support remains deferred.
+5. **[DELIVERED] Situational yaku:** all declared and event yaku are requestable
+    through `yaku`; the generator supplies matching `GameState` flags.
 6. **Ura/aka:** aka requestable in v1, allocated inside the tile assigner's
    4-copy budget as the physical tile it is — not a post-hoc substitution
    pass, which could double-spend a 5 the dora planner already committed
-   (revised per review §6); ura requestable as a range, riichi-gated.
-   Exact-ura is the worst yield corner in the system — allow it, but let
-   `analyze` warn.
+    (revised per review §6); exact ura is riichi-gated and supported.
 7. **Batch semantics:** guarantee distinct normalized hands (definition in §8)
    or return fewer with an explicit shortfall reason; never silent repeats.
 8. **Variety metric:** `analyze` returns `{feasible, reason?, estimatedYield,

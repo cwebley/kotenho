@@ -1,21 +1,67 @@
 # riichi-hand-generator
 
 Generate randomized, valid, completed Riichi Mahjong winning hands that satisfy
-scoring and structural constraints — the inverse of scoring a hand.
+scoring and structural constraints. `riichi-score` verifies every accepted hand
+and supplies the returned answer key.
+
+Requires Node.js 20 or later.
+
+## Install
+
+```sh
+npm install riichi-hand-generator
+```
+
+## Generate A Hand
 
 ```ts
-generate({
-  yaku: ["tanyao", "pinfu"],   // exclusive: these and nothing else
+import { generate } from "riichi-hand-generator";
+
+const result = generate({
+  yaku: ["tanyao", "pinfu"],
   han: 3,
   fu: 30,
   closed: true,
   waitType: "ryanmen",
-})
+}, { seed: 7 });
+
+if (result.status === "ok") {
+  console.log(result.hand.handInput, result.hand.canonical);
+}
 ```
 
-**Status: not implemented.** The specification and implementation plan are
-complete and reviewed, but kept outside this repository. Work starts in
-`riichi-score`, which must be correct before anything here can be.
+`yakuPolicy` defaults to `"exact"`: generated hands contain the requested yaku
+and no others. Use `"atLeast"` when extra yaku are acceptable.
+
+The result distinguishes:
+
+- `ok`: a scorer-verified hand and answer key.
+- `unsatisfiable`: the static engine proved the constraints impossible.
+- `exhausted`: no hand was found within the search budget.
+- `shortfall`: a batch found fewer distinct hands than requested.
+
+## Batches And Analysis
+
+```ts
+import { analyze, generate } from "riichi-hand-generator";
+
+const batch = generate(
+  { fu: 30, closed: true, winMethod: "ron" },
+  { count: 10, seed: 7 },
+);
+
+const feasibility = analyze({ yaku: ["pinfu"], han: 4 }, { seed: 7 });
+```
+
+Batch generation returns normalized-distinct hands or an explicit shortfall.
+`analyze()` reports static feasibility plus seeded empirical yield and diversity
+metrics.
+
+## Rulesets
+
+Pass `RulesetOptions` through `GenerateSpec.ruleset` to use the same scoring
+variant as `riichi-score`, including red-five availability, local double yakuman,
+and Kansai chiitoitsu.
 
 ## The one rule
 

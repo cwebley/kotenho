@@ -1,5 +1,8 @@
 # Review of `DESIGN.md`
 
+> **Historical review.** Its findings informed the delivered implementation;
+> consult `STATUS.md` for current behavior and remaining work.
+
 **Re:** riichi-hand-generator — Design & Implementation Plan
 **Verdict:** architecture accepted. Three revisions required before implementation.
 
@@ -204,7 +207,7 @@ ron-completed-triplet rule, absent riichi han, and the missing kuipinfu floor al
 corrupt kan and riichi lessons regardless of yaku coverage. M0 does precede
 structural work. SPEC §8.4 will be corrected.
 
-We also accept §13.4: `doraCount` was under-defined. Adopting your reading —
+We also accept §13.4: `dora` was under-defined. Adopting your reading —
 omote only, with `uraDoraCount` and `akaDoraCount` separate, ranges on all three,
 no combined convenience field in v1.
 

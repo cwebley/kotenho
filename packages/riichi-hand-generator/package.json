@@ -1,6 +1,6 @@
 {
   "name": "riichi-hand-generator",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Generate randomized valid Riichi Mahjong winning hands satisfying scoring constraints",
   "type": "module",
   "main": "dist/index.js",
@@ -12,7 +12,10 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -26,14 +29,28 @@
     "vitest": "^3.0.4"
   },
   "dependencies": {
-    "riichi-score": "^1.0.6"
+    "riichi-score": "^2.0.0"
   },
   "keywords": [
     "riichi",
     "mahjong",
+    "japanese-mahjong",
     "generator",
-    "scoring"
+    "scoring",
+    "hand-generator"
   ],
   "author": "Cameron Webley <cameron.webley@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cwebley/kotenho.git",
+    "directory": "packages/riichi-hand-generator"
+  },
+  "bugs": {
+    "url": "https://github.com/cwebley/kotenho/issues"
+  },
+  "homepage": "https://github.com/cwebley/kotenho#readme",
+  "engines": {
+    "node": ">=20"
+  }
 }
