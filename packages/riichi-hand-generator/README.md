@@ -119,6 +119,12 @@ A pinned winning tile fixes the wait as a side effect, so `waitType` is only
 needed to choose between readings: a 7p that completes both `567p` and a `77p`
 pair is ryanmen or tanki, and either is a legitimate drill.
 
+Pins guarantee **tiles, not a decomposition**. `["234p", "234p", "234p"]` puts
+nine tiles in the hand, and `riichi-score` may well read them as 222p/333p/444p
+and score toitoi or suuankou instead of iipeiko — both readings are of the same
+tiles, and the scorer picks whichever is worth more. Constrain `yaku` when the
+reading matters as well as the shape.
+
 Groups can be called, and kans can name their meld type — `shouminkan` is the
 one another player can rob:
 
