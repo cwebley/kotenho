@@ -23,6 +23,17 @@ const domain: Domain = {
 };
 
 describe("structural sampling", () => {
+  it("treats an empty exact yaku list as unrestricted generation", () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const ordinary = generate({ closed: false }, { seed, budget: 3_000 });
+      const atLeast = generate(
+        { closed: false, yakuPolicy: "atLeast" },
+        { seed, budget: 3_000 },
+      );
+      expect(ordinary).toEqual(atLeast);
+    }
+  });
+
   it("keeps interior and terminal run classes disjoint", () => {
     expect(
       runStartsFor({ kind: "run", called: false, edge: "simple" }, domain),

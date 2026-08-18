@@ -24,6 +24,19 @@ const skeleton = (kind: "run" | "triplet"): Skeleton => ({
 });
 
 describe("planTiles", () => {
+  it("does not apply exact anti-yaku biases without a requested yaku list", () => {
+    const plan = planTiles(
+      skeleton("triplet"),
+      [],
+      "east",
+      "south",
+      createRng(1),
+    );
+    expect(plan).not.toBeNull();
+    expect(plan!.domain.avoidDuplicateRuns).toBe(false);
+    expect(plan!.domain.forbiddenTriplets).toEqual([]);
+  });
+
   it("varies which run slots carry ittsuu", () => {
     const fixedSlotSets = new Set<string>();
     for (let seed = 0; seed < 40; seed++) {

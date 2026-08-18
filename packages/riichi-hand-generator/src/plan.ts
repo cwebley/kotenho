@@ -120,7 +120,8 @@ export function planTiles(
   yakuPolicy: YakuPolicy = "exact",
 ): TilePlan | null {
   const domain = baseDomain();
-  if (yakuPolicy === "atLeast") domain.avoidDuplicateRuns = false;
+  const avoidExtraYaku = yakuPolicy === "exact" && yaku.length > 0;
+  if (!avoidExtraYaku) domain.avoidDuplicateRuns = false;
 
   // 1. Narrow the domain. Every required yaku contributes before anything is
   //    placed, so no placer can pick a tile another yaku forbids.
@@ -170,7 +171,7 @@ export function planTiles(
   ];
   const wantsWindYakuman =
     yaku.includes("shousuushii") || yaku.includes("daisuushii");
-  if (yakuPolicy === "exact") {
+  if (avoidExtraYaku) {
     for (const [name, tile] of YAKUHAI) {
       const isWind = name === "round-wind" || name === "seat-wind";
       if (!yaku.includes(name as YakuName) && !(wantsWindYakuman && isWind)) {
