@@ -183,13 +183,60 @@ export function planTiles(
     suited(start + 1, suit),
     suited(start + 2, suit),
   ];
+  const freeRuns = rng.shuffled(runBlocks);
+  const freeTriplets = rng.shuffled(tripletBlocks);
   const commonRunStarts = (indices: number[]): number[] =>
     indices.length === 0
       ? []
       : runStartsFor(skeleton.blocks[indices[0]], domain).filter((start) =>
       indices.every((index) => runStartsFor(skeleton.blocks[index], domain).includes(start)),
       );
-  const placers = yaku
+  const removeRunSlots = (indices: number[]): void => {
+    for (const index of indices) {
+      freeRuns.splice(freeRuns.indexOf(index), 1);
+    }
+  };
+  const commonRunChoice = (
+    count: number,
+    minimumStarts = 1,
+  ): { indices: number[]; starts: number[] } | null => {
+    const choices: { indices: number[]; starts: number[] }[] = [];
+    const visit = (start: number, indices: number[]): void => {
+      if (indices.length === count) {
+        const starts = commonRunStarts(indices);
+        if (starts.length >= minimumStarts) choices.push({ indices, starts });
+        return;
+      }
+      for (let index = start; index < freeRuns.length; index++) {
+        visit(index + 1, [...indices, freeRuns[index]]);
+      }
+    };
+    visit(0, []);
+    return choices.length ? rng.pick(choices) : null;
+  };
+  const orderedRunChoice = (starts: number[]): number[] | null => {
+    const choices: number[][] = [];
+    const visit = (position: number, remaining: number[], selected: number[]): void => {
+      if (position === starts.length) {
+        choices.push(selected);
+        return;
+      }
+      for (const index of remaining) {
+        if (!runStartsFor(skeleton.blocks[index], domain).includes(starts[position])) {
+          continue;
+        }
+        visit(
+          position + 1,
+          remaining.filter((candidate) => candidate !== index),
+          [...selected, index],
+        );
+      }
+    };
+    visit(0, [...freeRuns], []);
+    return choices.length ? rng.pick(choices) : null;
+  };
+  const placers = rng
+    .shuffled(yaku)
     .filter((name) => templateFor(name)?.placer)
     .sort(
       (a, b) =>
@@ -197,8 +244,6 @@ export function planTiles(
         PLACER_ORDER[templateFor(b)!.placer!],
     );
 
-  const freeRuns = [...runBlocks];
-  const freeTriplets = [...tripletBlocks];
   let pair: MahjongTile | undefined;
   let chuuren = false;
 
@@ -206,44 +251,41 @@ export function planTiles(
     const kind = templateFor(name)!.placer!;
 
     if (kind === "ittsuu") {
-      const indices = freeRuns.slice(0, 3);
-      if (
-        indices.length < 3 ||
-        ![1, 4, 7].every((start, index) =>
-          runStartsFor(skeleton.blocks[indices[index]], domain).includes(start),
-        )
-      ) {
-        return null;
-      }
+      const indices = orderedRunChoice([1, 4, 7]);
+      if (!indices) return null;
       const suit = rng.pick(domain.suits);
-      for (const start of [1, 4, 7]) {
-        fixed.set(freeRuns.shift()!, makeRun(start, suit));
+      for (const [index, start] of indices.map((index, position) => [index, [1, 4, 7][position]] as const)) {
+        fixed.set(index, makeRun(start, suit));
       }
+      removeRunSlots(indices);
     } else if (kind === "sanshoku") {
-      const starts = commonRunStarts(freeRuns.slice(0, 3));
-      if (freeRuns.length < 3 || domain.suits.length < 3 || !starts.length) {
+      const choice = domain.suits.length < 3 ? null : commonRunChoice(3);
+      if (!choice) {
         return null;
       }
-      const start = rng.pick(starts);
-      for (const suit of SUITS) {
-        fixed.set(freeRuns.shift()!, makeRun(start, suit));
+      const start = rng.pick(choice.starts);
+      for (const [index, suit] of choice.indices.map((index, position) => [index, SUITS[position]] as const)) {
+        fixed.set(index, makeRun(start, suit));
       }
+      removeRunSlots(choice.indices);
     } else if (kind === "ryanpeikou") {
-      const starts = commonRunStarts(freeRuns.slice(0, 4));
-      if (freeRuns.length < 4 || starts.length < 2) return null;
-      const shuffled = rng.shuffled(starts);
-      for (const start of shuffled.slice(0, 2)) {
+      const choice = commonRunChoice(4, 2);
+      if (!choice) return null;
+      const selectedStarts = rng.shuffled(choice.starts).slice(0, 2);
+      for (const [start, offset] of selectedStarts.map((start, index) => [start, index * 2] as const)) {
         const suit = rng.pick(domain.suits);
-        fixed.set(freeRuns.shift()!, makeRun(start, suit));
-        fixed.set(freeRuns.shift()!, makeRun(start, suit));
+        fixed.set(choice.indices[offset], makeRun(start, suit));
+        fixed.set(choice.indices[offset + 1], makeRun(start, suit));
       }
+      removeRunSlots(choice.indices);
     } else if (kind === "iipeiko") {
-      const starts = commonRunStarts(freeRuns.slice(0, 2));
-      if (freeRuns.length < 2 || !starts.length) return null;
-      const start = rng.pick(starts);
+      const choice = commonRunChoice(2);
+      if (!choice) return null;
+      const start = rng.pick(choice.starts);
       const suit = rng.pick(domain.suits);
-      fixed.set(freeRuns.shift()!, makeRun(start, suit));
-      fixed.set(freeRuns.shift()!, makeRun(start, suit));
+      fixed.set(choice.indices[0], makeRun(start, suit));
+      fixed.set(choice.indices[1], makeRun(start, suit));
+      removeRunSlots(choice.indices);
     } else if (kind === "yakuhai") {
       if (!freeTriplets.length || !domain.honorsAllowed) return null;
       const tile =
@@ -314,8 +356,8 @@ export function planTiles(
         const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
         fixed.set(index, Array.from({ length: size }, () => tile));
       }
-      pair = DRAGONS.find((tile) => !dragons.includes(tile));
-      if (!pair) return null;
+      const used = new Set([...winds, ...dragons]);
+      pair = rng.pick(HONORS.filter((tile) => !used.has(tile)));
     } else if (kind === "chuuren") {
       chuuren = true;
     }
