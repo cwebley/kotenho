@@ -118,7 +118,7 @@ export const DEFAULT_SAMPLING_CONFIG: StructuralSamplingConfig = Object.freeze({
     chun: 5,
     "round-wind": 5,
     "seat-wind": 5,
-    "double-wind": 14,
+    "double-wind": 9,
     ittsuu: 5,
     sanshoku: 5,
   }),
