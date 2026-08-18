@@ -1,5 +1,6 @@
 import { normalizedHandSignature } from "./identity.js";
 import { deriveSeed, freshSeed } from "./rng.js";
+import { resolveSamplingConfig } from "./sampling-config.js";
 import { runSearch } from "./search.js";
 import { selectSkeletons } from "./skeleton.js";
 import { checkYakuFeasibility } from "./yaku/static.js";
@@ -30,6 +31,7 @@ function generateOne(
   spec: GenerateSpec,
   options: GenerateOptions,
 ): GenerateResult {
+  const sampling = resolveSamplingConfig(options.sampling);
   // Yaku contradictions are decided from the templates alone, before any shape
   // is considered — they produce the most actionable reasons.
   const skipInferred = options.__unsafeSkipInferredChecks ?? false;
@@ -54,6 +56,7 @@ function generateOne(
     budget: options.budget ?? DEFAULT_BUDGET,
     requireUnambiguousWait: options.requireUnambiguousWait ?? false,
     stopOnFirstSuccess: true,
+    sampling,
     onAttempt: options.onAttempt,
   });
   const candidate = run.accepted[0];
@@ -109,17 +112,24 @@ function generateBatch(
       budget: budget - attempts,
       onAttempt: options.onAttempt,
       requireUnambiguousWait: options.requireUnambiguousWait,
+      sampling: options.sampling,
       __unsafeSkipInferredChecks: options.__unsafeSkipInferredChecks,
     });
 
     if (result.status === "unsatisfiable") {
-      return { status: "unsatisfiable", requested: options.count, reason: result.reason };
+      return {
+        status: "unsatisfiable",
+        requested: options.count,
+        reason: result.reason,
+      };
     }
     if (result.status === "exhausted") {
       attempts += result.attempts;
       mergeCounts(rejections, result.rejections);
       mergeCounts(diagnoses, result.diagnoses);
-      nearMisses.push(...result.nearMisses.slice(0, NEAR_MISS_LIMIT - nearMisses.length));
+      nearMisses.push(
+        ...result.nearMisses.slice(0, NEAR_MISS_LIMIT - nearMisses.length),
+      );
       break;
     }
 
@@ -137,7 +147,14 @@ function generateBatch(
   }
 
   if (hands.length === options.count) {
-    return { status: "ok", requested: options.count, hands, attempts, rejections, diagnoses };
+    return {
+      status: "ok",
+      requested: options.count,
+      hands,
+      attempts,
+      rejections,
+      diagnoses,
+    };
   }
   if (!hands.length) {
     return {

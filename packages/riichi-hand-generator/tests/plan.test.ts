@@ -27,8 +27,11 @@ describe("planTiles", () => {
   it("varies which run slots carry ittsuu", () => {
     const fixedSlotSets = new Set<string>();
     for (let seed = 0; seed < 40; seed++) {
+      const ittsuuSkeleton = skeleton("run");
+      ittsuuSkeleton.blocks[0].edge = "terminalRun";
+      ittsuuSkeleton.blocks[1].edge = "terminalRun";
       const plan = planTiles(
-        skeleton("run"),
+        ittsuuSkeleton,
         ["ittsuu"],
         "east",
         "south",

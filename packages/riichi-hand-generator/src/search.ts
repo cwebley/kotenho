@@ -4,13 +4,22 @@ import type {
   HandInput,
   HandInterpretation,
 } from "riichi-score";
+import { calculate } from "riichi-score";
 import { assignTiles } from "./assign.js";
 import { placeAka } from "./aka.js";
 import { placeDora } from "./dora.js";
 import { planTiles } from "./plan.js";
 import { createRng, type Rng } from "./rng.js";
+import { candidateOrder } from "./sampling.js";
+import type { StructuralSamplingConfig } from "./sampling-config.js";
 import type { Skeleton } from "./skeleton.js";
-import { declaredGameState, hasRiichi, requiredDora } from "./yaku/static.js";
+import {
+  declaredGameState,
+  hasRiichi,
+  requiredDora,
+  type DeclaredGameState,
+} from "./yaku/static.js";
+import { templateFor } from "./yaku/templates.js";
 import type {
   AmbiguityFlags,
   AttemptRecord,
@@ -48,6 +57,7 @@ interface SearchOptions {
   budget: number;
   requireUnambiguousWait: boolean;
   stopOnFirstSuccess: boolean;
+  sampling: StructuralSamplingConfig;
   onAttempt?: (record: AttemptRecord) => void;
 }
 
@@ -81,8 +91,10 @@ function resolveWinds(
   const roundChoices = allowedWinds(spec.roundWind, DEFAULT_ROUND_WINDS);
   let seatChoices = allowedWinds(spec.seatWind, DIRECTIONS);
   const requested = new Set(spec.yaku ?? []);
-  if (requested.has("tenhou")) seatChoices = seatChoices.filter((seat) => seat === "east");
-  if (requested.has("chiihou")) seatChoices = seatChoices.filter((seat) => seat !== "east");
+  if (requested.has("tenhou"))
+    seatChoices = seatChoices.filter((seat) => seat === "east");
+  if (requested.has("chiihou"))
+    seatChoices = seatChoices.filter((seat) => seat !== "east");
   if (!seatChoices.length) return null;
   if (skeleton.pair === "doubleWind") {
     const shared = roundChoices.filter((wind) => seatChoices.includes(wind));
@@ -91,6 +103,27 @@ function resolveWinds(
     return { roundWind: wind, seatWind: wind };
   }
   return { roundWind: pick(roundChoices), seatWind: pick(seatChoices) };
+}
+
+function attemptGameState(
+  spec: GenerateSpec,
+  skeleton: Skeleton,
+  required: DeclaredGameState,
+  chance: number,
+  rng: Rng,
+): DeclaredGameState {
+  const requested = new Set(spec.yaku ?? []);
+  const eligible =
+    (spec.yaku?.length ?? 0) > 0 &&
+    spec.yakuPolicy === "atLeast" &&
+    skeleton.menzen &&
+    !required.isRiichi &&
+    !required.isDoubleRiichi &&
+    !required.isTenhou &&
+    !required.isChiihou &&
+    ![...requested].some((name) => templateFor(name)?.limit);
+  if (!eligible || chance === 0) return required;
+  return rng.next() < chance ? { ...required, isRiichi: true } : required;
 }
 
 /** Run the shared planner/verifier loop for either generation or analysis. */
@@ -104,7 +137,7 @@ export function runSearch(
   const diagnoses: Record<string, number> = {};
   const nearMisses: NearMiss[] = [];
   const accepted: AcceptedCandidate[] = [];
-  const declared = declaredGameState(spec);
+  const requiredState = declaredGameState(spec);
 
   const record = (entry: AttemptRecord): void => {
     for (const cause of entry.causes) {
@@ -127,15 +160,18 @@ export function runSearch(
     options.onAttempt?.(entry);
   };
 
-  // Shuffle rather than iterate in table order: skeleton choice is the largest
-  // source of variety between calls, and first-fit would make every hand for a
-  // given spec structurally identical.
-  const order = rng.shuffled(candidates);
+  // Build a seeded proposal order rather than iterating table order. The
+  // structural profile uses domain weights; uniform preserves the old policy.
+  let order = candidateOrder(candidates, spec, options.sampling, rng);
   let attempts = 0;
   let cursor = 0;
 
   while (attempts < options.budget) {
-    const skeleton = order[cursor % order.length];
+    if (cursor === order.length) {
+      order = candidateOrder(candidates, spec, options.sampling, rng);
+      cursor = 0;
+    }
+    const skeleton = order[cursor];
     cursor++;
     const id = skeletonId(skeleton);
 
@@ -146,6 +182,13 @@ export function runSearch(
     ) {
       const winds = resolveWinds(skeleton, spec, rng.pick);
       if (!winds) break;
+      const declared = attemptGameState(
+        spec,
+        skeleton,
+        requiredState,
+        options.sampling.atLeastRiichiChance,
+        rng,
+      );
 
       attempts++;
       const plan = planTiles(
@@ -154,6 +197,7 @@ export function runSearch(
         winds.roundWind,
         winds.seatWind,
         rng,
+        spec.yakuPolicy ?? "exact",
       );
       const assignment = plan
         ? assignTiles(
@@ -168,23 +212,43 @@ export function runSearch(
       if (assignment) {
         // Dora runs last: choosing indicators never changes the tiles, so it
         // cannot disturb anything decided above.
-        const need =
-          requiredDora(spec, !skeleton.menzen) ?? {
-            dora: 0,
-            ura: 0,
-            aka: 0,
-            flexibleBonus: 0,
-          };
+        let need = requiredDora(spec, !skeleton.menzen) ?? {
+          dora: 0,
+          ura: 0,
+          aka: 0,
+          flexibleBonus: 0,
+        };
         const slots = spec.doraIndicatorCount ?? 1;
         const input = assignment.handInput;
         input.gameState = { ...input.gameState!, ...declared };
+        if (
+          spec.yakuPolicy === "atLeast" &&
+          spec.han !== undefined &&
+          spec.dora === undefined &&
+          spec.uraDora === undefined &&
+          spec.akaDora === undefined
+        ) {
+          const base = calculate(input).handInterpretations[0];
+          if (base && !base.limit) {
+            const flexibleBonus = spec.han - base.han;
+            need = {
+              dora: Math.max(0, flexibleBonus),
+              ura: 0,
+              aka: 0,
+              flexibleBonus: Math.max(0, flexibleBonus),
+            };
+          }
+        }
         const bonusSplits: { dora: number; ura: number; aka: number }[] = [];
         if (need.flexibleBonus === 0) {
           bonusSplits.push(need);
         } else {
           const maxAka = Math.min(
             need.flexibleBonus,
-            Object.values(declared.ruleset.akaDora).reduce((sum, n) => sum + n, 0),
+            Object.values(declared.ruleset.akaDora).reduce(
+              (sum, n) => sum + n,
+              0,
+            ),
           );
           for (let aka = 0; aka <= maxAka; aka++) {
             const maxUra = hasRiichi(declared) ? need.flexibleBonus - aka : 0;
@@ -294,6 +358,11 @@ export function runSearch(
       if (options.stopOnFirstSuccess) {
         return { attempts, rejections, diagnoses, nearMisses, accepted };
       }
+      // analyze() models repeated independent generations, so every accepted
+      // hand starts a fresh weighted race rather than draining one full order.
+      order = candidateOrder(candidates, spec, options.sampling, rng);
+      cursor = 0;
+      break;
     }
   }
 

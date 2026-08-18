@@ -66,13 +66,7 @@ const BLOCK_TYPES: Block[] = [
 ];
 
 const PAIR_CLASSES: PairClass[] = ["plain", "yakuhai", "doubleWind"];
-const WAITS: WaitType[] = [
-  "ryanmen",
-  "kanchan",
-  "penchan",
-  "shanpon",
-  "tanki",
-];
+const WAITS: WaitType[] = ["ryanmen", "kanchan", "penchan", "shanpon", "tanki"];
 
 function blockFu(block: Block, scoredOpen: boolean): number {
   if (block.kind === "run") return 0;
@@ -102,7 +96,10 @@ export function computeFu(
   wait: WaitType,
   waitHost: number,
   tsumo: boolean,
-  ruleset: Pick<Ruleset, "doubleWindPairFu" | "openPinfuMinimumFu"> = TENHOU_RULESET,
+  ruleset: Pick<
+    Ruleset,
+    "doubleWindPairFu" | "openPinfuMinimumFu"
+  > = TENHOU_RULESET,
 ): { rawFu: number; fu: number; pinfuShape: boolean } {
   const menzen = blocks.every((block) => !block.called);
   const allRuns = blocks.every((block) => block.kind === "run");
@@ -133,7 +130,10 @@ export function computeFu(
   return { rawFu: raw, fu, pinfuShape };
 }
 
-function combinationsWithRepetition<T>(items: readonly T[], size: number): T[][] {
+function combinationsWithRepetition<T>(
+  items: readonly T[],
+  size: number,
+): T[][] {
   const out: T[][] = [];
   const walk = (start: number, current: T[]): void => {
     if (current.length === size) {
@@ -175,7 +175,13 @@ export function allSkeletons(): Skeleton[] {
           .filter((i) => i >= 0);
       } else {
         hosts = blocks
-          .map((b, i) => (b.kind === "run" && !b.called ? i : -1))
+          .map((b, i) =>
+            b.kind === "run" &&
+            !b.called &&
+            (wait !== "penchan" || b.edge === "terminalRun")
+              ? i
+              : -1,
+          )
           .filter((i) => i >= 0);
       }
       if (!hosts.length) continue;
@@ -379,15 +385,19 @@ const FILTERS: {
     // hand carries only even dora, including its Kansai four-copy pairs.
     name: "doraReachable",
     applies: (spec) =>
-      spec.dora !== undefined || spec.uraDora !== undefined || spec.han !== undefined,
+      spec.dora !== undefined ||
+      spec.uraDora !== undefined ||
+      spec.han !== undefined,
     keep: (s, spec) => {
       const need = requiredDora(spec, !s.menzen);
       if (!need) return true;
       const slots = spec.doraIndicatorCount ?? 1;
       const kansaiChiitoitsu = createRuleset(spec.ruleset).kansaiChiitoitsu;
       return (
-        (need.flexibleBonus > 0 || doraReachable(s, slots, need.dora, kansaiChiitoitsu)) &&
-        (need.flexibleBonus > 0 || doraReachable(s, slots, need.ura, kansaiChiitoitsu))
+        (need.flexibleBonus > 0 ||
+          doraReachable(s, slots, need.dora, kansaiChiitoitsu)) &&
+        (need.flexibleBonus > 0 ||
+          doraReachable(s, slots, need.ura, kansaiChiitoitsu))
       );
     },
     reason: (spec) => {
@@ -405,7 +415,9 @@ const FILTERS: {
       (spec.yaku?.length ?? 0) > 0 && (spec.yakuPolicy ?? "exact") === "exact",
     keep: (s, spec) => {
       const requested = new Set(spec.yaku ?? []);
-      const requestsYakuman = [...requested].some((name) => templateFor(name)?.limit);
+      const requestsYakuman = [...requested].some(
+        (name) => templateFor(name)?.limit,
+      );
       const subsumed = new Set<string>();
       for (const name of requested) {
         for (const child of templateFor(name)?.subsumes ?? []) {

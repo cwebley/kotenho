@@ -1,6 +1,7 @@
 import type { Direction, MahjongTile, YakuName } from "riichi-score";
 import type { Rng } from "./rng.js";
 import type { Block, Skeleton } from "./skeleton.js";
+import type { YakuPolicy } from "./types.js";
 import { templateFor } from "./yaku/templates.js";
 
 const SUITS = ["m", "p", "s"] as const;
@@ -69,10 +70,12 @@ export function runStarts(domain: Domain): number[] {
 /** Starts allowed for this structural run class. */
 export function runStartsFor(block: Block, domain: Domain): number[] {
   const starts = runStarts(domain);
-  if (domain.greenOnly) return block.kind === "run" ? [2] : [];
+  if (domain.greenOnly) {
+    return block.kind === "run" && block.edge !== "terminalRun" ? [2] : [];
+  }
   return block.edge === "terminalRun"
     ? starts.filter((start) => start === 1 || start === 7)
-    : starts;
+    : starts.filter((start) => start !== 1 && start !== 7);
 }
 
 function baseDomain(): Domain {
@@ -114,8 +117,10 @@ export function planTiles(
   roundWind: Direction,
   seatWind: Direction,
   rng: Rng,
+  yakuPolicy: YakuPolicy = "exact",
 ): TilePlan | null {
   const domain = baseDomain();
+  if (yakuPolicy === "atLeast") domain.avoidDuplicateRuns = false;
 
   // 1. Narrow the domain. Every required yaku contributes before anything is
   //    placed, so no placer can pick a tile another yaku forbids.
@@ -139,8 +144,7 @@ export function planTiles(
     if (constraints.requireHonor) domain.requireHonor = true;
     if (constraints.pair === "terminal" || constraints.pair === "numbered") {
       domain.pair = constraints.pair;
-    }
-    else if (constraints.pair === "yaochu" && domain.pair === "any") {
+    } else if (constraints.pair === "yaochu" && domain.pair === "any") {
       domain.pair = "yaochu";
     }
     if (constraints.singleSuit) domain.suits = [rng.pick(domain.suits)];
@@ -158,15 +162,20 @@ export function planTiles(
   }
 
   const YAKUHAI: [string, MahjongTile][] = [
-    ["haku", "5z"], ["hatsu", "6z"], ["chun", "7z"],
-    ["round-wind", WIND_TILES[roundWind]], ["seat-wind", WIND_TILES[seatWind]],
+    ["haku", "5z"],
+    ["hatsu", "6z"],
+    ["chun", "7z"],
+    ["round-wind", WIND_TILES[roundWind]],
+    ["seat-wind", WIND_TILES[seatWind]],
   ];
   const wantsWindYakuman =
     yaku.includes("shousuushii") || yaku.includes("daisuushii");
-  for (const [name, tile] of YAKUHAI) {
-    const isWind = name === "round-wind" || name === "seat-wind";
-    if (!yaku.includes(name as YakuName) && !(wantsWindYakuman && isWind)) {
-      domain.forbiddenTriplets.push(tile);
+  if (yakuPolicy === "exact") {
+    for (const [name, tile] of YAKUHAI) {
+      const isWind = name === "round-wind" || name === "seat-wind";
+      if (!yaku.includes(name as YakuName) && !(wantsWindYakuman && isWind)) {
+        domain.forbiddenTriplets.push(tile);
+      }
     }
   }
 
@@ -189,8 +198,10 @@ export function planTiles(
     indices.length === 0
       ? []
       : runStartsFor(skeleton.blocks[indices[0]], domain).filter((start) =>
-      indices.every((index) => runStartsFor(skeleton.blocks[index], domain).includes(start)),
-      );
+          indices.every((index) =>
+            runStartsFor(skeleton.blocks[index], domain).includes(start),
+          ),
+        );
   const removeRunSlots = (indices: number[]): void => {
     for (const index of indices) {
       freeRuns.splice(freeRuns.indexOf(index), 1);
@@ -216,13 +227,21 @@ export function planTiles(
   };
   const orderedRunChoice = (starts: number[]): number[] | null => {
     const choices: number[][] = [];
-    const visit = (position: number, remaining: number[], selected: number[]): void => {
+    const visit = (
+      position: number,
+      remaining: number[],
+      selected: number[],
+    ): void => {
       if (position === starts.length) {
         choices.push(selected);
         return;
       }
       for (const index of remaining) {
-        if (!runStartsFor(skeleton.blocks[index], domain).includes(starts[position])) {
+        if (
+          !runStartsFor(skeleton.blocks[index], domain).includes(
+            starts[position],
+          )
+        ) {
           continue;
         }
         visit(
@@ -254,7 +273,9 @@ export function planTiles(
       const indices = orderedRunChoice([1, 4, 7]);
       if (!indices) return null;
       const suit = rng.pick(domain.suits);
-      for (const [index, start] of indices.map((index, position) => [index, [1, 4, 7][position]] as const)) {
+      for (const [index, start] of indices.map(
+        (index, position) => [index, [1, 4, 7][position]] as const,
+      )) {
         fixed.set(index, makeRun(start, suit));
       }
       removeRunSlots(indices);
@@ -264,7 +285,9 @@ export function planTiles(
         return null;
       }
       const start = rng.pick(choice.starts);
-      for (const [index, suit] of choice.indices.map((index, position) => [index, SUITS[position]] as const)) {
+      for (const [index, suit] of choice.indices.map(
+        (index, position) => [index, SUITS[position]] as const,
+      )) {
         fixed.set(index, makeRun(start, suit));
       }
       removeRunSlots(choice.indices);
@@ -272,7 +295,9 @@ export function planTiles(
       const choice = commonRunChoice(4, 2);
       if (!choice) return null;
       const selectedStarts = rng.shuffled(choice.starts).slice(0, 2);
-      for (const [start, offset] of selectedStarts.map((start, index) => [start, index * 2] as const)) {
+      for (const [start, offset] of selectedStarts.map(
+        (start, index) => [start, index * 2] as const,
+      )) {
         const suit = rng.pick(domain.suits);
         fixed.set(choice.indices[offset], makeRun(start, suit));
         fixed.set(choice.indices[offset + 1], makeRun(start, suit));
@@ -289,14 +314,21 @@ export function planTiles(
     } else if (kind === "yakuhai") {
       if (!freeTriplets.length || !domain.honorsAllowed) return null;
       const tile =
-        name === "haku" ? "5z"
-        : name === "hatsu" ? "6z"
-        : name === "chun" ? "7z"
-        : name === "round-wind" ? WIND_TILES[roundWind]
-        : WIND_TILES[seatWind];
+        name === "haku"
+          ? "5z"
+          : name === "hatsu"
+            ? "6z"
+            : name === "chun"
+              ? "7z"
+              : name === "round-wind"
+                ? WIND_TILES[roundWind]
+                : WIND_TILES[seatWind];
       const index = freeTriplets.shift()!;
       const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
-      fixed.set(index, Array.from({ length: size }, () => tile as MahjongTile));
+      fixed.set(
+        index,
+        Array.from({ length: size }, () => tile as MahjongTile),
+      );
     } else if (kind === "shousangen") {
       const dragonTriplets = [...fixed.values()]
         .map((tiles) => tiles[0])
@@ -310,16 +342,24 @@ export function planTiles(
       for (const tile of selected) {
         const index = freeTriplets.shift()!;
         const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
-        fixed.set(index, Array.from({ length: size }, () => tile));
+        fixed.set(
+          index,
+          Array.from({ length: size }, () => tile),
+        );
       }
-      pair = DRAGONS.find((tile) => ![...dragonTriplets, ...selected].includes(tile));
+      pair = DRAGONS.find(
+        (tile) => ![...dragonTriplets, ...selected].includes(tile),
+      );
       if (!pair) return null;
     } else if (kind === "daisangen") {
       if (freeTriplets.length < DRAGONS.length) return null;
       for (const tile of rng.shuffled(DRAGONS)) {
         const index = freeTriplets.shift()!;
         const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
-        fixed.set(index, Array.from({ length: size }, () => tile));
+        fixed.set(
+          index,
+          Array.from({ length: size }, () => tile),
+        );
       }
     } else if (kind === "shousuushii") {
       const windTriplets = [...fixed.values()]
@@ -333,9 +373,14 @@ export function planTiles(
       for (const tile of selected) {
         const index = freeTriplets.shift()!;
         const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
-        fixed.set(index, Array.from({ length: size }, () => tile));
+        fixed.set(
+          index,
+          Array.from({ length: size }, () => tile),
+        );
       }
-      pair = WINDS.find((tile) => ![...windTriplets, ...selected].includes(tile));
+      pair = WINDS.find(
+        (tile) => ![...windTriplets, ...selected].includes(tile),
+      );
       if (!pair) return null;
       // The fourth wind would upgrade this hand to daisuushii.
       domain.forbiddenTriplets.push(...WINDS);
@@ -344,7 +389,10 @@ export function planTiles(
       for (const tile of rng.shuffled(WINDS)) {
         const index = freeTriplets.shift()!;
         const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
-        fixed.set(index, Array.from({ length: size }, () => tile));
+        fixed.set(
+          index,
+          Array.from({ length: size }, () => tile),
+        );
       }
     } else if (kind === "tsuuiisou") {
       if (skeleton.shape === "chiitoitsu") continue;
@@ -354,7 +402,10 @@ export function planTiles(
       for (const tile of [...winds, ...dragons]) {
         const index = freeTriplets.shift()!;
         const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
-        fixed.set(index, Array.from({ length: size }, () => tile));
+        fixed.set(
+          index,
+          Array.from({ length: size }, () => tile),
+        );
       }
       const used = new Set([...winds, ...dragons]);
       pair = rng.pick(HONORS.filter((tile) => !used.has(tile)));

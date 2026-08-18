@@ -1,5 +1,6 @@
 import { normalizedHandSignature } from "./identity.js";
 import { freshSeed } from "./rng.js";
+import { resolveSamplingConfig } from "./sampling-config.js";
 import { runSearch } from "./search.js";
 import { selectSkeletons } from "./skeleton.js";
 import type { AnalyzeOptions, AnalyzeResult, GenerateSpec } from "./types.js";
@@ -43,6 +44,7 @@ export function analyze(
   if (!Number.isInteger(requestedSampleSize) || requestedSampleSize < 0) {
     throw new RangeError("sampleSize must be a non-negative integer");
   }
+  const sampling = resolveSamplingConfig(options.sampling);
   if (requestedSampleSize === 0) {
     return {
       feasible: true,
@@ -52,21 +54,22 @@ export function analyze(
       rejections: {},
     };
   }
-
   const run = runSearch(spec, candidates, {
     seed: options.seed ?? freshSeed(),
     budget: requestedSampleSize,
     requireUnambiguousWait: options.requireUnambiguousWait ?? false,
     stopOnFirstSuccess: false,
+    sampling,
   });
   const identities = new Set(
-    run.accepted.map((candidate) => normalizedHandSignature(candidate.handInput)),
+    run.accepted.map((candidate) =>
+      normalizedHandSignature(candidate.handInput),
+    ),
   );
 
   return {
     feasible: true,
-    estimatedYield:
-      run.attempts === 0 ? 0 : run.accepted.length / run.attempts,
+    estimatedYield: run.attempts === 0 ? 0 : run.accepted.length / run.attempts,
     distinctRatio:
       run.accepted.length === 0 ? 0 : identities.size / run.accepted.length,
     sampleSize: run.attempts,

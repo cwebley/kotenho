@@ -7,6 +7,7 @@ import type {
   WaitType,
   YakuName,
 } from "riichi-score";
+import type { StructuralSamplingConfigOverrides } from "./sampling-config.js";
 
 export type WinMethod = "ron" | "tsumo";
 export type WindConstraint = Direction | readonly Direction[];
@@ -63,6 +64,8 @@ export interface GenerateSpec {
 
 export interface GenerateOptions {
   seed?: number;
+  /** Proposal distribution overrides; omitted values use DEFAULT_SAMPLING_CONFIG. */
+  sampling?: StructuralSamplingConfigOverrides;
   /** Maximum verifier calls before giving up. */
   budget?: number;
   /**
@@ -96,6 +99,7 @@ export interface BatchGenerateOptions extends GenerateOptions {
 
 export interface AnalyzeOptions {
   seed?: number;
+  sampling?: StructuralSamplingConfigOverrides;
   /** Number of candidate attempts in the seeded probe. Defaults to 100. */
   sampleSize?: number;
   requireUnambiguousWait?: boolean;
