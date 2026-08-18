@@ -8,7 +8,7 @@ export { formatTiles, parseTiles, sortTiles } from "./utils/tile-notation.js";
 export type { GameState, GameStateOptions } from "./models/game-state.js";
 export type { Ruleset, RulesetOptions } from "./models/ruleset.js";
 export type { HandInput, Meld } from "./models/hand-input.js";
-export type { HandAnalysis } from "./models/hand-analysis.js";
+export type { FinalWait, HandAnalysis } from "./models/hand-analysis.js";
 export type {
   HandInterpretation,
   StandardHandInterpretation,

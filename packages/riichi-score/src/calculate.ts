@@ -24,6 +24,7 @@ import { roundFu } from "./utils/round-fu.js";
 import { calculateBasicPoints } from "./utils/calculate-basic-points.js";
 import { LIMIT_BY_COUNT } from "./models/yaku.js";
 import { calcaulateSeatPayments } from "./utils/calculate-seat-payments.js";
+import { parseFinalWait } from "./parsing/parse-final-wait.js";
 
 export function calculate(handInput: HandInput): HandAnalysis {
   const handAnalysis = createHandAnalysis();
@@ -126,6 +127,13 @@ export function calculate(handInput: HandInput): HandAnalysis {
   if (handAnalysis.errors.length) {
     return handAnalysis;
   }
+
+  handAnalysis.finalWait.tiles = parseFinalWait(
+    handInput.closedTiles,
+    handInput.openMelds,
+    ruleset,
+  );
+  handAnalysis.finalWait.sideCount = handAnalysis.finalWait.tiles.length;
 
   // replace akadora with regular five tiles to make hand analysis easier
   // we'll repopulate them later

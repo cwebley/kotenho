@@ -64,6 +64,12 @@ createGameState({
 Each `HandInterpretation` contains the winning grouping, yaku, itemized fu,
 dora/ura/aka counts, `basicPoints`, `seatPayments`, and `totalWinnings`.
 
+The aggregate result also includes `finalWait`, which describes the pre-win hand
+using distinct normalized tile types. `finalWait.sideCount` can be used to
+display labels such as "3-sided wait"; it counts tile types, not physical tile
+copies or live tiles. This structural result is available even when the hand is
+not a valid winning hand because it has no yaku.
+
 Named yakuman use the `limit` field. Consumers should use `limit` and
 `basicPoints` for limit hands; `han` remains the accumulated numeric han field
 and is not the limit payout.

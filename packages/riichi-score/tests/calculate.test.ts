@@ -195,4 +195,37 @@ describe("calculate", () => {
       "pinfu",
     ]);
   });
+
+  it("reports the distinct tile types in the pre-win wait", () => {
+    const handInput: HandInput = {
+      closedTiles: [
+        "2m",
+        "3m",
+        "4m",
+        "5m",
+        "6m",
+        "1p",
+        "2p",
+        "3p",
+        "4p",
+        "5p",
+        "6p",
+        "5z",
+        "5z",
+      ],
+      openMelds: [],
+      winningTile: {
+        tile: "4m",
+        from: "north",
+      },
+      gameState: createGameState(),
+    };
+
+    const handAnalysis = calculate(handInput);
+
+    expect(handAnalysis.finalWait).toEqual({
+      tiles: ["1m", "4m", "7m"],
+      sideCount: 3,
+    });
+  });
 });
