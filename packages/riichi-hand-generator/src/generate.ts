@@ -1,9 +1,8 @@
 import { normalizedHandSignature } from "./identity.js";
+import { prepareSearchVariants } from "./open-base-yaku.js";
 import { deriveSeed, freshSeed } from "./rng.js";
 import { resolveSamplingConfig } from "./sampling-config.js";
 import { runSearch } from "./search.js";
-import { selectSkeletons } from "./skeleton.js";
-import { checkYakuFeasibility } from "./yaku/static.js";
 import type {
   BatchGenerateOptions,
   GenerateBatchResult,
@@ -32,26 +31,14 @@ function generateOne(
   options: GenerateOptions,
 ): GenerateResult {
   const sampling = resolveSamplingConfig(options.sampling);
-  // Yaku contradictions are decided from the templates alone, before any shape
-  // is considered — they produce the most actionable reasons.
   const skipInferred = options.__unsafeSkipInferredChecks ?? false;
-  if (!skipInferred) {
-    const yakuCheck = checkYakuFeasibility(spec);
-    if (!yakuCheck.ok) {
-      return { status: "unsatisfiable", reason: yakuCheck.reason! };
-    }
-  }
-
-  const { candidates, reason } = selectSkeletons(spec, skipInferred);
-  if (!candidates.length) {
-    return {
-      status: "unsatisfiable",
-      reason: reason ?? "no hand shape satisfies these constraints",
-    };
+  const prepared = prepareSearchVariants(spec, sampling, skipInferred);
+  if (!prepared.ok) {
+    return { status: "unsatisfiable", reason: prepared.reason };
   }
 
   const seed = options.seed ?? freshSeed();
-  const run = runSearch(spec, candidates, {
+  const run = runSearch(prepared.variants, {
     seed,
     budget: options.budget ?? DEFAULT_BUDGET,
     requireUnambiguousWait: options.requireUnambiguousWait ?? false,
@@ -69,6 +56,7 @@ function generateOne(
         analysis: candidate.analysis,
         canonical: candidate.canonical,
         ambiguity: candidate.ambiguity,
+        baseYakuCategory: candidate.baseYakuCategory,
         seed,
         stats: {
           attempts: run.attempts,

@@ -177,6 +177,7 @@ function pairOptions(
   const seat = WIND_TILES[seatWind];
   const restrict = (tiles: MahjongTile[]): MahjongTile[] =>
     tiles.filter((tile) => {
+      if (domain.forbiddenPairs.includes(tile)) return false;
       if (domain.pair === "any") return true;
       if (domain.pair === "numbered") return !tile.endsWith("z");
       if (tile.endsWith("z")) return domain.pair === "yaochu";

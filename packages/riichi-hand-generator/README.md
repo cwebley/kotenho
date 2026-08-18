@@ -40,10 +40,19 @@ that with `sampling.atLeastRiichiChance` in the generation options.
 
 Generation defaults to the `"structural"` sampling profile. It weights each of
 the four groups as 80% run and 20% triplet, then weights interior/terminal runs,
-pairs, and waits by their concrete structural support. This changes proposal
-order only: static feasibility remains exhaustive and `riichi-score` still
-verifies every result. Pass `sampling: { profile: "uniform" }` to use the legacy
-uniform-skeleton ordering.
+pairs, and waits by their concrete structural support. Unconstrained win methods
+use a 2:1 ron-to-tsumo prior. This changes proposal order only: static
+feasibility remains exhaustive and `riichi-score` still verifies every result.
+Pass `sampling: { profile: "uniform" }` to use the legacy uniform-skeleton
+ordering.
+
+An explicitly open request with no `yaku` (`closed: false` or a positive
+`openMeldCount`) first selects a feasible base yaku by weight, then allows
+incidental extra yaku. Configure the distribution with
+`sampling.openHandBaseYakuWeights`. The selected target is returned as
+`hand.baseYakuCategory`; `analyze()` reports accepted targets in
+`baseYakuCounts`. The `double-wind` category requires compatible round and seat
+winds and uses one value-wind triplet for both yaku.
 
 ```ts
 generate(
@@ -53,15 +62,17 @@ generate(
     sampling: {
       profile: "structural",
       atLeastRiichiChance: 0.7,
+      winMethodWeights: { ron: 2, tsumo: 1 },
       groupWeights: { run: 4, triplet: 1 },
+      openHandBaseYakuWeights: { tanyao: 15, "double-wind": 14 },
     },
   },
 );
 ```
 
-`DEFAULT_SAMPLING_CONFIG` exports the complete defaults for group, run,
-triplet, pair, and wait weights. Nested overrides are deeply merged, and the
-same configuration is accepted by `generate()` and `analyze()`.
+`DEFAULT_SAMPLING_CONFIG` exports the complete defaults for open-hand base yaku,
+group, run, triplet, pair, and wait weights. Nested overrides are deeply merged,
+and the same configuration is accepted by `generate()` and `analyze()`.
 
 The result distinguishes:
 

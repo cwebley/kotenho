@@ -1,10 +1,9 @@
 import { normalizedHandSignature } from "./identity.js";
+import { prepareSearchVariants } from "./open-base-yaku.js";
 import { freshSeed } from "./rng.js";
 import { resolveSamplingConfig } from "./sampling-config.js";
 import { runSearch } from "./search.js";
-import { selectSkeletons } from "./skeleton.js";
 import type { AnalyzeOptions, AnalyzeResult, GenerateSpec } from "./types.js";
-import { checkYakuFeasibility } from "./yaku/static.js";
 
 const DEFAULT_SAMPLE_SIZE = 100;
 
@@ -16,23 +15,12 @@ export function analyze(
   spec: GenerateSpec = {},
   options: AnalyzeOptions = {},
 ): AnalyzeResult {
-  const yakuCheck = checkYakuFeasibility(spec);
-  if (!yakuCheck.ok) {
+  const sampling = resolveSamplingConfig(options.sampling);
+  const prepared = prepareSearchVariants(spec, sampling);
+  if (!prepared.ok) {
     return {
       feasible: false,
-      reason: yakuCheck.reason,
-      estimatedYield: 0,
-      distinctRatio: 0,
-      sampleSize: 0,
-      rejections: {},
-    };
-  }
-
-  const { candidates, reason } = selectSkeletons(spec);
-  if (!candidates.length) {
-    return {
-      feasible: false,
-      reason: reason ?? "no hand shape satisfies these constraints",
+      reason: prepared.reason,
       estimatedYield: 0,
       distinctRatio: 0,
       sampleSize: 0,
@@ -44,7 +32,6 @@ export function analyze(
   if (!Number.isInteger(requestedSampleSize) || requestedSampleSize < 0) {
     throw new RangeError("sampleSize must be a non-negative integer");
   }
-  const sampling = resolveSamplingConfig(options.sampling);
   if (requestedSampleSize === 0) {
     return {
       feasible: true,
@@ -54,7 +41,7 @@ export function analyze(
       rejections: {},
     };
   }
-  const run = runSearch(spec, candidates, {
+  const run = runSearch(prepared.variants, {
     seed: options.seed ?? freshSeed(),
     budget: requestedSampleSize,
     requireUnambiguousWait: options.requireUnambiguousWait ?? false,
@@ -66,6 +53,17 @@ export function analyze(
       normalizedHandSignature(candidate.handInput),
     ),
   );
+  const baseYakuCounts = Object.fromEntries(
+    prepared.variants
+      .filter((variant) => variant.baseYakuCategory)
+      .map((variant) => [
+        variant.baseYakuCategory!,
+        run.accepted.filter(
+          (candidate) =>
+            candidate.baseYakuCategory === variant.baseYakuCategory,
+        ).length,
+      ]),
+  );
 
   return {
     feasible: true,
@@ -74,5 +72,8 @@ export function analyze(
       run.accepted.length === 0 ? 0 : identities.size / run.accepted.length,
     sampleSize: run.attempts,
     rejections: run.rejections,
+    ...(prepared.variants.some((variant) => variant.baseYakuCategory)
+      ? { baseYakuCounts }
+      : {}),
   };
 }

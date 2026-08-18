@@ -5,6 +5,8 @@ import { candidateOrder, structuralWeights } from "../src/sampling.js";
 import {
   DEFAULT_SAMPLING_CONFIG,
   resolveSamplingConfig,
+  type OpenHandBaseYakuCategory,
+  type OpenHandBaseYakuWeights,
 } from "../src/sampling-config.js";
 import { createRng } from "../src/rng.js";
 import { selectSkeletons } from "../src/skeleton.js";
@@ -20,9 +22,82 @@ const domain: Domain = {
   pair: "any",
   avoidDuplicateRuns: false,
   forbiddenTriplets: [],
+  forbiddenPairs: [],
 };
 
+const onlyBaseYaku = (
+  category: OpenHandBaseYakuCategory,
+): OpenHandBaseYakuWeights =>
+  Object.fromEntries(
+    Object.keys(DEFAULT_SAMPLING_CONFIG.openHandBaseYakuWeights).map((name) => [
+      name,
+      name === category ? 1 : 0,
+    ]),
+  ) as unknown as OpenHandBaseYakuWeights;
+
 describe("structural sampling", () => {
+  it("selects and reports a feasible base yaku for explicit open hands", () => {
+    const result = generate(
+      { closed: false },
+      {
+        seed: 7,
+        sampling: { openHandBaseYakuWeights: onlyBaseYaku("tanyao") },
+      },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.hand.baseYakuCategory).toBe("tanyao");
+    expect(result.hand.canonical.yaku.map((yaku) => yaku.name)).toContain(
+      "tanyao",
+    );
+  });
+
+  it("does not select a base yaku when openness was not requested", () => {
+    const result = generate({}, { seed: 7, budget: 3_000 });
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.hand.baseYakuCategory).toBeUndefined();
+    }
+  });
+
+  it("uses one non-pair wind triplet for the double-wind base", () => {
+    const result = generate(
+      { closed: false, roundWind: "west", seatWind: "west" },
+      {
+        seed: 11,
+        budget: 3_000,
+        sampling: { openHandBaseYakuWeights: onlyBaseYaku("double-wind") },
+      },
+    );
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    const names = result.hand.canonical.yaku.map((yaku) => yaku.name);
+    expect(result.hand.baseYakuCategory).toBe("double-wind");
+    expect(names).toContain("round-wind");
+    expect(names).toContain("seat-wind");
+    expect(result.hand.canonical.pair.tiles[0]).not.toBe("3z");
+    expect(
+      result.hand.canonical.groups.filter(
+        (group) => group.tiles[0] === "3z",
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("excludes double wind when round and seat constraints cannot overlap", () => {
+    const result = generate(
+      { closed: false, roundWind: "east", seatWind: "south" },
+      {
+        seed: 7,
+        sampling: { openHandBaseYakuWeights: onlyBaseYaku("double-wind") },
+      },
+    );
+    expect(result).toEqual({
+      status: "unsatisfiable",
+      reason:
+        "no configured open-hand base yaku is feasible under these constraints",
+    });
+  });
+
   it("treats an empty exact yaku list as unrestricted generation", () => {
     for (let seed = 0; seed < 30; seed++) {
       const ordinary = generate({ closed: false }, { seed, budget: 3_000 });
@@ -79,6 +154,25 @@ describe("structural sampling", () => {
     expect(pairMass.get("plain")).toBeCloseTo(29.25 / 34, 6);
     expect(pairMass.get("yakuhai")).toBeCloseTo(4.5 / 34, 6);
     expect(pairMass.get("doubleWind")).toBeCloseTo(0.25 / 34, 6);
+  });
+
+  it("weights unconstrained win methods two-to-one toward ron", () => {
+    const spec = { closed: false };
+    const candidates = selectSkeletons(spec).candidates;
+    const weights = structuralWeights(candidates, spec);
+    const tsumoMass = candidates
+      .filter((candidate) => candidate.tsumo)
+      .reduce((sum, candidate) => sum + weights.get(candidate)!, 0);
+    expect(tsumoMass).toBeCloseTo(1 / 3, 6);
+
+    const custom = resolveSamplingConfig({
+      winMethodWeights: { ron: 1, tsumo: 3 },
+    });
+    const customWeights = structuralWeights(candidates, spec, custom);
+    const customTsumoMass = candidates
+      .filter((candidate) => candidate.tsumo)
+      .reduce((sum, candidate) => sum + customWeights.get(candidate)!, 0);
+    expect(customTsumoMass).toBeCloseTo(3 / 4, 6);
   });
 
   it("creates a deterministic weighted order without removing support", () => {
@@ -167,11 +261,13 @@ describe("structural sampling", () => {
   it("deeply merges sampling overrides without mutating the defaults", () => {
     const config = resolveSamplingConfig({
       atLeastRiichiChance: 0.5,
+      winMethodWeights: { tsumo: 2 },
       groupWeights: { run: 3 },
       pairWeights: { differentWinds: { plain: 20 } },
       waitWeights: { interiorRun: { ryanmen: 8 } },
     });
     expect(config.atLeastRiichiChance).toBe(0.5);
+    expect(config.winMethodWeights).toEqual({ ron: 2, tsumo: 2 });
     expect(config.groupWeights).toEqual({ run: 3, triplet: 1 });
     expect(config.pairWeights.differentWinds).toEqual({
       plain: 20,
@@ -305,4 +401,23 @@ describe("structural sampling", () => {
     expect(counts.riichi / counts.total).toBeGreaterThan(0.62);
     expect(counts.riichi / counts.total).toBeLessThan(0.78);
   });
+
+  it(
+    "keeps open-hand tsumo near the configured one-third prior",
+    () => {
+      let tsumo = 0;
+      for (let seed = 0; seed < 300; seed++) {
+        const result = generate({ closed: false }, { seed, budget: 3_000 });
+        expect(result.status).toBe("ok");
+        if (result.status !== "ok") continue;
+        if (result.hand.handInput.winningTile.isTsumo) tsumo++;
+        const names = result.hand.canonical.yaku.map((yaku) => yaku.name);
+        expect(names).not.toContain("riichi");
+        expect(names).not.toContain("menzen-tsumo");
+      }
+      expect(tsumo / 300).toBeGreaterThan(0.25);
+      expect(tsumo / 300).toBeLessThan(0.42);
+    },
+    15_000,
+  );
 });

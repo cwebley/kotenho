@@ -46,6 +46,8 @@ export interface Domain {
    * measured at ~70% of the residue once shape-level exclusion was in place.
    */
   forbiddenTriplets: MahjongTile[];
+  /** Tiles already reserved for a required triplet cannot also be the pair. */
+  forbiddenPairs: MahjongTile[];
 }
 
 export interface TilePlan {
@@ -90,6 +92,7 @@ function baseDomain(): Domain {
     pair: "any",
     avoidDuplicateRuns: true,
     forbiddenTriplets: [],
+    forbiddenPairs: [],
   };
 }
 
@@ -313,7 +316,7 @@ export function planTiles(
       fixed.set(choice.indices[1], makeRun(start, suit));
       removeRunSlots(choice.indices);
     } else if (kind === "yakuhai") {
-      if (!freeTriplets.length || !domain.honorsAllowed) return null;
+      if (!domain.honorsAllowed) return null;
       const tile =
         name === "haku"
           ? "5z"
@@ -324,6 +327,10 @@ export function planTiles(
               : name === "round-wind"
                 ? WIND_TILES[roundWind]
                 : WIND_TILES[seatWind];
+      domain.forbiddenPairs.push(tile);
+      // A double wind earns both yakuhai from one physical triplet.
+      if ([...fixed.values()].some((tiles) => tiles[0] === tile)) continue;
+      if (!freeTriplets.length) return null;
       const index = freeTriplets.shift()!;
       const size = skeleton.blocks[index].kind === "kan" ? 4 : 3;
       fixed.set(

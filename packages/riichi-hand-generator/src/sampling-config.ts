@@ -1,8 +1,34 @@
 export type SamplingProfile = "structural" | "uniform";
 
+export type OpenHandBaseYakuCategory =
+  | "tanyao"
+  | "honitsu"
+  | "chinitsu"
+  | "chanta"
+  | "junchan"
+  | "sanankou"
+  | "toitoi"
+  | "haku"
+  | "hatsu"
+  | "chun"
+  | "round-wind"
+  | "seat-wind"
+  | "double-wind"
+  | "ittsuu"
+  | "sanshoku";
+
+export type OpenHandBaseYakuWeights = Readonly<
+  Record<OpenHandBaseYakuCategory, number>
+>;
+
 export interface GroupWeights {
   readonly run: number;
   readonly triplet: number;
+}
+
+export interface WinMethodWeights {
+  readonly ron: number;
+  readonly tsumo: number;
 }
 
 export interface RunWeights {
@@ -42,6 +68,8 @@ export interface WaitWeights {
 export interface StructuralSamplingConfig {
   readonly profile: SamplingProfile;
   readonly atLeastRiichiChance: number;
+  readonly winMethodWeights: WinMethodWeights;
+  readonly openHandBaseYakuWeights: OpenHandBaseYakuWeights;
   readonly groupWeights: GroupWeights;
   readonly runWeights: RunWeights;
   readonly tripletWeights: TripletWeights;
@@ -52,6 +80,8 @@ export interface StructuralSamplingConfig {
 export interface StructuralSamplingConfigOverrides {
   profile?: SamplingProfile;
   atLeastRiichiChance?: number;
+  winMethodWeights?: Partial<WinMethodWeights>;
+  openHandBaseYakuWeights?: Partial<OpenHandBaseYakuWeights>;
   groupWeights?: Partial<GroupWeights>;
   runWeights?: Partial<RunWeights>;
   tripletWeights?: Partial<TripletWeights>;
@@ -71,6 +101,27 @@ export interface StructuralSamplingConfigOverrides {
 export const DEFAULT_SAMPLING_CONFIG: StructuralSamplingConfig = Object.freeze({
   profile: "structural",
   atLeastRiichiChance: 0.7,
+  winMethodWeights: Object.freeze({
+    ron: 2,
+    tsumo: 1,
+  }),
+  openHandBaseYakuWeights: Object.freeze({
+    tanyao: 15,
+    honitsu: 12,
+    chinitsu: 3,
+    chanta: 10,
+    junchan: 3,
+    sanankou: 1,
+    toitoi: 12,
+    haku: 5,
+    hatsu: 5,
+    chun: 5,
+    "round-wind": 5,
+    "seat-wind": 5,
+    "double-wind": 14,
+    ittsuu: 5,
+    sanshoku: 5,
+  }),
   groupWeights: Object.freeze({
     run: 4,
     triplet: 1,
@@ -129,6 +180,14 @@ export function resolveSamplingConfig(
     atLeastRiichiChance:
       overrides.atLeastRiichiChance ??
       DEFAULT_SAMPLING_CONFIG.atLeastRiichiChance,
+    winMethodWeights: {
+      ...DEFAULT_SAMPLING_CONFIG.winMethodWeights,
+      ...overrides.winMethodWeights,
+    },
+    openHandBaseYakuWeights: {
+      ...DEFAULT_SAMPLING_CONFIG.openHandBaseYakuWeights,
+      ...overrides.openHandBaseYakuWeights,
+    },
     groupWeights: {
       ...DEFAULT_SAMPLING_CONFIG.groupWeights,
       ...overrides.groupWeights,
@@ -182,6 +241,11 @@ export function resolveSamplingConfig(
     );
   }
   validateWeights("sampling.groupWeights", config.groupWeights);
+  validateWeights("sampling.winMethodWeights", config.winMethodWeights);
+  validateWeights(
+    "sampling.openHandBaseYakuWeights",
+    config.openHandBaseYakuWeights,
+  );
   validateWeights("sampling.runWeights", config.runWeights);
   validateWeights("sampling.tripletWeights", config.tripletWeights);
   validateWeights(

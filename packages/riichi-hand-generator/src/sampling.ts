@@ -177,10 +177,25 @@ export function structuralWeights(
     strata.set(key, members);
   }
 
-  for (const members of strata.values()) {
-    // Preserve current shape/win/open/kan mass in this first profile. Weighting
-    // only replaces record multiplicity inside a comparable structural stratum.
-    const stratumMass = members.length / candidates.length;
+  const stratumWeights = new Map<string, number>();
+  for (const [key, members] of strata) {
+    const methodWeight = members[0].tsumo
+      ? config.winMethodWeights.tsumo
+      : config.winMethodWeights.ron;
+    stratumWeights.set(key, members.length * methodWeight);
+  }
+  const stratumWeightTotal = [...stratumWeights.values()].reduce(
+    (sum, weight) => sum + weight,
+    0,
+  );
+
+  for (const [key, members] of strata) {
+    // Preserve current shape/open/kan mass, then apply the configured win-method
+    // prior. Hard constraints condition this naturally to the remaining method.
+    const stratumMass =
+      stratumWeightTotal > 0
+        ? stratumWeights.get(key)! / stratumWeightTotal
+        : members.length / candidates.length;
     if (members[0].shape !== "standard") {
       for (const member of members) {
         weights.set(member, stratumMass / members.length);

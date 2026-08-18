@@ -8,10 +8,14 @@ import { calculate } from "riichi-score";
 import { assignTiles } from "./assign.js";
 import { placeAka } from "./aka.js";
 import { placeDora } from "./dora.js";
+import type { SearchVariant } from "./open-base-yaku.js";
 import { planTiles } from "./plan.js";
 import { createRng, type Rng } from "./rng.js";
 import { candidateOrder } from "./sampling.js";
-import type { StructuralSamplingConfig } from "./sampling-config.js";
+import type {
+  OpenHandBaseYakuCategory,
+  StructuralSamplingConfig,
+} from "./sampling-config.js";
 import type { Skeleton } from "./skeleton.js";
 import {
   declaredGameState,
@@ -42,6 +46,7 @@ export interface AcceptedCandidate {
   canonical: HandInterpretation;
   ambiguity: AmbiguityFlags;
   diagnosis: IntendedReadingDiagnosis;
+  baseYakuCategory?: OpenHandBaseYakuCategory;
 }
 
 export interface SearchRun {
@@ -87,6 +92,7 @@ function resolveWinds(
   skeleton: Skeleton,
   spec: GenerateSpec,
   pick: <T>(items: readonly T[]) => T,
+  forceSameWind = false,
 ): { roundWind: Direction; seatWind: Direction } | null {
   const roundChoices = allowedWinds(spec.roundWind, DEFAULT_ROUND_WINDS);
   let seatChoices = allowedWinds(spec.seatWind, DIRECTIONS);
@@ -96,7 +102,7 @@ function resolveWinds(
   if (requested.has("chiihou"))
     seatChoices = seatChoices.filter((seat) => seat !== "east");
   if (!seatChoices.length) return null;
-  if (skeleton.pair === "doubleWind") {
+  if (forceSameWind || skeleton.pair === "doubleWind") {
     const shared = roundChoices.filter((wind) => seatChoices.includes(wind));
     if (!shared.length) return null;
     const wind = pick(shared);
@@ -126,10 +132,20 @@ function attemptGameState(
   return rng.next() < chance ? { ...required, isRiichi: true } : required;
 }
 
+function pickVariant(variants: SearchVariant[], rng: Rng): SearchVariant {
+  if (variants.length === 1) return variants[0];
+  const total = variants.reduce((sum, variant) => sum + variant.weight, 0);
+  let target = rng.next() * total;
+  for (const variant of variants) {
+    target -= variant.weight;
+    if (target < 0) return variant;
+  }
+  return variants[variants.length - 1];
+}
+
 /** Run the shared planner/verifier loop for either generation or analysis. */
 export function runSearch(
-  spec: GenerateSpec,
-  candidates: Skeleton[],
+  variants: SearchVariant[],
   options: SearchOptions,
 ): SearchRun {
   const rng: Rng = createRng(options.seed);
@@ -137,27 +153,43 @@ export function runSearch(
   const diagnoses: Record<string, number> = {};
   const nearMisses: NearMiss[] = [];
   const accepted: AcceptedCandidate[] = [];
-  const requiredState = declaredGameState(spec);
+  let variant = pickVariant(variants, rng);
+  let spec = variant.spec;
+  let candidates = variant.candidates;
+  let requiredState = declaredGameState(spec);
 
   const record = (entry: AttemptRecord): void => {
-    for (const cause of entry.causes) {
+    const attributed = {
+      ...entry,
+      baseYakuCategory: entry.baseYakuCategory ?? variant.baseYakuCategory,
+    };
+    for (const cause of attributed.causes) {
       rejections[cause] = (rejections[cause] ?? 0) + 1;
     }
-    if (entry.diagnosis) {
-      diagnoses[entry.diagnosis] = (diagnoses[entry.diagnosis] ?? 0) + 1;
+    if (attributed.diagnosis) {
+      diagnoses[attributed.diagnosis] =
+        (diagnoses[attributed.diagnosis] ?? 0) + 1;
     }
     if (
-      entry.causes.length === 1 &&
-      entry.handInput &&
+      attributed.causes.length === 1 &&
+      attributed.handInput &&
       nearMisses.length < NEAR_MISS_LIMIT
     ) {
       nearMisses.push({
-        closedTiles: [...entry.handInput.closedTiles],
-        winningTile: entry.handInput.winningTile.tile,
-        violated: entry.causes[0],
+        closedTiles: [...attributed.handInput.closedTiles],
+        winningTile: attributed.handInput.winningTile.tile,
+        violated: attributed.causes[0],
       });
     }
-    options.onAttempt?.(entry);
+    options.onAttempt?.(attributed);
+  };
+
+  const startRace = (): Skeleton[] => {
+    variant = pickVariant(variants, rng);
+    spec = variant.spec;
+    candidates = variant.candidates;
+    requiredState = declaredGameState(spec);
+    return candidateOrder(candidates, spec, options.sampling, rng);
   };
 
   // Build a seeded proposal order rather than iterating table order. The
@@ -180,7 +212,12 @@ export function runSearch(
       i < ATTEMPTS_PER_SKELETON && attempts < options.budget;
       i++
     ) {
-      const winds = resolveWinds(skeleton, spec, rng.pick);
+      const winds = resolveWinds(
+        skeleton,
+        spec,
+        rng.pick,
+        variant.forceSameWind,
+      );
       if (!winds) break;
       const declared = attemptGameState(
         spec,
@@ -353,6 +390,7 @@ export function runSearch(
         canonical: result.canonical,
         ambiguity: result.ambiguity,
         diagnosis: result.diagnosis,
+        baseYakuCategory: variant.baseYakuCategory,
       });
 
       if (options.stopOnFirstSuccess) {
@@ -360,7 +398,7 @@ export function runSearch(
       }
       // analyze() models repeated independent generations, so every accepted
       // hand starts a fresh weighted race rather than draining one full order.
-      order = candidateOrder(candidates, spec, options.sampling, rng);
+      order = startRace();
       cursor = 0;
       break;
     }

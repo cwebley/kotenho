@@ -7,7 +7,10 @@ import type {
   WaitType,
   YakuName,
 } from "riichi-score";
-import type { StructuralSamplingConfigOverrides } from "./sampling-config.js";
+import type {
+  OpenHandBaseYakuCategory,
+  StructuralSamplingConfigOverrides,
+} from "./sampling-config.js";
 
 export type WinMethod = "ron" | "tsumo";
 export type WindConstraint = Direction | readonly Direction[];
@@ -117,6 +120,8 @@ export interface AnalyzeResult {
   sampleSize: number;
   /** All rejection causes observed during the probe. */
   rejections: Record<string, number>;
+  /** Accepted samples by internally selected open-hand lesson target. */
+  baseYakuCounts?: Partial<Record<OpenHandBaseYakuCategory, number>>;
 }
 
 /** Which dimensions the score-tied top readings disagree on. Diagnostic only. */
@@ -135,6 +140,8 @@ export interface GeneratedHand {
   /** analysis.handInterpretations[0] — the reading kotenho selects. */
   canonical: HandInterpretation;
   ambiguity: AmbiguityFlags;
+  /** Internally selected lesson target for an otherwise unconstrained open hand. */
+  baseYakuCategory?: OpenHandBaseYakuCategory;
   seed: number;
   stats: {
     attempts: number;
@@ -183,6 +190,7 @@ export interface AttemptRecord {
   /** Deterministic pick from `causes`; drives how far the search backtracks. */
   primaryCause?: RejectionCause;
   skeletonId: string;
+  baseYakuCategory?: OpenHandBaseYakuCategory;
   /** Present from the verification stage on, for offline analysis. */
   handInput?: HandInput;
 }

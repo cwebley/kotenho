@@ -40,6 +40,18 @@ describe("analyze", () => {
     );
   });
 
+  it("redraws and reports open-hand base yaku after accepted samples", () => {
+    const result = analyze(
+      { closed: false },
+      { seed: 29, sampleSize: 1_000 },
+    );
+    const counts = Object.values(result.baseYakuCounts ?? {});
+    expect(counts.filter((count) => count > 0).length).toBeGreaterThan(5);
+    expect(counts.reduce((sum, count) => sum + count, 0)).toBe(
+      Math.round(result.estimatedYield * result.sampleSize),
+    );
+  });
+
   it("does not turn a zero-size probe into an impossibility proof", () => {
     expect(analyze({ fu: 40 }, { sampleSize: 0, seed: 1 })).toEqual({
       feasible: true,

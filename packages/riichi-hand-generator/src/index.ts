@@ -4,6 +4,9 @@ export { DEFAULT_SAMPLING_CONFIG } from "./sampling-config.js";
 
 export type {
   SamplingProfile,
+  OpenHandBaseYakuCategory,
+  OpenHandBaseYakuWeights,
+  WinMethodWeights,
   GroupWeights,
   RunWeights,
   TripletWeights,
