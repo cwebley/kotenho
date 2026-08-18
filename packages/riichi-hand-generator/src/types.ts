@@ -1,5 +1,6 @@
 import type {
   Direction,
+  GroupType,
   HandAnalysis,
   HandInput,
   HandInterpretation,
@@ -24,6 +25,21 @@ export type WindConstraint = Direction | readonly Direction[];
  * `"atLeast"` — these yaku plus whatever else turns up.
  */
 export type YakuPolicy = "exact" | "atLeast";
+
+/** One group the hand must contain, written as `"234p"` or `"2p3p4p"`. */
+export interface RequiredGroupOptions {
+  tiles: string;
+  /** Called from another player: chi, pon, daiminkan. Defaults to false. */
+  called?: boolean;
+  /**
+   * Pins the meld type. Only kans are ambiguous — ankan, daiminkan and
+   * shouminkan share a shape but not a story, and shouminkan is the one that
+   * lets another player rob it. Implies `called`, so the two cannot disagree.
+   */
+  meldType?: GroupType;
+}
+
+export type RequiredGroupSpec = string | RequiredGroupOptions;
 
 /** A lesson description. Every field is optional; omitted means "generator's choice". */
 export interface GenerateSpec {
@@ -63,6 +79,26 @@ export interface GenerateSpec {
   roundWind?: WindConstraint;
   /** A fixed wind or seeded-random selection from allowed winds. */
   seatWind?: WindConstraint;
+  /**
+   * Groups the hand must contain, as concrete tiles. Everything the spec does
+   * not pin is still sampled, so `["234p", "567p"]` fixes six tiles and leaves
+   * the rest of the hand free.
+   *
+   * This is the only way to describe a wait *shape*: riichi-score reports the
+   * wait of the group the winning tile completed, so a sanmenchan and a plain
+   * ryanmen are both `"ryanmen"` to `waitType`. Pinning `["234p", "567p"]` with
+   * `requiredWinningTile: "7p"` puts 23456p in the hand and the 1p/4p/7p wait
+   * with it.
+   */
+  requiredGroups?: RequiredGroupSpec[];
+  /** The pair, as concrete tiles: `"77p"`. */
+  requiredPair?: string;
+  /**
+   * The winning tile. Must complete one of the concealed `requiredGroups` or
+   * the `requiredPair` — pinning it anywhere else would leave the wait to be
+   * searched for rather than looked up.
+   */
+  requiredWinningTile?: string;
 }
 
 export interface GenerateOptions {

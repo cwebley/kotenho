@@ -8,6 +8,7 @@ import type {
 import { createRuleset } from "riichi-score";
 import type { Domain, TilePlan } from "./plan.js";
 import { runStartsFor } from "./plan.js";
+import { runWinOptions } from "./required.js";
 import type { Rng } from "./rng.js";
 import type { Block, PairClass, Skeleton } from "./skeleton.js";
 
@@ -38,6 +39,18 @@ const WIND_TILES: Record<Direction, MahjongTile> = {
   north: "4z",
 };
 const DRAGONS: MahjongTile[] = ["5z", "6z", "7z"];
+/**
+ * The player to your left, who plays immediately before you. Chi is legal only
+ * from them — a called run from anyone else is a board state that cannot happen,
+ * which matters for a hand a learner is meant to read even though it scores the
+ * same either way.
+ */
+const KAMICHA: Record<Direction, Direction> = {
+  east: "north",
+  south: "east",
+  west: "south",
+  north: "west",
+};
 const HONORS: MahjongTile[] = ["1z", "2z", "3z", "4z", "5z", "6z", "7z"];
 const GREEN_TILES = new Set<MahjongTile>(["2s", "3s", "4s", "6s", "8s", "6z"]);
 
@@ -128,8 +141,25 @@ const ALL_TILES: MahjongTile[] = [
   ...HONORS,
 ];
 
-/** Tiles a triplet or kan may use, given its edge class and the domain. */
-function tripletOptions(block: Block, domain: Domain): MahjongTile[] {
+/**
+ * Tiles a triplet or kan may use, given its edge class and the domain.
+ *
+ * `counts` is what has already been placed. Filtering here rather than picking
+ * and letting `take` fail is what keeps the choice uniform: a kan needs all four
+ * copies, so a single pinned run elsewhere in the suit silently removed six of
+ * the seven simple ranks from consideration and dropped that suit's share of
+ * kan blocks from 33% to 5%.
+ */
+function tripletOptions(
+  block: Block,
+  domain: Domain,
+  counts?: Map<MahjongTile, number>,
+): MahjongTile[] {
+  const size = block.kind === "kan" ? 4 : 3;
+  const affordable = (tiles: MahjongTile[]): MahjongTile[] =>
+    counts
+      ? tiles.filter((tile) => (counts.get(tile) ?? 0) + size <= 4)
+      : tiles;
   const numbered = domain.honorsOnly ? [] : domain.suits.flatMap((suit) => {
     const out: MahjongTile[] = [];
     for (let rank = domain.minRank; rank <= domain.maxRank; rank++) {
@@ -141,13 +171,17 @@ function tripletOptions(block: Block, domain: Domain): MahjongTile[] {
     return out;
   });
   if (block.edge === "simple") {
-    return domain.greenOnly ? numbered.filter((tile) => GREEN_TILES.has(tile)) : numbered;
+    return affordable(
+      domain.greenOnly ? numbered.filter((tile) => GREEN_TILES.has(tile)) : numbered,
+    );
   }
   const honors = domain.honorsAllowed
     ? HONORS.filter((tile) => !domain.forbiddenTriplets.includes(tile))
     : [];
   const options = [...numbered, ...honors];
-  return domain.greenOnly ? options.filter((tile) => GREEN_TILES.has(tile)) : options;
+  return affordable(
+    domain.greenOnly ? options.filter((tile) => GREEN_TILES.has(tile)) : options,
+  );
 }
 
 /**
@@ -172,12 +206,14 @@ function pairOptions(
   domain: Domain,
   roundWind: Direction,
   seatWind: Direction,
+  counts?: Map<MahjongTile, number>,
 ): MahjongTile[] {
   const round = WIND_TILES[roundWind];
   const seat = WIND_TILES[seatWind];
   const restrict = (tiles: MahjongTile[]): MahjongTile[] =>
     tiles.filter((tile) => {
       if (domain.forbiddenPairs.includes(tile)) return false;
+      if (counts && (counts.get(tile) ?? 0) + 2 > 4) return false;
       if (domain.pair === "any") return true;
       if (domain.pair === "numbered") return !tile.endsWith("z");
       if (tile.endsWith("z")) return domain.pair === "yaochu";
@@ -213,17 +249,10 @@ export function winFromRun(
   wait: WaitType,
   rng: Rng,
 ): MahjongTile | null {
-  const start = Number(tiles[0][0]);
-  if (wait === "kanchan") return tiles[1];
-  if (wait === "penchan") {
-    if (start === 1) return tiles[2];
-    if (start === 7) return tiles[0];
-    return null;
-  }
-  // ryanmen: winning on an end must leave a genuine two-sided wait
-  const options: MahjongTile[] = [];
-  if (start + 3 <= 9) options.push(tiles[0]);
-  if (start - 1 >= 1) options.push(tiles[2]);
+  const options = runWinOptions(tiles, wait);
+  // Only ryanmen is ever a choice; drawing for the others would consume the
+  // stream and change every seeded hand downstream.
+  if (wait !== "ryanmen") return options[0] ?? null;
   return options.length ? rng.pick(options) : null;
 }
 
@@ -410,7 +439,7 @@ function tryAssign(
       continue;
     }
 
-    const options = tripletOptions(block, domain);
+    const options = tripletOptions(block, domain, counts);
     if (!options.length) return null;
     const tile = pickTile(options, rng);
     const size = block.kind === "kan" ? 4 : 3;
@@ -419,7 +448,13 @@ function tryAssign(
     concrete.push({ block, tiles });
   }
 
-  const pairChoices = pairOptions(skeleton.pair, domain, roundWind, seatWind);
+  const pairChoices = pairOptions(
+    skeleton.pair,
+    domain,
+    roundWind,
+    seatWind,
+    counts,
+  );
   const pairTile =
     plan.pair ??
     // A yaochu pair has the same terminal-vs-honor split as a yaochu triplet.
@@ -435,28 +470,44 @@ function tryAssign(
     winningTile = pairTile;
   } else {
     const host = concrete[skeleton.waitHost];
-    winningTile =
-      host.block.kind === "run"
-        ? winFromRun(host.tiles, skeleton.wait, rng)
-        : host.tiles[0];
+    if (plan.winningTile) {
+      // A pinned winning tile settles a choice the host would otherwise make at
+      // random: 567p won on 5p and won on 7p are both ryanmen, and only one of
+      // them is the drill.
+      const offered =
+        host.block.kind === "run"
+          ? runWinOptions(host.tiles, skeleton.wait)
+          : [host.tiles[0]];
+      winningTile = offered.includes(plan.winningTile) ? plan.winningTile : null;
+    } else {
+      winningTile =
+        host.block.kind === "run"
+          ? winFromRun(host.tiles, skeleton.wait, rng)
+          : host.tiles[0];
+    }
   }
   if (!winningTile) return null;
+  // Defensive: the tanki branch takes the pair, which a pinned win must match.
+  if (plan.winningTile && winningTile !== plan.winningTile) return null;
 
   const openMelds: Meld[] = [];
   const closedTiles: MahjongTile[] = [];
-  for (const { block, tiles } of concrete) {
+  concrete.forEach(({ block, tiles }, index) => {
     if (block.called || block.kind === "kan") {
+      const type = plan.meldTypes?.get(index) ?? meldTypeFor(block);
       openMelds.push({
-        type: meldTypeFor(block),
-          tiles: sortTiles(tiles),
-        from: block.called
-          ? rng.pick(DIRECTIONS.filter((d) => d !== seatWind))
-          : seatWind,
+        type,
+        tiles: sortTiles(tiles),
+        from: !block.called
+          ? seatWind
+          : type === "run"
+            ? KAMICHA[seatWind]
+            : rng.pick(DIRECTIONS.filter((d) => d !== seatWind)),
       });
     } else {
       closedTiles.push(...tiles);
     }
-  }
+  });
   closedTiles.push(pairTile, pairTile);
 
   const winnerIndex = closedTiles.indexOf(winningTile);

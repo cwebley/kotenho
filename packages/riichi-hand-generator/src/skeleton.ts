@@ -3,6 +3,7 @@ import { createRuleset, TENHOU_RULESET, type Ruleset } from "riichi-score";
 import type { GenerateSpec } from "./types.js";
 import { skeletonSatisfies, templateFor, TEMPLATES } from "./yaku/templates.js";
 import { doraReachable } from "./dora.js";
+import { skeletonAcceptsRequired, type RequiredPlan } from "./required.js";
 import { requiredDora } from "./yaku/static.js";
 
 /**
@@ -282,10 +283,28 @@ export function allSkeletons(): Skeleton[] {
 /** Which spec field eliminated every candidate, for the unsatisfiable reason. */
 const FILTERS: {
   name: string;
-  applies: (spec: GenerateSpec) => boolean;
-  keep: (s: Skeleton, spec: GenerateSpec) => boolean;
-  reason: (spec: GenerateSpec) => string;
+  applies: (spec: GenerateSpec, required?: RequiredPlan) => boolean;
+  keep: (s: Skeleton, spec: GenerateSpec, required?: RequiredPlan) => boolean;
+  reason: (spec: GenerateSpec, required?: RequiredPlan) => string;
 }[] = [
+  {
+    // Pinned groups are concrete blocks, so they are matched against the table
+    // exactly like a fu or wait constraint rather than searched for at tile
+    // time. When a winning tile is pinned too, the group carrying it must land
+    // on the wait host, which fixes the wait as a side effect.
+    name: "requiredGroups",
+    applies: (_spec, required) => required !== undefined,
+    keep: (s, _spec, required) => skeletonAcceptsRequired(s, required!),
+    reason: (_spec, required) => {
+      const shown = (required?.groups ?? [])
+        .map((group) => group.tiles.join(""))
+        .join(" + ");
+      const win = required?.winningTile
+        ? ` won on ${required.winningTile}`
+        : "";
+      return `no hand shape holds ${shown || "the required pair"}${win} alongside the other constraints`;
+    },
+  },
   {
     name: "handShape",
     applies: (spec) => spec.handShape !== undefined,
@@ -456,13 +475,16 @@ const INFERRED_FILTERS = new Set(["yaku", "excludedYaku", "doraReachable"]);
 export function selectSkeletons(
   spec: GenerateSpec,
   skipInferred = false,
+  required?: RequiredPlan,
 ): SkeletonQuery {
   let candidates = allSkeletons();
   for (const filter of FILTERS) {
     if (skipInferred && INFERRED_FILTERS.has(filter.name)) continue;
-    if (!filter.applies(spec)) continue;
-    const next = candidates.filter((s) => filter.keep(s, spec));
-    if (!next.length) return { candidates: [], reason: filter.reason(spec) };
+    if (!filter.applies(spec, required)) continue;
+    const next = candidates.filter((s) => filter.keep(s, spec, required));
+    if (!next.length) {
+      return { candidates: [], reason: filter.reason(spec, required) };
+    }
     candidates = next;
   }
   return { candidates };

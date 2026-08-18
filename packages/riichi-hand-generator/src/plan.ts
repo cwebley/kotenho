@@ -1,4 +1,5 @@
-import type { Direction, MahjongTile, YakuName } from "riichi-score";
+import type { Direction, GroupType, MahjongTile, YakuName } from "riichi-score";
+import { matchGroups, type RequiredPlan, type RequiredWin } from "./required.js";
 import type { Rng } from "./rng.js";
 import type { Block, Skeleton } from "./skeleton.js";
 import type { YakuPolicy } from "./types.js";
@@ -36,8 +37,10 @@ export interface Domain {
   pair: "any" | "yaochu" | "terminal" | "numbered";
   /**
    * Avoid repeating a run unless a duplicate-run yaku was asked for. Worth more
-   * than the composition strategy itself: it took the worst measured spec from
-   * 31% to 88%.
+   * than the composition strategy itself: it took the worst measured *concealed*
+   * spec from 31% to 88%. Menzen-scoped — iipeiko and ryanpeikou are the yaku it
+   * guards against and both require a concealed hand, so planTiles leaves it off
+   * for open ones.
    */
   avoidDuplicateRuns: boolean;
   /**
@@ -58,6 +61,14 @@ export interface TilePlan {
   pair?: MahjongTile;
   /** Chuuren's multiset is assigned directly, not block by block. */
   chuuren?: true;
+  /**
+   * Author-pinned winning tile. The wait host can offer more than one legal
+   * winning tile — 567p won on 5p and on 7p are both ryanmen — so without this
+   * the assigner would choose between them at random.
+   */
+  winningTile?: MahjongTile;
+  /** Block index → meld type, when the author pinned one. */
+  meldTypes?: Map<number, GroupType>;
 }
 
 /** Run starts legal under the domain: the whole run must fit in the range. */
@@ -78,6 +89,18 @@ export function runStartsFor(block: Block, domain: Domain): number[] {
   return block.edge === "terminalRun"
     ? starts.filter((start) => start === 1 || start === 7)
     : starts.filter((start) => start !== 1 && start !== 7);
+}
+
+const GREEN_TILES = new Set<MahjongTile>(["2s", "3s", "4s", "6s", "8s", "6z"]);
+
+/** Whether a concrete tile survives the domain the required yaku narrowed. */
+function tileFitsDomain(tile: MahjongTile, domain: Domain): boolean {
+  if (domain.greenOnly && !GREEN_TILES.has(tile)) return false;
+  if (tile[1] === "z") return domain.honorsAllowed;
+  if (domain.honorsOnly) return false;
+  if (!domain.suits.includes(tile[1] as Suit)) return false;
+  const rank = Number(tile[0]);
+  return rank >= domain.minRank && rank <= domain.maxRank;
 }
 
 function baseDomain(): Domain {
@@ -121,10 +144,17 @@ export function planTiles(
   seatWind: Direction,
   rng: Rng,
   yakuPolicy: YakuPolicy = "exact",
+  required?: RequiredPlan,
 ): TilePlan | null {
   const domain = baseDomain();
   const avoidExtraYaku = yakuPolicy === "exact" && yaku.length > 0;
-  if (!avoidExtraYaku) domain.avoidDuplicateRuns = false;
+  // Duplicate runs are avoided only where they could actually contaminate an
+  // exact yaku list. Both duplicate-run yaku are menzen-only, so on an open
+  // hand the flag buys nothing and costs variety — measured at 9.4% of accepted
+  // open hands carrying a duplicate run once it is lifted. It stays on for
+  // concealed hands, where it also suppresses the accidental honitsu that
+  // packing six tiles into one suit invites.
+  if (!avoidExtraYaku || !skeleton.menzen) domain.avoidDuplicateRuns = false;
 
   // 1. Narrow the domain. Every required yaku contributes before anything is
   //    placed, so no placer can pick a tile another yaku forbids.
@@ -198,6 +228,58 @@ export function planTiles(
   ];
   const freeRuns = rng.shuffled(runBlocks);
   const freeTriplets = rng.shuffled(tripletBlocks);
+
+  // 2. Author-pinned groups go down before any placer runs. They are the
+  //    tightest constraint there is — fully concrete — so the same tightest-first
+  //    rule that orders PLACER_ORDER puts them first, and every later placer
+  //    sees a smaller but still consistent set of free slots.
+  const meldTypes = new Map<number, GroupType>();
+  let requiredPair: MahjongTile | undefined;
+  if (required) {
+    // A pin can contradict a yaku's domain — "123p" under tanyao, say. Failing
+    // here rather than assigning the hand keeps a doomed candidate out of the
+    // verifier. Under singleSuit the domain is drawn per attempt, so returning
+    // null is a retry with a different suit rather than a dead end.
+    const pinned = [
+      ...required.groups.flatMap((group) => group.tiles),
+      ...(required.pair ? [required.pair] : []),
+    ];
+    if (!pinned.every((tile) => tileFitsDomain(tile, domain))) return null;
+    const choices: { win?: RequiredWin; matching: number[] }[] = [];
+    if (required.winningTile) {
+      for (const win of required.wins) {
+        if (win.wait !== skeleton.wait) continue;
+        if (win.group === -1 ? skeleton.waitHost !== -1 : skeleton.waitHost === -1) {
+          continue;
+        }
+        for (const matching of matchGroups(skeleton, required, win)) {
+          choices.push({ win, matching });
+        }
+      }
+    } else {
+      for (const matching of matchGroups(skeleton, required)) {
+        choices.push({ matching });
+      }
+    }
+    if (!choices.length) return null;
+
+    const { matching } = rng.pick(choices);
+    matching.forEach((block, index) => {
+      const group = required.groups[index];
+      fixed.set(block, [...group.tiles]);
+      if (group.meldType) meldTypes.set(block, group.meldType);
+      const runSlot = freeRuns.indexOf(block);
+      if (runSlot >= 0) freeRuns.splice(runSlot, 1);
+      const tripletSlot = freeTriplets.indexOf(block);
+      if (tripletSlot >= 0) freeTriplets.splice(tripletSlot, 1);
+    });
+    requiredPair = required.pair;
+    // A pinned triplet or kan already holds three or four copies, so its tile
+    // cannot also be the pair. A pinned run holds one copy of each, so it can.
+    for (const group of required.groups) {
+      if (group.kind !== "run") domain.forbiddenPairs.push(group.tiles[0]);
+    }
+  }
   const commonRunStarts = (indices: number[]): number[] =>
     indices.length === 0
       ? []
@@ -422,10 +504,27 @@ export function planTiles(
     }
   }
 
-  // 2. `requireHonor` is deliberately NOT placed here. Forcing the honor into a
+  // 3. `requireHonor` is deliberately NOT placed here. Forcing the honor into a
   //    fixed location makes every hand carry the bare minimum — one honor, in
   //    the same spot. The assigner samples honors per block and rejects a hand
   //    that ends up with none, which satisfies the same rule while leaving the
   //    count free to vary.
-  return { domain, fixed, pair, chuuren: chuuren || undefined };
+
+  // A placer that forces its own pair (shousangen, tsuuiisou) cannot coexist
+  // with a pinned one.
+  if (requiredPair !== undefined && pair !== undefined && pair !== requiredPair) {
+    return null;
+  }
+  // Chuuren's multiset is assigned whole rather than block by block, so it has
+  // nowhere to honour a pin.
+  if (required && chuuren) return null;
+
+  return {
+    domain,
+    fixed,
+    pair: requiredPair ?? pair,
+    chuuren: chuuren || undefined,
+    ...(required?.winningTile ? { winningTile: required.winningTile } : {}),
+    ...(meldTypes.size ? { meldTypes } : {}),
+  };
 }

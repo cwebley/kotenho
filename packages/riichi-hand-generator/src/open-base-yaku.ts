@@ -3,6 +3,7 @@ import type {
   OpenHandBaseYakuCategory,
   StructuralSamplingConfig,
 } from "./sampling-config.js";
+import { parseRequired, type RequiredPlan } from "./required.js";
 import { selectSkeletons, type Skeleton } from "./skeleton.js";
 import type { GenerateSpec, WindConstraint } from "./types.js";
 import { checkYakuFeasibility } from "./yaku/static.js";
@@ -71,6 +72,8 @@ export interface SearchVariant {
   weight: number;
   baseYakuCategory?: OpenHandBaseYakuCategory;
   forceSameWind: boolean;
+  /** Parsed once here rather than per attempt; undefined when nothing is pinned. */
+  required?: RequiredPlan;
 }
 
 export type PrepareSearchVariantsResult =
@@ -87,12 +90,19 @@ export function prepareSearchVariants(
     if (!check.ok) return { ok: false, reason: check.reason! };
   }
 
+  // Pinned tiles are parsed and validated once, before any skeleton is looked
+  // at: a malformed or self-contradictory pin is a property of the spec, not of
+  // any particular shape.
+  const parsedRequired = parseRequired(spec);
+  if (!parsedRequired.ok) return { ok: false, reason: parsedRequired.reason };
+  const required = parsedRequired.plan;
+
   const explicitlyOpen =
     spec.closed === false ||
     (spec.openMeldCount !== undefined && spec.openMeldCount > 0);
   const chooseBase = explicitlyOpen && (spec.yaku?.length ?? 0) === 0;
   if (!chooseBase) {
-    const { candidates, reason } = selectSkeletons(spec, skipInferred);
+    const { candidates, reason } = selectSkeletons(spec, skipInferred, required);
     return candidates.length
       ? {
           ok: true,
@@ -102,6 +112,7 @@ export function prepareSearchVariants(
               candidates,
               weight: 1,
               forceSameWind: false,
+              required,
             },
           ],
         }
@@ -134,7 +145,11 @@ export function prepareSearchVariants(
       const check = checkYakuFeasibility(effectiveSpec);
       if (!check.ok) continue;
     }
-    let candidates = selectSkeletons(effectiveSpec, skipInferred).candidates;
+    let candidates = selectSkeletons(
+      effectiveSpec,
+      skipInferred,
+      required,
+    ).candidates;
     if (category === "double-wind") {
       candidates = candidates.filter(
         (candidate) => candidate.pair !== "doubleWind",
@@ -147,6 +162,7 @@ export function prepareSearchVariants(
       weight,
       baseYakuCategory: category,
       forceSameWind: category === "double-wind",
+      required,
     });
   }
 

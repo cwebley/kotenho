@@ -81,6 +81,66 @@ The result distinguishes:
 - `exhausted`: no hand was found within the search budget.
 - `shortfall`: a batch found fewer distinct hands than requested.
 
+## Pinning Tiles
+
+Some drills are about a *shape* rather than a score. A sanmenchan — 23456p
+waiting on 1p/4p/7p — is not describable with `waitType`, because `riichi-score`
+classifies a wait from the group the winning tile completed: a sanmenchan and a
+plain ryanmen both report `"ryanmen"`. The shape lives in the thirteen tiles
+before the win, so it is pinned directly.
+
+```ts
+generate(
+  {
+    requiredGroups: ["234p", "567p"],
+    requiredWinningTile: "7p",
+    yaku: ["riichi"],
+    yakuPolicy: "atLeast",
+  },
+  { seed: 7 },
+);
+// 1m2m3m 7m7m 2p3p4p5p6p 2s3s4s + 7p — 23456p in hand, the 1/4/7 wait with it
+```
+
+Everything the spec does not pin is still sampled, so the two runs above fix six
+tiles and leave the rest of the hand free. Extra tiles landing in the same suit
+are a feature, not contamination: they add waits on top of the pinned shape
+rather than replacing it. Pin `requiredPair` when a specific stacked shape is
+wanted.
+
+- `requiredGroups` — runs, triplets and kans as concrete tiles. `"234p"` and
+  `"2p3p4p"` are the same group.
+- `requiredPair` — the pair, as concrete tiles: `"77p"`.
+- `requiredWinningTile` — must complete one of the *concealed* required groups
+  or the required pair. Anywhere else and the wait would have to be searched for
+  rather than looked up.
+
+A pinned winning tile fixes the wait as a side effect, so `waitType` is only
+needed to choose between readings: a 7p that completes both `567p` and a `77p`
+pair is ryanmen or tanki, and either is a legitimate drill.
+
+Groups can be called, and kans can name their meld type — `shouminkan` is the
+one another player can rob:
+
+```ts
+generate({
+  requiredGroups: [
+    { tiles: "234p", called: true },
+    { tiles: "5555s", meldType: "shouminkan" },
+    "678m",
+  ],
+  requiredWinningTile: "7p",
+  yaku: ["tanyao"],
+  yakuPolicy: "atLeast",
+  doraIndicatorCount: 2,
+});
+```
+
+Pins are matched against the skeleton table like every other structural
+constraint, so a contradiction is proven rather than searched for:
+`requiredGroups: ["5555p"], requiredWinningTile: "5p"` returns `unsatisfiable` —
+a kan is never completed by the winning tile.
+
 ## Batches And Analysis
 
 ```ts

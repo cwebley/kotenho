@@ -20,6 +20,8 @@ export type {
 
 export type {
   GenerateSpec,
+  RequiredGroupOptions,
+  RequiredGroupSpec,
   GenerateOptions,
   BatchGenerateOptions,
   AnalyzeOptions,

@@ -3,6 +3,7 @@ import type {
   HandAnalysis,
   HandInput,
   HandInterpretation,
+  MahjongTile,
 } from "riichi-score";
 import { calculate } from "riichi-score";
 import { assignTiles } from "./assign.js";
@@ -37,6 +38,12 @@ import { verify } from "./verify.js";
 
 const DIRECTIONS: Direction[] = ["east", "south", "west", "north"];
 const DEFAULT_ROUND_WINDS: Direction[] = ["east", "south"];
+const WIND_DIRECTION: Partial<Record<MahjongTile, Direction>> = {
+  "1z": "east",
+  "2z": "south",
+  "3z": "west",
+  "4z": "north",
+};
 const ATTEMPTS_PER_SKELETON = 20;
 const NEAR_MISS_LIMIT = 5;
 
@@ -93,6 +100,7 @@ function resolveWinds(
   spec: GenerateSpec,
   pick: <T>(items: readonly T[]) => T,
   forceSameWind = false,
+  requiredPair?: MahjongTile,
 ): { roundWind: Direction; seatWind: Direction } | null {
   const roundChoices = allowedWinds(spec.roundWind, DEFAULT_ROUND_WINDS);
   let seatChoices = allowedWinds(spec.seatWind, DIRECTIONS);
@@ -102,7 +110,33 @@ function resolveWinds(
   if (requested.has("chiihou"))
     seatChoices = seatChoices.filter((seat) => seat !== "east");
   if (!seatChoices.length) return null;
-  if (forceSameWind || skeleton.pair === "doubleWind") {
+  const sameWind = forceSameWind || skeleton.pair === "doubleWind";
+
+  // A pinned wind pair makes the winds part of the shape: the same 1z pair is
+  // plain, yakuhai or double wind depending on where the table sits, and only
+  // one of those matches the skeleton this attempt is building.
+  const pairWind = requiredPair ? WIND_DIRECTION[requiredPair] : undefined;
+  if (pairWind) {
+    const combos: { roundWind: Direction; seatWind: Direction }[] = [];
+    for (const roundWind of roundChoices) {
+      for (const seatWind of seatChoices) {
+        if (sameWind && roundWind !== seatWind) continue;
+        const isDouble = roundWind === seatWind && roundWind === pairWind;
+        const isYakuhai =
+          !isDouble && (roundWind === pairWind || seatWind === pairWind);
+        const pairClass = isDouble
+          ? "doubleWind"
+          : isYakuhai
+            ? "yakuhai"
+            : "plain";
+        if (pairClass !== skeleton.pair) continue;
+        combos.push({ roundWind, seatWind });
+      }
+    }
+    return combos.length ? pick(combos) : null;
+  }
+
+  if (sameWind) {
     const shared = roundChoices.filter((wind) => seatChoices.includes(wind));
     if (!shared.length) return null;
     const wind = pick(shared);
@@ -217,6 +251,7 @@ export function runSearch(
         spec,
         rng.pick,
         variant.forceSameWind,
+        variant.required?.pair,
       );
       if (!winds) break;
       const declared = attemptGameState(
@@ -235,6 +270,7 @@ export function runSearch(
         winds.seatWind,
         rng,
         spec.yakuPolicy ?? "exact",
+        variant.required,
       );
       const assignment = plan
         ? assignTiles(
