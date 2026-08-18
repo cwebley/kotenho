@@ -147,6 +147,42 @@ constraint, so a contradiction is proven rather than searched for:
 `requiredGroups: ["5555p"], requiredWinningTile: "5p"` returns `unsatisfiable` —
 a kan is never completed by the winning tile.
 
+## Yakuman Forms
+
+Several yakuman have a doubled local variant, enabled per ruleset. The two forms
+share a yaku name and differ only in `limit`, so `yaku` cannot tell them apart —
+`limit` is the lever:
+
+```ts
+generate(
+  {
+    yaku: ["chuuren-poutou"],
+    limit: "double-yakuman",                        // junsei: the nine-sided wait
+    ruleset: { doubleYakuman: { junseiChuuren: true } },
+  },
+  { seed: 7 },
+);
+```
+
+| yaku | doubled by | also selectable with |
+| --- | --- | --- |
+| `chuuren-poutou` | `junseiChuuren` | — |
+| `kokushi-musou` | `kokushi13Wait` | `waitType: "kokushi-wide"` / `"kokushi-single"` |
+| `suuankou` | `suuankouTanki` | `waitType: "tanki"` / `"shanpon"` |
+| `daisuushii` | `daisuushii` | — |
+
+Yakuman stack additively, so with an exact yaku list the reachable multipliers
+are a closed interval and an unreachable one is proven rather than searched for:
+
+```
+{ yaku: ["chuuren-poutou"], limit: "double-yakuman" }
+  -> unsatisfiable: chuuren-poutou cannot reach double-yakuman under this
+     ruleset — enable ruleset.doubleYakuman.junseiChuuren
+```
+
+Under `yakuPolicy: "atLeast"`, or with no yaku list, an unrequested yakuman may
+still turn up and lift the multiplier, so nothing is decided up front.
+
 ## Batches And Analysis
 
 ```ts

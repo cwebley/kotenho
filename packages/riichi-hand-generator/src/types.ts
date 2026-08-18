@@ -4,6 +4,7 @@ import type {
   HandAnalysis,
   HandInput,
   HandInterpretation,
+  Limit,
   RulesetOptions,
   WaitType,
   YakuName,
@@ -67,6 +68,13 @@ export interface GenerateSpec {
   handShape?: "standard" | "chiitoitsu" | "kokushi";
   /** Rounded fu, exactly. */
   fu?: number;
+  /**
+   * The yakuman multiplier, exactly. The only way to select between a yakuman's
+   * single and doubled forms: junsei chuuren and plain chuuren are the same
+   * yaku name at different limits, so `yaku` cannot tell them apart. Requires a
+   * ruleset that enables the corresponding `doubleYakuman` flag.
+   */
+  limit?: Limit;
   waitType?: WaitType;
   winMethod?: WinMethod;
   /** True forces a concealed hand. A concealed kan still counts as closed. */
@@ -194,6 +202,7 @@ export type RejectionCause =
   | "aka-unplaceable"
   | "han-mismatch"
   | "fu-mismatch"
+  | "limit-mismatch"
   | "wait-mismatch"
   | "ambiguous-wait"
   | "assignment-failed"
@@ -201,9 +210,9 @@ export type RejectionCause =
 
 /**
  * Why the reading the planner built is not the one that scored. Only
- * planner-defect is a regression in this package — the other three are
- * expected, and conflating them would make the tripwire useless exactly when
- * scorer coverage is thinnest.
+ * planner-defect is a regression in this package — the rest are expected, and
+ * conflating them would make the tripwire useless exactly when scorer coverage
+ * is thinnest.
  */
 export type IntendedReadingDiagnosis =
   /** Intended reading present and on target; a peer simply outscored it. */
@@ -213,7 +222,15 @@ export type IntendedReadingDiagnosis =
   /** Intended reading filtered out for carrying no yaku the scorer can detect. */
   | "coverage-shadow"
   /** Intended reading was the canonical one. */
-  | "matched";
+  | "matched"
+  /**
+   * There was no intended reading to compare. Nine gates is assigned as a whole
+   * multiset rather than block by block, so the planner never forms a grouping
+   * and has nothing to be right or wrong about. Recorded explicitly rather than
+   * left blank: a missing diagnosis already means "rejected before the scorer
+   * ran", and overloading that would hide both facts.
+   */
+  | "not-aimed";
 
 export interface AttemptRecord {
   attempt: number;

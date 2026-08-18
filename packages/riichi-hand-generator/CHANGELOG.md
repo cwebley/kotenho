@@ -15,8 +15,34 @@
   previously unreachable: every called kan was emitted as a `daiminkan`, so a
   learner never saw the added kan that chankan robs.
 
+- `GenerateSpec.limit` constrains the yakuman multiplier exactly. It is the only
+  way to select between a yakuman's single and doubled forms, which share a yaku
+  name and differ only in `limit`. Unreachable multipliers are proven statically:
+  yakuman stack additively and each `doubleYakuman` switch adds one, so with an
+  exact yaku list the reachable range is a closed interval.
+
 ### Fixed
 
+- Chuuren draws its duplicated rank and its winning tile independently. Holding
+  the pure 1112345678999 and winning any tile makes the thirteen-tile hand pure
+  every time, so every generated chuuren was junsei: the ordinary form was
+  unreachable, and under a `junseiChuuren` ruleset so was a single yakuman.
+  Kokushi already modelled both of its forms; chuuren was the one that did not.
+- Chuuren no longer fabricates an intended reading. The planner records the
+  grouping it built so the verifier can tell "a better reading won" from "our fu
+  table is wrong", but nine gates is assigned as a whole multiset and forms no
+  grouping. The placeholder never matched anything, so every nine-gates hand was
+  filed as `coverage-shadow` — the diagnosis meaning the scorer could not find
+  our reading — at a 100% false-positive rate, while the genuine `planner-defect`
+  tripwire was unreachable on that path. Reported as the new `not-aimed`
+  diagnosis rather than left blank, since a missing diagnosis already means
+  "rejected before the scorer ran".
+- Kokushi skeletons carry the scorer's own wait vocabulary, `kokushi-wide` and
+  `kokushi-single`, instead of `tanki`. `waitType: "kokushi-wide"` was reported
+  as `unsatisfiable` — a false impossibility proof for a perfectly generatable
+  hand — while `waitType: "tanki"` passed the filter and then failed
+  verification forever. The thirteen-wait is also what `kokushi13Wait` pays
+  double for, so the distinction has to survive into the skeleton.
 - Chi melds are now always called from kamicha, the player to your left. They
   were drawn uniformly from the three other seats, so roughly 70% of generated
   chi melds described a board state that cannot occur. Scoring was unaffected,

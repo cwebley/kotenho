@@ -1,8 +1,15 @@
-import type { Direction, GroupType, MahjongTile, YakuName } from "riichi-score";
+import type {
+  Direction,
+  GroupType,
+  Limit,
+  MahjongTile,
+  YakuName,
+} from "riichi-score";
 import { matchGroups, type RequiredPlan, type RequiredWin } from "./required.js";
 import type { Rng } from "./rng.js";
 import type { Block, Skeleton } from "./skeleton.js";
 import type { YakuPolicy } from "./types.js";
+import { LIMIT_MULTIPLIER } from "./yaku/static.js";
 import { templateFor } from "./yaku/templates.js";
 
 const SUITS = ["m", "p", "s"] as const;
@@ -61,6 +68,12 @@ export interface TilePlan {
   pair?: MahjongTile;
   /** Chuuren's multiset is assigned directly, not block by block. */
   chuuren?: true;
+  /**
+   * Aim chuuren at the pure shape or away from it. Undefined leaves it to a
+   * coin flip; set, it is what makes `limit` a lookup rather than a 50%
+   * rejection.
+   */
+  junsei?: boolean;
   /**
    * Author-pinned winning tile. The wait host can offer more than one legal
    * winning tile — 567p won on 5p and on 7p are both ryanmen — so without this
@@ -145,6 +158,7 @@ export function planTiles(
   rng: Rng,
   yakuPolicy: YakuPolicy = "exact",
   required?: RequiredPlan,
+  limit?: Limit,
 ): TilePlan | null {
   const domain = baseDomain();
   const avoidExtraYaku = yakuPolicy === "exact" && yaku.length > 0;
@@ -526,5 +540,8 @@ export function planTiles(
     chuuren: chuuren || undefined,
     ...(required?.winningTile ? { winningTile: required.winningTile } : {}),
     ...(meldTypes.size ? { meldTypes } : {}),
+    ...(chuuren && limit !== undefined
+      ? { junsei: LIMIT_MULTIPLIER[limit] >= 2 }
+      : {}),
   };
 }

@@ -4,7 +4,7 @@ import type { GenerateSpec } from "./types.js";
 import { skeletonSatisfies, templateFor, TEMPLATES } from "./yaku/templates.js";
 import { doraReachable } from "./dora.js";
 import { skeletonAcceptsRequired, type RequiredPlan } from "./required.js";
-import { requiredDora } from "./yaku/static.js";
+import { LIMIT_MULTIPLIER, requiredDora } from "./yaku/static.js";
 
 /**
  * A skeleton is a hand with every tile identity removed, keeping only the
@@ -258,22 +258,30 @@ export function allSkeletons(): Skeleton[] {
   // Kokushi musou: thirteen orphans plus a duplicate, always concealed. Fu is
   // recorded as 0 because it is meaningless for a yakuman and varies with the
   // pair — which also means a fu-constrained spec never selects it, correctly.
-  for (const tsumo of [false, true]) {
-    out.push({
-      shape: "kokushi",
-      concealedTriplets: 0,
-      blocks: [],
-      pair: "plain",
-      wait: "tanki",
-      waitHost: -1,
-      tsumo,
-      fu: 0,
-      rawFu: 0,
-      menzen: true,
-      calledMelds: 0,
-      kanCount: 0,
-      pinfuShape: false,
-    });
+  //
+  // The wait is the scorer's own kokushi vocabulary, not "tanki". Recording
+  // tanki here made `waitType: "kokushi-wide"` a false impossibility proof while
+  // `waitType: "tanki"` passed the filter and then failed verification forever.
+  // It is also the whole distinction between the two forms: the thirteen-tile
+  // wait is the one a ruleset may pay double for.
+  for (const wait of ["kokushi-wide", "kokushi-single"] as WaitType[]) {
+    for (const tsumo of [false, true]) {
+      out.push({
+        shape: "kokushi",
+        concealedTriplets: 0,
+        blocks: [],
+        pair: "plain",
+        wait,
+        waitHost: -1,
+        tsumo,
+        fu: 0,
+        rawFu: 0,
+        menzen: true,
+        calledMelds: 0,
+        kanCount: 0,
+        pinfuShape: false,
+      });
+    }
   }
 
   cache = out;
@@ -400,6 +408,32 @@ const FILTERS: {
       `no hand shape supports ${(spec.yaku ?? []).join(" + ")} together with the other constraints`,
   },
   {
+    // Two yakuman are doubled by a property the skeleton already carries: the
+    // kokushi thirteen-wait, and suuankou's tanki. Narrowing here turns a 50%
+    // rejection rate into a lookup. Only applies under an exact policy, where
+    // no unrequested yakuman can stack on top and move the multiplier.
+    name: "limit",
+    applies: (spec) =>
+      spec.limit !== undefined &&
+      (spec.yakuPolicy ?? "exact") === "exact" &&
+      (spec.yaku?.length ?? 0) > 0,
+    keep: (s, spec) => {
+      const want = LIMIT_MULTIPLIER[spec.limit!];
+      const doubles = createRuleset(spec.ruleset).doubleYakuman;
+      if (s.shape === "kokushi" && spec.yaku?.includes("kokushi-musou")) {
+        const doubled = s.wait === "kokushi-wide" && doubles.kokushi13Wait;
+        return want === (doubled ? 2 : 1);
+      }
+      if (s.shape === "standard" && spec.yaku?.includes("suuankou")) {
+        const doubled = s.wait === "tanki" && doubles.suuankouTanki;
+        return want === (doubled ? 2 : 1);
+      }
+      return true;
+    },
+    reason: (spec) =>
+      `no hand shape reaches ${spec.limit} for ${(spec.yaku ?? []).join(" + ")} under this ruleset`,
+  },
+  {
     // Dora reachability is a parity question decided by shape: a chiitoitsu
     // hand carries only even dora, including its Kansai four-copy pairs.
     name: "doraReachable",
@@ -470,7 +504,12 @@ export interface SkeletonQuery {
  * Structural constraints are exactly invertible — they are looked up, never
  * searched. An empty result is a proof of impossibility, not a failed search.
  */
-const INFERRED_FILTERS = new Set(["yaku", "excludedYaku", "doraReachable"]);
+const INFERRED_FILTERS = new Set([
+  "yaku",
+  "excludedYaku",
+  "doraReachable",
+  "limit",
+]);
 
 export function selectSkeletons(
   spec: GenerateSpec,

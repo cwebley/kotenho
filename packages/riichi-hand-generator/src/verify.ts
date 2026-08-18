@@ -34,6 +34,7 @@ export type VerifyResult =
  */
 const CAUSE_PRIORITY: RejectionCause[] = [
   "yaku-mismatch",
+  "limit-mismatch",
   "han-mismatch",
   "dora-unplaceable",
   "aka-unplaceable",
@@ -69,7 +70,7 @@ function interpretationSignature(hi: HandInterpretation): string {
  */
 export function verify(
   handInput: HandInput,
-  intended: IntendedReading,
+  intended: IntendedReading | undefined,
   spec: GenerateSpec,
   requireUnambiguousWait: boolean,
 ): VerifyResult {
@@ -83,7 +84,7 @@ export function verify(
       causes: [cause],
       primaryCause: cause,
       // The reading exists; the scorer just cannot see a yaku in it yet.
-      diagnosis: "coverage-shadow",
+      diagnosis: intended ? "coverage-shadow" : "not-aimed",
     };
   }
 
@@ -96,13 +97,18 @@ export function verify(
     (spec.fu === undefined || hi.fu === spec.fu) &&
     (spec.waitType === undefined || hi.waitType === spec.waitType);
 
-  const wanted = readingSignature(intended);
-  const match = analysis.handInterpretations.find(
-    (hi) => interpretationSignature(hi) === wanted,
-  );
+  const wanted = intended ? readingSignature(intended) : undefined;
+  const match =
+    wanted === undefined
+      ? undefined
+      : analysis.handInterpretations.find(
+          (hi) => interpretationSignature(hi) === wanted,
+        );
 
   let diagnosis: IntendedReadingDiagnosis;
-  if (!match) {
+  if (!intended) {
+    diagnosis = "not-aimed";
+  } else if (!match) {
     diagnosis = "coverage-shadow";
   } else if (!holds(match)) {
     // We built a reading that misses its own target: the fu table or a
@@ -132,6 +138,11 @@ export function verify(
 
   if (spec.fu !== undefined && tied.some((hi) => hi.fu !== spec.fu)) {
     causes.push("fu-mismatch");
+  }
+  // The yakuman multiplier. Interpretation-dependent in principle, so it is
+  // checked across the tied set like every other graded constraint.
+  if (spec.limit !== undefined && tied.some((hi) => hi.limit !== spec.limit)) {
+    causes.push("limit-mismatch");
   }
   // Dora is interpretation-independent — every reading has the same tiles — so
   // it can never be the source of a tied-set disagreement.

@@ -271,6 +271,7 @@ export function runSearch(
         rng,
         spec.yakuPolicy ?? "exact",
         variant.required,
+        spec.limit,
       );
       const assignment = plan
         ? assignTiles(

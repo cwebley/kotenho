@@ -1,4 +1,10 @@
-import { createRuleset, type Direction, type Ruleset, type YakuName } from "riichi-score";
+import {
+  createRuleset,
+  type Direction,
+  type Limit,
+  type Ruleset,
+  type YakuName,
+} from "riichi-score";
 import type { GenerateSpec, WindConstraint } from "../types.js";
 import { templateFor, type YakuTemplate } from "./templates.js";
 
@@ -6,6 +12,27 @@ export interface Feasibility {
   ok: boolean;
   reason?: string;
 }
+
+/** riichi-score does not export its multiplier helper, so it is mirrored here. */
+export const LIMIT_MULTIPLIER: Record<Limit, number> = {
+  yakuman: 1,
+  "double-yakuman": 2,
+  "triple-yakuman": 3,
+  "quadruple-yakuman": 4,
+};
+
+/**
+ * Which ruleset switch doubles each yakuman. A yakuman with no entry has no
+ * doubled form at all, so requesting one is decidable before any search.
+ */
+export const DOUBLE_YAKUMAN_FLAG: Partial<
+  Record<YakuName, keyof Ruleset["doubleYakuman"]>
+> = {
+  daisuushii: "daisuushii",
+  "kokushi-musou": "kokushi13Wait",
+  suuankou: "suuankouTanki",
+  "chuuren-poutou": "junseiChuuren",
+};
 
 const ok: Feasibility = { ok: true };
 const no = (reason: string): Feasibility => ({ ok: false, reason });
@@ -181,9 +208,66 @@ export function checkYakuFeasibility(spec: GenerateSpec): Feasibility {
     }
   }
 
+  const limitCheck = checkLimitFeasibility(spec, templates, ruleset);
+  if (!limitCheck.ok) return limitCheck;
+
   const doraCheck = checkDoraFeasibility(spec, templates);
   if (!doraCheck.ok) return doraCheck;
 
+  return ok;
+}
+
+/**
+ * Yakuman stack additively and each doubling switch adds one more, so with the
+ * yaku set pinned the reachable multipliers are a closed interval rather than a
+ * search. Deliberately loose at the top: the interval ignores whether each
+ * doubled *variant* is separately reachable, because an unsatisfiable verdict
+ * has to be a proof, and overstating the ceiling only costs a rejection.
+ */
+function checkLimitFeasibility(
+  spec: GenerateSpec,
+  templates: YakuTemplate[],
+  ruleset: Ruleset,
+): Feasibility {
+  if (spec.limit === undefined) return ok;
+  const want = LIMIT_MULTIPLIER[spec.limit];
+  if (!want) return no(`unknown limit: ${spec.limit}`);
+  // Under atLeast, or with no list at all, an unrequested yakuman may still
+  // turn up and lift the multiplier — nothing is decidable.
+  if ((spec.yakuPolicy ?? "exact") !== "exact" || !templates.length) return ok;
+
+  const yakuman = templates.filter((template) => template.limit);
+  if (!yakuman.length) {
+    return no(
+      `${spec.limit} requires a yakuman, and the exact yaku list contains none`,
+    );
+  }
+  const doublable = yakuman.filter((template) => {
+    const flag = DOUBLE_YAKUMAN_FLAG[template.name];
+    return flag ? ruleset.doubleYakuman[flag] : false;
+  });
+  const floor = yakuman.length;
+  const ceiling = Math.min(4, yakuman.length + doublable.length);
+
+  if (want < floor) {
+    return no(
+      `${yakuman.map((template) => template.name).join(" + ")} ${yakuman.length > 1 ? "are" : "is"} worth at least ${floor} yakuman, which is more than ${spec.limit}`,
+    );
+  }
+  if (want > ceiling) {
+    const undoubled = yakuman.filter(
+      (template) => !doublable.includes(template),
+    );
+    const flagged = undoubled
+      .map((template) => DOUBLE_YAKUMAN_FLAG[template.name])
+      .filter((flag): flag is keyof Ruleset["doubleYakuman"] => Boolean(flag));
+    const hint = flagged.length
+      ? ` — enable ruleset.doubleYakuman.${flagged.join(" / ")}`
+      : "";
+    return no(
+      `${yakuman.map((template) => template.name).join(" + ")} cannot reach ${spec.limit} under this ruleset${hint}`,
+    );
+  }
   return ok;
 }
 

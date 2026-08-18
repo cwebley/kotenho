@@ -27,7 +27,8 @@ export interface IntendedReading {
 
 export interface Assignment {
   handInput: HandInput;
-  intended: IntendedReading;
+  /** Absent when the assigner builds a hand without forming a grouping. */
+  intended?: IntendedReading;
 }
 
 const SUITS = ["m", "p", "s"] as const;
@@ -88,6 +89,7 @@ const ORPHANS: MahjongTile[] = [
   "1z", "2z", "3z", "4z", "5z", "6z", "7z",
 ];
 const CHUUREN_BASE = [1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9];
+const CHUUREN_RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 /** Thirteen orphans plus a duplicate. Winning on the duplicate is the 13-wait. */
 function assignKokushi(
@@ -97,7 +99,10 @@ function assignKokushi(
   rng: Rng,
 ): Assignment {
   const duplicate = rng.pick(ORPHANS);
-  const thirteenWait = rng.next() < 0.5;
+  // Which of the two forms is decided by the skeleton, not here: the thirteen
+  // wait is what a kokushi13Wait ruleset pays double for, so it has to be
+  // selectable rather than a coin flip.
+  const thirteenWait = skeleton.wait === "kokushi-wide";
   const winningTile = thirteenWait
     ? duplicate
     : rng.pick(ORPHANS.filter((tile) => tile !== duplicate));
@@ -323,17 +328,35 @@ function assignChiitoitsu(
   };
 }
 
-/** Nine gates is a tile multiset, not a prescribed grouping. */
+/**
+ * Nine gates is a tile multiset, not a prescribed grouping.
+ *
+ * The duplicated rank and the winning tile are drawn independently. Collapsing
+ * them — holding the pure 1112345678999 and winning anything — makes the
+ * thirteen-tile hand pure every time, which is junsei every time: the non-pure
+ * form was unreachable, and under a junseiChuuren ruleset so was an ordinary
+ * single yakuman.
+ */
 function assignChuuren(
   skeleton: Skeleton,
   domain: Domain,
   roundWind: Direction,
   seatWind: Direction,
   rng: Rng,
+  junsei?: boolean,
 ): Assignment {
   const suit = rng.pick(domain.suits);
-  const winningTile = suited(rng.pick([1, 2, 3, 4, 5, 6, 7, 8, 9]), suit);
-  const closedTiles = CHUUREN_BASE.map((rank) => suited(rank, suit));
+  const duplicate = rng.pick(CHUUREN_RANKS);
+  const wantJunsei = junsei ?? rng.next() < 0.5;
+  const full = [...CHUUREN_BASE, duplicate];
+  // Junsei exactly when removing the winning tile leaves the pure base, which
+  // happens only if the winning tile IS the duplicated rank.
+  const winningRank = wantJunsei
+    ? duplicate
+    : rng.pick(full.filter((rank) => rank !== duplicate));
+  const winningTile = suited(winningRank, suit);
+  const closedTiles = full.map((rank) => suited(rank, suit));
+  closedTiles.splice(closedTiles.indexOf(winningTile), 1);
 
   return {
     handInput: {
@@ -355,14 +378,10 @@ function assignChuuren(
         ruleset: createRuleset(),
       },
     },
-    // The scorer owns chuuren's many valid decompositions. The intended reading
-    // is diagnostic-only and does not constrain verification for this yakuman.
-    intended: {
-      shape: "standard",
-      groups: [],
-      pair: suited(1, suit),
-      wait: "tanki",
-    },
+    // No intended reading: the scorer owns chuuren's many valid decompositions
+    // and the planner formed none of them. Filling in a placeholder here made
+    // every nine-gates hand report coverage-shadow — the diagnosis meaning the
+    // scorer could not find our reading — for a hand that was never in question.
   };
 }
 
@@ -389,7 +408,14 @@ function tryAssign(
     );
   }
   if (plan.chuuren) {
-    return assignChuuren(skeleton, domain, roundWind, seatWind, rng);
+    return assignChuuren(
+      skeleton,
+      domain,
+      roundWind,
+      seatWind,
+      rng,
+      plan.junsei,
+    );
   }
 
   const counts = new Map<MahjongTile, number>();
