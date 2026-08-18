@@ -207,7 +207,11 @@ function pairOptions(
 }
 
 /** Where the winning tile sits in a run, given the wait. */
-function winFromRun(tiles: MahjongTile[], wait: WaitType): MahjongTile | null {
+export function winFromRun(
+  tiles: MahjongTile[],
+  wait: WaitType,
+  rng: Rng,
+): MahjongTile | null {
   const start = Number(tiles[0][0]);
   if (wait === "kanchan") return tiles[1];
   if (wait === "penchan") {
@@ -219,7 +223,7 @@ function winFromRun(tiles: MahjongTile[], wait: WaitType): MahjongTile | null {
   const options: MahjongTile[] = [];
   if (start + 3 <= 9) options.push(tiles[0]);
   if (start - 1 >= 1) options.push(tiles[2]);
-  return options.length ? options[0] : null;
+  return options.length ? rng.pick(options) : null;
 }
 
 function meldTypeFor(block: Block): Meld["type"] {
@@ -432,7 +436,7 @@ function tryAssign(
     const host = concrete[skeleton.waitHost];
     winningTile =
       host.block.kind === "run"
-        ? winFromRun(host.tiles, skeleton.wait)
+        ? winFromRun(host.tiles, skeleton.wait, rng)
         : host.tiles[0];
   }
   if (!winningTile) return null;
