@@ -102,4 +102,97 @@ describe("calculate", () => {
     expect(eastSeatPayment.value).toBe(700);
     expect(handAnalysis.handInterpretations[0].totalWinnings).toBe(1500);
   });
+
+  it("chooses pinfu over the higher-fu tanki interpretation when riichi is declared", () => {
+    const handInput: HandInput = {
+      closedTiles: [
+        "1p",
+        "2p",
+        "3p",
+        "4p",
+        "5p",
+        "6p",
+        "6p",
+        "7p",
+        "8p",
+        "2m",
+        "3m",
+        "4m",
+        "4m",
+      ],
+      openMelds: [],
+      winningTile: {
+        tile: "4m",
+        from: "north",
+      },
+      gameState: createGameState({ isRiichi: true }),
+    };
+
+    const handAnalysis = calculate(handInput);
+
+    expect(handAnalysis.valid).toBe(true);
+    expect(handAnalysis.handInterpretations).toHaveLength(2);
+    expect(handAnalysis.handInterpretations[0]).toMatchObject({
+      waitType: "ryanmen",
+      han: 2,
+      fu: 30,
+      basicPoints: 480,
+      totalWinnings: 2000,
+    });
+    expect(handAnalysis.handInterpretations[0].yaku.map((y) => y.name)).toEqual([
+      "riichi",
+      "pinfu",
+    ]);
+    expect(handAnalysis.handInterpretations[1]).toMatchObject({
+      waitType: "tanki",
+      han: 1,
+      fu: 40,
+      basicPoints: 320,
+      totalWinnings: 1300,
+    });
+    expect(handAnalysis.handInterpretations[1].yaku.map((y) => y.name)).toEqual([
+      "riichi",
+    ]);
+  });
+
+  it("discards the tanki interpretation when it has no yaku", () => {
+    const handInput: HandInput = {
+      closedTiles: [
+        "1p",
+        "2p",
+        "3p",
+        "4p",
+        "5p",
+        "6p",
+        "6p",
+        "7p",
+        "8p",
+        "2m",
+        "3m",
+        "4m",
+        "4m",
+      ],
+      openMelds: [],
+      winningTile: {
+        tile: "4m",
+        from: "north",
+      },
+      gameState: createGameState(),
+    };
+
+    const handAnalysis = calculate(handInput);
+
+    expect(handAnalysis.valid).toBe(true);
+    expect(handAnalysis.handInterpretations).toHaveLength(1);
+    expect(handAnalysis.handInterpretations[0]).toMatchObject({
+      waitType: "ryanmen",
+      han: 1,
+      fu: 30,
+      basicPoints: 240,
+      totalWinnings: 1000,
+    });
+    expect(handAnalysis.handInterpretations[0].yaku.map((y) => y.name)).toEqual([
+      "pinfu",
+    ]);
+  });
 });
