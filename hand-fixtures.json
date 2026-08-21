@@ -1,23 +1,25 @@
 {
   "_readme": "Fixtures for the Kotenho hand renderer. handInput is riichi-score HandInput (feed straight back into calculate()); analysis is verbatim calculate() output. canonical reading = analysis.handInterpretations[0].",
   "_gotchas": [
+    "closedTiles does NOT include the winning tile. To draw the 14-tile hand, concatenate closedTiles + winningTile.tile. A hand with called melds has correspondingly fewer closedTiles.",
+    "handInterpretations is an ARRAY, sorted best-first. Some hands have >1 valid reading. canonical = handInterpretations[0].",
+    "canonical.groups is the full four-groups-plus-pair PARSE, with open melds appended. handInput.closedTiles/openMelds is what the player physically holds. Draw from handInput; explain from groups.",
     "meld.type is \"run\" | \"triplet\" | \"daiminkan\" | \"shouminkan\" | \"ankan\". There is no \"set\" - it was renamed in riichi-score 3.0.",
     "Meld is a DISCRIMINATED UNION. A called meld has `from` and `calledIndex`. An ankan has NEITHER - the fields are absent, not sentinels. Branch on type === \"ankan\", never on presence of `from`.",
-    "calledIndex indexes into that meld's own `tiles` array and names the tile to lay sideways. It never affects scoring.",
-    "A run (chi) is ALWAYS called from the caller's kamicha - the player on their left. calculate() now rejects any other source. Relative seat: (WINDS.indexOf(from) - WINDS.indexOf(seatWind) + 4) % 4 -> 1 right, 2 across, 3 left.",
-    "handInterpretations is an ARRAY, sorted best-first. Some hands have >1.",
-    "Red fives are \"0m\"/\"0p\"/\"0s\", not \"5m\"/\"5p\"/\"5s\".",
-    "ankan lives in openMelds and carries a `from` that means nothing. Branch on meld.type.",
-    "Yakuman hands report han: 0 and carry `limit` instead.",
-    "Non-standard hands (chiitoitsu, kokushi) have `tiles`; standard hands have `groups` + `pair`. No overlap.",
-    "fuList is [{ reason, value }] objects — NOT [reason, value] tuples.",
-    "winningTile is a discriminated union: tsumo has isTsumo:true and no `from`; ron has `from` and no isTsumo.",
+    "calledIndex indexes into that meld's own `tiles` array and names the tile to lay sideways. It never affects scoring, but it is validated, so it always points at a real tile.",
+    "A run (chi) is ALWAYS called from the caller's kamicha - the player on their left. calculate() rejects any other source. Relative seat: (WINDS.indexOf(from) - WINDS.indexOf(seatWind) + 4) % 4 -> 1 right, 2 across, 3 left.",
+    "Red fives are \"0m\"/\"0p\"/\"0s\", not \"5m\"/\"5p\"/\"5s\". They appear inside melds too.",
+    "Yakuman hands report han: 0 and carry `limit` (\"yakuman\" | \"double-yakuman\" | ...) instead. A naive han-times-fu display renders them as nothing.",
+    "Non-standard hands (chiitoitsu, kokushi) have `tiles` and NO `groups`/`pair`. Standard hands have `groups` + `pair` and no `tiles`. Discriminate on isStandardHand.",
+    "fuList is [{ reason, value }] objects - NOT [reason, value] tuples.",
+    "winningTile is a discriminated union: tsumo has isTsumo:true and no `from`; ron has `from` and no isTsumo. Never infer from presence of `from`.",
+    "seatPayments is per-seat: ron yields one entry, tsumo three. totalWinnings is their sum.",
     "gameState.ruleset is a fully resolved snapshot, not a pointer.",
-    "honbaCount is accepted but currently ignored by the scorer (DATA-MODEL.md §12)."
+    "honbaCount is accepted but currently ignored by the scorer (DATA-MODEL.md sec 12)."
   ],
   "scorerVersion": "3.0.0",
   "generatorVersion": "0.2.0",
-  "generatedAt": "2026-08-21T20:30:59.728Z",
+  "generatedAt": "2026-08-21T20:42:12.288Z",
   "fixtures": [
     {
       "name": "closed-riichi-ron-kanchan",
@@ -602,7 +604,7 @@
     },
     {
       "name": "open-melds",
-      "note": "Called chi/pon. Each meld has `from` = the seat it was called from, which decides which tile renders rotated.",
+      "note": "Called chi and pon. `from` decides WHICH SLOT renders rotated (via relative seat); calledIndex decides which TILE sits in it. Two separate facts.",
       "source": {
         "via": "riichi-hand-generator",
         "spec": {
@@ -842,7 +844,7 @@
     },
     {
       "name": "concealed-kan-ankan",
-      "note": "ANKAN. Appears in openMelds but is CONCEALED. Its `from` is meaningless — key off type, not from. Renders 2 face-down bracketing 2 face-up.",
+      "note": "ANKAN. Lives in openMelds but is CONCEALED, and has NO `from` and NO `calledIndex` at all - a called ankan is unrepresentable. Renders 2 face-down bracketing 2 face-up, with nothing rotated.",
       "source": {
         "via": "riichi-hand-generator",
         "spec": {
@@ -1086,7 +1088,7 @@
     },
     {
       "name": "called-kan-daiminkan",
-      "note": "DAIMINKAN — genuinely called. `from` is real here.",
+      "note": "DAIMINKAN - genuinely called, so `from` and calledIndex are both real. Contrast with the ankan fixture, which has neither.",
       "source": {
         "via": "riichi-hand-generator",
         "spec": {
