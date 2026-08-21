@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0
+
+**Breaking.** Requires `riichi-score@^3.0.0`, and seeds do not reproduce hands
+from 0.1.x — meld construction now draws from the RNG stream.
+
+- Every called meld carries `calledIndex`, chosen at random. A concealed kan is
+  emitted with no `from` and no `calledIndex`.
+- `requiredGroups` accepts `calledTile` to pin which tile was called:
+  `{ tiles: "234m", called: true, calledTile: "4m" }`. Rejected on a group that
+  was never called, and on a tile the group does not contain.
+- Hand identity no longer folds in a concealed kan's source seat or a called
+  meld's `calledIndex`; neither makes a materially different exercise.
+
 ## Unreleased
 
 ### Added

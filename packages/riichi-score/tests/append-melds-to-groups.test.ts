@@ -32,9 +32,10 @@ describe("appendMeldsToGroups", () => {
 
     const openMelds: Meld[] = [
       {
-        type: "set",
+        type: "triplet",
         tiles: ["7z", "7z", "7z"],
         from: "east",
+        calledIndex: 0,
       },
       {
         type: "run",
@@ -46,7 +47,7 @@ describe("appendMeldsToGroups", () => {
       ryanmenInterpretation,
     );
     expect(updatedInterpretation.groups.length).toBe(3);
-    expect(updatedInterpretation.groups[1].type).toBe("set");
+    expect(updatedInterpretation.groups[1].type).toBe("triplet");
     expect(updatedInterpretation.groups[2].tiles[0]).toBe("0s");
   });
 
@@ -91,7 +92,7 @@ describe("appendMeldsToGroups", () => {
     });
 
     const updated = appendMeldsToGroups(
-      [{ type: "ankan", tiles: ["7z", "7z", "7z", "7z"], from: "east" }],
+      [{ type: "ankan", tiles: ["7z", "7z", "7z", "7z"] }],
       hand,
     );
 

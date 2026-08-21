@@ -32,7 +32,7 @@ describe("detectTanyao", () => {
         }),
         createStandardGroup({
           tiles: ["6p", "6p", "6p"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
         createStandardGroup({
@@ -76,7 +76,7 @@ describe("detectTanyao", () => {
         }),
         createStandardGroup({
           tiles: ["6p", "6p", "6p"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
         createStandardGroup({
@@ -120,7 +120,7 @@ describe("detectTanyao", () => {
         }),
         createStandardGroup({
           tiles: ["6p", "6p", "6p"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
         createStandardGroup({

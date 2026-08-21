@@ -17,13 +17,19 @@ export function appendMeldsToGroups(
       handInterpretation.groups = [];
     }
     handInterpretation.groups.push(
-      createStandardGroup({
-        tiles: [...meld.tiles],
-        type: meld.type,
-        // Concealed kans do not break menzen and use concealed-kan fu.
-        open: meld.type !== "ankan",
-        from: meld.from,
-      }),
+      createStandardGroup(
+        // Concealed kans do not break menzen and use concealed-kan fu, and
+        // they carry neither a source seat nor a called tile.
+        meld.type === "ankan"
+          ? { tiles: [...meld.tiles], type: meld.type, open: false }
+          : {
+              tiles: [...meld.tiles],
+              type: meld.type,
+              open: true,
+              from: meld.from,
+              calledIndex: meld.calledIndex,
+            },
+      ),
     );
   });
   return handInterpretation;

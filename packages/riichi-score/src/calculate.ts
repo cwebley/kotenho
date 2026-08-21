@@ -1,7 +1,12 @@
-import { flattenInputTiles, HandInput } from "./models/hand-input.js";
+import {
+  CalledMeld,
+  flattenInputTiles,
+  HandInput,
+} from "./models/hand-input.js";
 import { appendMeldsToGroups } from "./utils/append-melds-to-groups.js";
 import { rehydrateRedFives } from "./utils/rehydrate-red-fives.js";
 import { createGameState } from "./models/game-state.js";
+import { KAMICHA } from "./models/direction.js";
 import { createRuleset } from "./models/ruleset.js";
 import { createHandInterpretation } from "./models/hand-interpretation.js";
 import { HandAnalysis, createHandAnalysis } from "./models/hand-analysis.js";
@@ -74,13 +79,31 @@ export function calculate(handInput: HandInput): HandAnalysis {
     );
   }
 
-  // verify all the melds are valid (tiles, count, type)
+  // verify all the melds are valid (tiles, count, type, called tile)
   const invalidMelds = handInput.openMelds.filter((meld) => !isValidMeld(meld));
   if (invalidMelds.length) {
     handAnalysis.valid = false;
     invalidMelds.forEach((invalidMeld) => {
       handAnalysis.errors.push(
         `Invalid meld of type ${invalidMeld.type}. Tiles: ${invalidMeld.tiles}`,
+      );
+    });
+  }
+
+  // Chi may only be called from the player on your left, so a run sourced from
+  // any other seat is a board state that cannot happen. It scores identically
+  // either way, which is precisely why nothing else would catch it — and a
+  // learner reading the hand would see an impossible table.
+  const expectedRunSource = KAMICHA[gameState.seatWind];
+  const misSourcedRuns = handInput.openMelds.filter(
+    (meld): meld is CalledMeld =>
+      meld.type === "run" && meld.from !== expectedRunSource,
+  );
+  if (misSourcedRuns.length) {
+    handAnalysis.valid = false;
+    misSourcedRuns.forEach((meld) => {
+      handAnalysis.errors.push(
+        `A run was called from ${meld.from}, but a ${gameState.seatWind} seat can only chi from ${expectedRunSource}. Tiles: ${meld.tiles}`,
       );
     });
   }

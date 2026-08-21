@@ -21,6 +21,8 @@ export interface RequiredGroup {
   called: boolean;
   /** Set only when the author asked for a specific meld type. */
   meldType?: GroupType;
+  /** Set only when the author pinned which tile was called. */
+  calledTile?: MahjongTile;
 }
 
 /** A way the pinned winning tile can be won. `group: -1` means the pair. */
@@ -186,7 +188,7 @@ export function pairClassAllows(
 
 const MELD_TYPE_SHAPES: Record<GroupType, { kind: BlockKind; called: boolean }> = {
   run: { kind: "run", called: true },
-  set: { kind: "triplet", called: true },
+  triplet: { kind: "triplet", called: true },
   ankan: { kind: "kan", called: false },
   daiminkan: { kind: "kan", called: true },
   shouminkan: { kind: "kan", called: true },
@@ -233,7 +235,35 @@ export function parseRequired(spec: GenerateSpec): RequiredResult {
       }
       called = expected.called;
     }
-    groups.push({ tiles, kind: shape.kind, edge: shape.edge, called, ...(source.meldType ? { meldType: source.meldType } : {}) });
+    let calledTile: MahjongTile | undefined;
+    if (source.calledTile !== undefined) {
+      if (!called) {
+        return {
+          ok: false,
+          reason: `calledTile is meaningless on "${source.tiles}", which is not called from another player`,
+        };
+      }
+      const parsedCall = parseTileGroup(source.calledTile);
+      if (!parsedCall.ok) return parsedCall;
+      if (parsedCall.tiles.length !== 1) {
+        return { ok: false, reason: `calledTile "${source.calledTile}" is not a single tile` };
+      }
+      if (!tiles.includes(parsedCall.tiles[0])) {
+        return {
+          ok: false,
+          reason: `calledTile ${parsedCall.tiles[0]} is not part of "${source.tiles}"`,
+        };
+      }
+      calledTile = parsedCall.tiles[0];
+    }
+    groups.push({
+      tiles,
+      kind: shape.kind,
+      edge: shape.edge,
+      called,
+      ...(source.meldType ? { meldType: source.meldType } : {}),
+      ...(calledTile ? { calledTile } : {}),
+    });
   }
 
   let pair: MahjongTile | undefined;

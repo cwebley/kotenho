@@ -21,7 +21,7 @@ describe("parseGroups", () => {
     const handInterpretations = parseGroups(parentHand);
     expect(handInterpretations.length).toBe(1);
     handInterpretations[0].forEach((group) => {
-      expect(group.type).toBe("set");
+      expect(group.type).toBe("triplet");
     });
     expect(handInterpretations[0][0].tiles[0]).toBe("2m");
     expect(handInterpretations[0][1].tiles[0]).toBe("6p");

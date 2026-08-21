@@ -31,14 +31,15 @@ describe("detectYakuhai", () => {
         }),
         createStandardGroup({
           tiles: ["3s", "3s", "3s"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
         createStandardGroup({
           tiles: ["1z", "1z", "1z"],
-          type: "set",
+          type: "triplet",
           open: true,
           from: "west",
+          calledIndex: 0,
         }),
       ],
       gameState: createGameState({
@@ -76,14 +77,15 @@ describe("detectYakuhai", () => {
         }),
         createStandardGroup({
           tiles: ["3s", "3s", "3s"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
         createStandardGroup({
           tiles: ["2z", "2z", "2z"],
-          type: "set",
+          type: "triplet",
           open: true,
           from: "west",
+          calledIndex: 0,
         }),
       ],
       gameState: createGameState({
@@ -121,14 +123,15 @@ describe("detectYakuhai", () => {
         }),
         createStandardGroup({
           tiles: ["3s", "3s", "3s"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
         createStandardGroup({
           tiles: ["1z", "1z", "1z"],
-          type: "set",
+          type: "triplet",
           open: true,
           from: "west",
+          calledIndex: 0,
         }),
       ],
       gameState: createGameState({
@@ -167,14 +170,15 @@ describe("detectYakuhai", () => {
         }),
         createStandardGroup({
           tiles: ["3s", "3s", "3s"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
         createStandardGroup({
           tiles: ["5z", "5z", "5z"],
-          type: "set",
+          type: "triplet",
           open: true,
           from: "west",
+          calledIndex: 0,
         }),
       ],
       gameState: createGameState({
@@ -212,14 +216,15 @@ describe("detectYakuhai", () => {
         }),
         createStandardGroup({
           tiles: ["3s", "3s", "3s"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
         createStandardGroup({
           tiles: ["6z", "6z", "6z"],
-          type: "set",
+          type: "triplet",
           open: true,
           from: "west",
+          calledIndex: 0,
         }),
       ],
       gameState: createGameState({
@@ -256,14 +261,15 @@ describe("detectYakuhai", () => {
         }),
         createStandardGroup({
           tiles: ["3s", "3s", "3s"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
         createStandardGroup({
           tiles: ["7z", "7z", "7z"],
-          type: "set",
+          type: "triplet",
           open: true,
           from: "west",
+          calledIndex: 0,
         }),
       ],
       gameState: createGameState({
@@ -301,14 +307,15 @@ describe("detectYakuhai", () => {
         }),
         createStandardGroup({
           tiles: ["1z", "1z", "1z"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
         createStandardGroup({
           tiles: ["7z", "7z", "7z"],
-          type: "set",
+          type: "triplet",
           open: true,
           from: "west",
+          calledIndex: 0,
         }),
       ],
       gameState: createGameState({

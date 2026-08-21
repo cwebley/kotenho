@@ -100,7 +100,7 @@ describe("rehydrateRedFives", () => {
           }),
           createStandardGroup({
             tiles: ["5s", "5s", "5s"],
-            type: "set",
+            type: "triplet",
             open: false,
             isFinalWait: true,
           }),

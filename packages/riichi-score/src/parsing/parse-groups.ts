@@ -4,7 +4,7 @@ import { removeTiles } from "../utils/remove-tiles.js";
 import { StandardGroup, createStandardGroup } from "../models/standard-group.js";
 import { MahjongTile } from "../models/mahjong-tile.js";
 /**
- * Attempts to parse all possible groups ("set" or "run") from a sorted
+ * Attempts to parse all possible groups ("triplet" or "run") from a sorted
  * subset of tiles (already excluding the pair), returning an array of
  * possible interpretations.
  *
@@ -33,7 +33,7 @@ export function parseGroups(tiles: MahjongTile[]): StandardGroup[][] {
 
   const firstTile = tiles[0];
 
-  // Attempt to form a "set" (three identical tiles) from the first tile.
+  // Attempt to form a "triplet" (three identical tiles) from the first tile.
   const setCandidate = [firstTile, firstTile, firstTile];
   const remainingAfterSet = removeTiles(tiles, setCandidate);
 
@@ -57,13 +57,13 @@ export function parseGroups(tiles: MahjongTile[]): StandardGroup[][] {
   if (remainingAfterSet) {
     const group = createStandardGroup({
       tiles: setCandidate,
-      type: "set",
+      type: "triplet",
       open: false,
     });
 
     // Recursively parse the rest
     const subInterpretations = parseGroups(remainingAfterSet);
-    // For each sub-interpretation, prepend our "set"
+    // For each sub-interpretation, prepend our "triplet"
     for (const sub of subInterpretations) {
       results.push([group, ...sub]);
     }

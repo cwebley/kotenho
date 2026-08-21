@@ -38,6 +38,14 @@ export interface RequiredGroupOptions {
    * lets another player rob it. Implies `called`, so the two cannot disagree.
    */
   meldType?: GroupType;
+  /**
+   * Which tile of this group was the one called, as concrete notation:
+   * `"4m"` for a `"234m"` chi. Purely presentational — a renderer lays it
+   * sideways — and unconstrained, since any tile of a chi is a legal call.
+   * Omitted means the generator picks one. Invalid on `ankan`, which is never
+   * called, and `"0p"` names the red five specifically.
+   */
+  calledTile?: string;
 }
 
 export type RequiredGroupSpec = string | RequiredGroupOptions;

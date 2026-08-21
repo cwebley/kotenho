@@ -264,7 +264,7 @@ export function winFromRun(
 function meldTypeFor(block: Block): Meld["type"] {
   if (block.kind === "kan") return block.called ? "daiminkan" : "ankan";
   if (block.kind === "run") return "run";
-  return "set";
+  return "triplet";
 }
 
 function assignChiitoitsu(
@@ -521,14 +521,25 @@ function tryAssign(
   concrete.forEach(({ block, tiles }, index) => {
     if (block.called || block.kind === "kan") {
       const type = plan.meldTypes?.get(index) ?? meldTypeFor(block);
+      const sorted = sortTiles(tiles);
+      if (type === "ankan") {
+        // Never called, so it carries neither a source seat nor a called tile.
+        openMelds.push({ type, tiles: sorted });
+        return;
+      }
+      // Which tile was called is unconstrained — every tile of a chi is a
+      // legal call, and a pon's three are the same tile — so it is chosen
+      // rather than derived. Nothing downstream scores differently for it.
+      const pinned = plan.calledTiles?.get(index);
+      const pinnedIndex = pinned ? sorted.indexOf(pinned) : -1;
       openMelds.push({
         type,
-        tiles: sortTiles(tiles),
-        from: !block.called
-          ? seatWind
-          : type === "run"
+        tiles: sorted,
+        from:
+          type === "run"
             ? KAMICHA[seatWind]
             : rng.pick(DIRECTIONS.filter((d) => d !== seatWind)),
+        calledIndex: pinnedIndex >= 0 ? pinnedIndex : rng.int(sorted.length),
       });
     } else {
       closedTiles.push(...tiles);

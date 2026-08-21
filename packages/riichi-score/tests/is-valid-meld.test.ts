@@ -9,6 +9,7 @@ describe("isValidMeld", () => {
       tiles: ["1m", "2g" as MahjongTile, "3m"],
       type: "run",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(validChi)).toBe(false);
   });
@@ -17,6 +18,7 @@ describe("isValidMeld", () => {
       tiles: ["5m", "6m", "7m"],
       type: "run",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(validChi)).toBe(true);
   });
@@ -25,6 +27,7 @@ describe("isValidMeld", () => {
       tiles: ["5m", "6m", "9m"],
       type: "run",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testChi)).toBe(false);
   });
@@ -33,6 +36,7 @@ describe("isValidMeld", () => {
       tiles: ["5m", "6m", "7m", "8m"],
       type: "run",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testChi)).toBe(false);
   });
@@ -41,6 +45,7 @@ describe("isValidMeld", () => {
       tiles: ["0m", "6m", "7m"],
       type: "run",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testChi)).toBe(true);
   });
@@ -48,24 +53,27 @@ describe("isValidMeld", () => {
   it("returns true for valid pon", () => {
     const testPon: Meld = {
       tiles: ["5m", "5m", "5m"],
-      type: "set",
+      type: "triplet",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testPon)).toBe(true);
   });
   it("returns false for a non-identical pon", () => {
     const testPon: Meld = {
       tiles: ["5m", "4m", "5m"],
-      type: "set",
+      type: "triplet",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testPon)).toBe(false);
   });
   it("returns false for pon that is too long", () => {
     const testPon: Meld = {
       tiles: ["5m", "5m", "5m", "5m"],
-      type: "set",
+      type: "triplet",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testPon)).toBe(false);
   });
@@ -74,6 +82,7 @@ describe("isValidMeld", () => {
       tiles: ["5m", "5m", "5m", "5m"],
       type: "daiminkan",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testDaiminkan)).toBe(true);
   });
@@ -82,6 +91,7 @@ describe("isValidMeld", () => {
       tiles: ["5m", "4m", "5m", "5m"],
       type: "daiminkan",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testDaiminkan)).toBe(false);
   });
@@ -90,6 +100,7 @@ describe("isValidMeld", () => {
       tiles: ["5m", "5m", "5m"],
       type: "daiminkan",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testDaiminkan)).toBe(false);
   });
@@ -98,6 +109,7 @@ describe("isValidMeld", () => {
       tiles: ["5m", "5m", "5m", "5m"],
       type: "shouminkan",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testShouminkan)).toBe(true);
   });
@@ -106,6 +118,7 @@ describe("isValidMeld", () => {
       tiles: ["5m", "4m", "5m", "5m"],
       type: "shouminkan",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testShouminkan)).toBe(false);
   });
@@ -114,6 +127,7 @@ describe("isValidMeld", () => {
       tiles: ["5m", "5m", "5m"],
       type: "shouminkan",
       from: "east",
+      calledIndex: 0,
     };
     expect(isValidMeld(testShouminkan)).toBe(false);
   });

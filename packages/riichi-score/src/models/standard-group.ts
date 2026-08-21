@@ -11,6 +11,8 @@ export interface StandardGroupOptions {
   type: GroupType;
   open?: boolean; // defaults to false
   from?: Direction; // only relevant if open is true
+  /** Index into `tiles` of the called tile; only present on a called meld. */
+  calledIndex?: number;
   isFinalWait?: boolean; // defaults to false
 }
 
@@ -22,6 +24,7 @@ export interface StandardGroup {
   type: GroupType;
   open: boolean;
   from?: Direction;
+  calledIndex?: number;
   isFinalWait: boolean;
 }
 
@@ -33,6 +36,7 @@ export function createStandardGroup({
   type,
   open = false,
   from,
+  calledIndex,
   isFinalWait = false,
 }: StandardGroupOptions): StandardGroup {
   return {
@@ -40,6 +44,7 @@ export function createStandardGroup({
     type,
     open,
     from, // remains undefined if omitted
+    calledIndex, // remains undefined for concealed groups
     isFinalWait,
   };
 }

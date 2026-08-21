@@ -307,9 +307,11 @@ function score(p, ctx) {
 const AKA = { "0m": "5m", "0p": "5p", "0s": "5s" };
 const norm = (t) => AKA[t] ?? t;
 
+// Keyed by riichi-score's GroupType — the one place this file tracks the
+// caller's vocabulary. Only the input format is shared; no scoring code is.
 const MELD_KIND = {
   run: { type: "run", called: true },
-  set: { type: "trip", called: true },
+  triplet: { type: "trip", called: true },
   daiminkan: { type: "kan", called: true },
   shouminkan: { type: "kan", called: true },
   ankan: { type: "kan", called: false }, // concealed: does not open the hand

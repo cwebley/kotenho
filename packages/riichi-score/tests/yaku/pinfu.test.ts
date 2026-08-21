@@ -83,6 +83,7 @@ describe("detectPinfu", () => {
           tiles: ["4s", "5s", "6s"],
           type: "run",
           from: "west",
+          calledIndex: 0,
         }),
       ],
       gameState: createGameState({
@@ -125,8 +126,9 @@ describe("detectPinfu", () => {
         }),
         createStandardGroup({
           tiles: ["4s", "4s", "4s"],
-          type: "set",
+          type: "triplet",
           from: "west",
+          calledIndex: 0,
         }),
       ],
       gameState: createGameState({
@@ -171,6 +173,7 @@ describe("detectPinfu", () => {
           tiles: ["4s", "5s", "6s"],
           type: "run",
           from: "west",
+          calledIndex: 0,
           open: true,
         }),
       ],

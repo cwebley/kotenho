@@ -1,5 +1,7 @@
 export { calculate } from "./calculate.js";
 export { createGameState } from "./models/game-state.js";
+export { createMeld } from "./models/hand-input.js";
+export { KAMICHA } from "./models/direction.js";
 export { createRuleset, TENHOU_RULESET } from "./models/ruleset.js";
 export { formatTiles, parseTiles, sortTiles } from "./utils/tile-notation.js";
 
@@ -7,7 +9,14 @@ export { formatTiles, parseTiles, sortTiles } from "./utils/tile-notation.js";
 // part of the public contract, not internals.
 export type { GameState, GameStateOptions } from "./models/game-state.js";
 export type { Ruleset, RulesetOptions } from "./models/ruleset.js";
-export type { HandInput, Meld } from "./models/hand-input.js";
+export type {
+  HandInput,
+  Meld,
+  MeldOptions,
+  CalledMeld,
+  CalledMeldType,
+  ConcealedKan,
+} from "./models/hand-input.js";
 export type { FinalWait, HandAnalysis } from "./models/hand-analysis.js";
 export type {
   HandInterpretation,

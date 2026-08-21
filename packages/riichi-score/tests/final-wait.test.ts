@@ -75,7 +75,7 @@ describe("final wait", () => {
   it("reports a structural wait even when the completion has no yaku", () => {
     const analysis = calculate({
       closedTiles: ["2p", "3p", "4p", "5p", "6p", "7p", "8s", "9s", "5z", "5z"],
-      openMelds: [{ type: "run", tiles: ["1m", "2m", "3m"], from: "east" }],
+      openMelds: [{ type: "run", tiles: ["1m", "2m", "3m"], from: "east", calledIndex: 0 }],
       winningTile: { tile: "7s", isTsumo: true },
       gameState: createGameState(),
     });

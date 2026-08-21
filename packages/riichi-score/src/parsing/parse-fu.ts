@@ -183,7 +183,7 @@ export function parseFu(
       return;
     }
     // handle sets first. everything else is a kan
-    if (group.type === "set") {
+    if (group.type === "triplet") {
       // A shanpon triplet completed by ron uses open-triplet fu, but it does
       // not make the hand open for menzen yaku or the closed-ron bonus.
       const isOpenForFu =

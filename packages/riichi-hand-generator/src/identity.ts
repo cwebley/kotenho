@@ -7,9 +7,15 @@ import type { HandInput } from "riichi-score";
  */
 export function normalizedHandSignature(input: HandInput): string {
   const melds = (input.openMelds ?? [])
-    .map(
-      (meld) =>
-        `${meld.type}:${[...meld.tiles].sort().join(",")}:${meld.from ?? ""}`,
+    .map((meld) =>
+      // A concealed kan has no source, and which tile of a called meld was
+      // called is presentational — neither makes a materially different
+      // exercise, so neither belongs in the identity.
+      [
+        meld.type,
+        [...meld.tiles].sort().join(","),
+        meld.type === "ankan" ? "concealed" : meld.from,
+      ].join(":"),
     )
     .sort()
     .join("|");

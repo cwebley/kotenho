@@ -231,16 +231,86 @@ describe("called melds", () => {
     expect(chi).toBeGreaterThan(0);
   });
 
-  it("keeps a concealed kan attributed to the winner", () => {
+  it("gives a concealed kan neither a source seat nor a called tile", () => {
+    let ankan = 0;
     for (const hand of hands(
       { kanCount: 1, closed: true, doraIndicatorCount: 2 },
       8,
     )) {
       for (const meld of hand.handInput.openMelds ?? []) {
         if (meld.type !== "ankan") continue;
-        expect(meld.from).toBe(hand.handInput.gameState!.seatWind);
+        ankan++;
+        expect("from" in meld).toBe(false);
+        expect("calledIndex" in meld).toBe(false);
       }
     }
+    expect(ankan).toBeGreaterThan(0);
+  });
+
+  it("points every called meld at a tile it actually contains", () => {
+    let called = 0;
+    for (const hand of hands(
+      { openMeldCount: 2, yaku: ["tanyao"], yakuPolicy: "atLeast" },
+      30,
+      5,
+    )) {
+      for (const meld of hand.handInput.openMelds ?? []) {
+        if (meld.type === "ankan") continue;
+        called++;
+        expect(Number.isInteger(meld.calledIndex)).toBe(true);
+        expect(meld.calledIndex).toBeGreaterThanOrEqual(0);
+        expect(meld.calledIndex).toBeLessThan(meld.tiles.length);
+      }
+    }
+    expect(called).toBeGreaterThan(0);
+  });
+
+  it("varies which tile of a chi was called", () => {
+    // A fixed choice would render every chi in the app as the same call.
+    const seen = new Set<number>();
+    for (const hand of hands(
+      { openMeldCount: 2, yaku: ["tanyao"], yakuPolicy: "atLeast" },
+      40,
+      5,
+    )) {
+      for (const meld of hand.handInput.openMelds ?? []) {
+        if (meld.type === "run") seen.add(meld.calledIndex);
+      }
+    }
+    expect(seen.size).toBeGreaterThan(1);
+  });
+
+  it("honours a pinned calledTile", () => {
+    for (const hand of hands(
+      {
+        requiredGroups: [{ tiles: "234m", called: true, calledTile: "4m" }],
+        yaku: ["tanyao"],
+        yakuPolicy: "atLeast",
+      },
+      6,
+    )) {
+      const chi = (hand.handInput.openMelds ?? []).find(
+        (meld) => meld.type === "run" && meld.tiles.join("") === "2m3m4m",
+      );
+      expect(chi).toBeDefined();
+      expect(chi!.tiles[chi!.calledIndex!]).toBe("4m");
+    }
+  });
+
+  it("rejects a calledTile that is not part of the group", () => {
+    const result = generate({
+      requiredGroups: [{ tiles: "234m", called: true, calledTile: "7m" }],
+    });
+    expect(result.hand).toBeUndefined();
+    expect(result.reason).toMatch(/calledTile 7m is not part of/);
+  });
+
+  it("rejects a calledTile on a group that was never called", () => {
+    const result = generate({
+      requiredGroups: [{ tiles: "5m5m5m5m", meldType: "ankan", calledTile: "5m" }],
+    });
+    expect(result.hand).toBeUndefined();
+    expect(result.reason).toMatch(/not called from another player/);
   });
 });
 

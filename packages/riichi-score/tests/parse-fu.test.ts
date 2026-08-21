@@ -205,7 +205,7 @@ describe("parse fu", () => {
         }),
         createStandardGroup({
           tiles: ["8m", "8m", "8m"],
-          type: "set",
+          type: "triplet",
           open: true,
         }),
       ],
@@ -256,7 +256,7 @@ describe("parse fu", () => {
         }),
         createStandardGroup({
           tiles: ["8m", "8m", "8m"],
-          type: "set",
+          type: "triplet",
           open: false,
         }),
       ],
@@ -289,7 +289,7 @@ describe("parse fu", () => {
         createStandardGroup({ tiles: ["7p", "8p", "9p"], type: "run" }),
         createStandardGroup({
           tiles: ["8m", "8m", "8m"],
-          type: "set",
+          type: "triplet",
           isFinalWait: true,
         }),
       ],
@@ -334,9 +334,10 @@ describe("parse fu", () => {
         }),
         createStandardGroup({
           tiles: ["7z", "7z", "7z"],
-          type: "set",
+          type: "triplet",
           open: true,
           from: "north",
+          calledIndex: 0,
         }),
       ],
       gameState: createGameState({

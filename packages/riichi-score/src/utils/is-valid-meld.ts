@@ -15,6 +15,19 @@ export function isValidMeld(meld: Meld): boolean {
     return false;
   }
 
+  // A called meld must point at a tile it actually contains. Nothing in
+  // scoring reads calledIndex, so an out-of-range value would otherwise
+  // surface only as a renderer drawing the wrong tile sideways.
+  if (meld.type !== "ankan") {
+    if (
+      !Number.isInteger(meld.calledIndex) ||
+      meld.calledIndex < 0 ||
+      meld.calledIndex >= meld.tiles.length
+    ) {
+      return false;
+    }
+  }
+
   // replace red 5s with normal 5s
   const normalizedTiles = replaceAkadora(meld.tiles);
 
@@ -35,7 +48,7 @@ export function isValidMeld(meld: Meld): boolean {
       return true;
     }
   }
-  if (meld.type === "set") {
+  if (meld.type === "triplet") {
     if (normalizedTiles.length !== 3) {
       return false;
     }

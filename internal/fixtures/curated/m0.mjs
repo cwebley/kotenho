@@ -63,7 +63,7 @@ export const m0Fixtures = [
       closedTiles: [
         "3p", "4p", "5p", "4p", "5p", "6p", "4s", "5s", "5s", "5s",
       ],
-      openMelds: [{ type: "run", tiles: ["2m", "3m", "4m"], from: "east" }],
+      openMelds: [{ type: "run", tiles: ["2m", "3m", "4m"], from: "east", calledIndex: 0 }],
       winningTile: { tile: "6s", from: "north" },
       gameState: {},
     },
@@ -92,7 +92,7 @@ export const m0Fixtures = [
     name: "open triplet of simples is 2 fu",
     handInput: {
       closedTiles: ["2m", "3m", "4m", "5m", "6m", "7m", "2p", "3p", "8p", "8p"],
-      openMelds: [{ type: "set", tiles: ["5s", "5s", "5s"], from: "south" }],
+      openMelds: [{ type: "triplet", tiles: ["5s", "5s", "5s"], from: "south", calledIndex: 0 }],
       winningTile: { tile: "4p", from: "north" },
       gameState: {},
     },
@@ -113,7 +113,7 @@ export const m0Fixtures = [
     name: "open triplet of honors is 4 fu",
     handInput: {
       closedTiles: ["2m", "3m", "4m", "5m", "6m", "7m", "2p", "3p", "9p", "9p"],
-      openMelds: [{ type: "set", tiles: ["5z", "5z", "5z"], from: "south" }],
+      openMelds: [{ type: "triplet", tiles: ["5z", "5z", "5z"], from: "south", calledIndex: 0 }],
       winningTile: { tile: "4p", from: "north" },
       gameState: {},
     },
@@ -137,7 +137,7 @@ export const m0Fixtures = [
     handInput: {
       closedTiles: ["2m", "3m", "4m", "5m", "6m", "7m", "2p", "3p", "8p", "8p"],
       openMelds: [
-        { type: "daiminkan", tiles: ["5s", "5s", "5s", "5s"], from: "south" },
+        { type: "daiminkan", tiles: ["5s", "5s", "5s", "5s"], from: "south", calledIndex: 0 },
       ],
       winningTile: { tile: "4p", from: "north" },
       gameState: {},
@@ -149,7 +149,7 @@ export const m0Fixtures = [
     handInput: {
       closedTiles: ["1p", "2p", "4s", "5s", "6s", "7s", "8s", "9s", "2m", "2m"],
       openMelds: [
-        { type: "ankan", tiles: ["5m", "5m", "5m", "5m"], from: "east" },
+        { type: "ankan", tiles: ["5m", "5m", "5m", "5m"] },
       ],
       winningTile: { tile: "3p", from: "north" },
       gameState: { isRiichi: true },
@@ -161,7 +161,7 @@ export const m0Fixtures = [
     handInput: {
       closedTiles: ["2m", "3m", "4m", "5m", "6m", "7m", "2p", "3p", "9p", "9p"],
       openMelds: [
-        { type: "daiminkan", tiles: ["5z", "5z", "5z", "5z"], from: "west" },
+        { type: "daiminkan", tiles: ["5z", "5z", "5z", "5z"], from: "west", calledIndex: 0 },
       ],
       winningTile: { tile: "4p", from: "north" },
       gameState: {},
@@ -175,7 +175,7 @@ export const m0Fixtures = [
         "1m", "2m", "3m", "4m", "5m", "6m", "7p", "8p", "5s", "5s",
       ],
       openMelds: [
-        { type: "ankan", tiles: ["7z", "7z", "7z", "7z"], from: "east" },
+        { type: "ankan", tiles: ["7z", "7z", "7z", "7z"] },
       ],
       winningTile: { tile: "9p", isTsumo: true },
       gameState: {},
@@ -303,7 +303,7 @@ export const m0Fixtures = [
     name: "all triplets is toitoi",
     handInput: {
       closedTiles: ["2m", "2m", "2m", "5p", "5p", "5p", "8s", "8s", "3s", "3s"],
-      openMelds: [{ type: "set", tiles: ["9m", "9m", "9m"], from: "east" }],
+      openMelds: [{ type: "triplet", tiles: ["9m", "9m", "9m"], from: "east", calledIndex: 0 }],
       winningTile: { tile: "8s", from: "north" },
       gameState: {},
     },
@@ -332,7 +332,7 @@ export const m0Fixtures = [
       closedTiles: [
         "6s", "7s", "5z", "5z", "5z", "1z", "1z", "1z", "9s", "9s",
       ],
-      openMelds: [{ type: "run", tiles: ["2s", "3s", "4s"], from: "east" }],
+      openMelds: [{ type: "run", tiles: ["2s", "3s", "4s"], from: "south", calledIndex: 0 }],
       winningTile: { tile: "8s", from: "north" },
       gameState: { roundWind: "south", seatWind: "west" },
     },
@@ -442,7 +442,7 @@ export const m0Fixtures = [
     name: "sanshoku is 1 han once the hand is opened",
     handInput: {
       closedTiles: ["2p", "3p", "4p", "2s", "3s", "4s", "6m", "7m", "9s", "9s"],
-      openMelds: [{ type: "run", tiles: ["2m", "3m", "4m"], from: "east" }],
+      openMelds: [{ type: "run", tiles: ["2m", "3m", "4m"], from: "east", calledIndex: 0 }],
       winningTile: { tile: "8m", from: "north" },
       gameState: {},
     },
@@ -494,7 +494,7 @@ export const m0Fixtures = [
     name: "ittsuu is 1 han once the hand is opened",
     handInput: {
       closedTiles: ["4s", "5s", "6s", "7s", "8s", "9s", "2m", "3m", "5p", "5p"],
-      openMelds: [{ type: "run", tiles: ["1s", "2s", "3s"], from: "east" }],
+      openMelds: [{ type: "run", tiles: ["1s", "2s", "3s"], from: "east", calledIndex: 0 }],
       winningTile: { tile: "4m", from: "north" },
       gameState: {},
     },

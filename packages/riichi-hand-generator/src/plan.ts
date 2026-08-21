@@ -82,6 +82,8 @@ export interface TilePlan {
   winningTile?: MahjongTile;
   /** Block index → meld type, when the author pinned one. */
   meldTypes?: Map<number, GroupType>;
+  /** Block index → the pinned called tile, when the author named one. */
+  calledTiles?: Map<number, MahjongTile>;
 }
 
 /** Run starts legal under the domain: the whole run must fit in the range. */
@@ -248,6 +250,7 @@ export function planTiles(
   //    rule that orders PLACER_ORDER puts them first, and every later placer
   //    sees a smaller but still consistent set of free slots.
   const meldTypes = new Map<number, GroupType>();
+  const calledTiles = new Map<number, MahjongTile>();
   let requiredPair: MahjongTile | undefined;
   if (required) {
     // A pin can contradict a yaku's domain — "123p" under tanyao, say. Failing
@@ -282,6 +285,7 @@ export function planTiles(
       const group = required.groups[index];
       fixed.set(block, [...group.tiles]);
       if (group.meldType) meldTypes.set(block, group.meldType);
+      if (group.calledTile) calledTiles.set(block, group.calledTile);
       const runSlot = freeRuns.indexOf(block);
       if (runSlot >= 0) freeRuns.splice(runSlot, 1);
       const tripletSlot = freeTriplets.indexOf(block);
@@ -540,6 +544,7 @@ export function planTiles(
     chuuren: chuuren || undefined,
     ...(required?.winningTile ? { winningTile: required.winningTile } : {}),
     ...(meldTypes.size ? { meldTypes } : {}),
+    ...(calledTiles.size ? { calledTiles } : {}),
     ...(chuuren && limit !== undefined
       ? { junsei: LIMIT_MULTIPLIER[limit] >= 2 }
       : {}),

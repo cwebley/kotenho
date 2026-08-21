@@ -113,7 +113,7 @@ describe("M0 curated scorer conformance", () => {
   it("reports a yaku-less hand as invalid rather than valid-with-no-readings", () => {
     const result = calculate({
       closedTiles: ["2m", "3m", "4m", "5p", "6p", "7p", "7s", "8s", "8s", "8s"],
-      openMelds: [{ type: "run", tiles: ["2m", "3m", "4m"], from: "east" }],
+      openMelds: [{ type: "run", tiles: ["2m", "3m", "4m"], from: "east", calledIndex: 0 }],
       winningTile: { tile: "9s", from: "north" },
       gameState: createGameState(),
     });
@@ -146,7 +146,7 @@ describe("M0 curated scorer conformance", () => {
   it("rejects a run meld made of honors", () => {
     const result = calculate({
       closedTiles: ["1m", "2m", "3m", "4m", "5m", "6m", "7p", "8p", "9p", "5s"],
-      openMelds: [{ type: "run", tiles: ["5z", "6z", "7z"], from: "east" }],
+      openMelds: [{ type: "run", tiles: ["5z", "6z", "7z"], from: "east", calledIndex: 0 }],
       winningTile: { tile: "5s", from: "north" },
       gameState: createGameState(),
     });

@@ -1,6 +1,6 @@
 {
   "name": "riichi-hand-generator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Generate randomized valid Riichi Mahjong winning hands satisfying scoring constraints",
   "type": "module",
   "main": "dist/index.js",
@@ -29,7 +29,7 @@
     "vitest": "^3.0.4"
   },
   "dependencies": {
-    "riichi-score": "^2.0.0"
+    "riichi-score": "^3.0.0"
   },
   "keywords": [
     "riichi",

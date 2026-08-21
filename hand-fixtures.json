@@ -1,0 +1,3277 @@
+{
+  "_readme": "Fixtures for the Kotenho hand renderer. handInput is riichi-score HandInput (feed straight back into calculate()); analysis is verbatim calculate() output. canonical reading = analysis.handInterpretations[0].",
+  "_gotchas": [
+    "meld.type is \"run\" | \"triplet\" | \"daiminkan\" | \"shouminkan\" | \"ankan\". There is no \"set\" - it was renamed in riichi-score 3.0.",
+    "Meld is a DISCRIMINATED UNION. A called meld has `from` and `calledIndex`. An ankan has NEITHER - the fields are absent, not sentinels. Branch on type === \"ankan\", never on presence of `from`.",
+    "calledIndex indexes into that meld's own `tiles` array and names the tile to lay sideways. It never affects scoring.",
+    "A run (chi) is ALWAYS called from the caller's kamicha - the player on their left. calculate() now rejects any other source. Relative seat: (WINDS.indexOf(from) - WINDS.indexOf(seatWind) + 4) % 4 -> 1 right, 2 across, 3 left.",
+    "handInterpretations is an ARRAY, sorted best-first. Some hands have >1.",
+    "Red fives are \"0m\"/\"0p\"/\"0s\", not \"5m\"/\"5p\"/\"5s\".",
+    "ankan lives in openMelds and carries a `from` that means nothing. Branch on meld.type.",
+    "Yakuman hands report han: 0 and carry `limit` instead.",
+    "Non-standard hands (chiitoitsu, kokushi) have `tiles`; standard hands have `groups` + `pair`. No overlap.",
+    "fuList is [{ reason, value }] objects — NOT [reason, value] tuples.",
+    "winningTile is a discriminated union: tsumo has isTsumo:true and no `from`; ron has `from` and no isTsumo.",
+    "gameState.ruleset is a fully resolved snapshot, not a pointer.",
+    "honbaCount is accepted but currently ignored by the scorer (DATA-MODEL.md §12)."
+  ],
+  "scorerVersion": "3.0.0",
+  "generatorVersion": "0.2.0",
+  "generatedAt": "2026-08-21T20:30:59.728Z",
+  "fixtures": [
+    {
+      "name": "closed-riichi-ron-kanchan",
+      "note": "Baseline. Closed, single interpretation, 1 han / 40 fu (raw 36), kanchan wait, ron from west.",
+      "source": {
+        "via": "hand-authored"
+      },
+      "handInput": {
+        "closedTiles": [
+          "3m",
+          "5m",
+          "6m",
+          "7m",
+          "8m",
+          "8p",
+          "8p",
+          "8p",
+          "1s",
+          "2s",
+          "3s",
+          "9s",
+          "9s"
+        ],
+        "openMelds": [],
+        "winningTile": {
+          "tile": "4m",
+          "from": "west"
+        },
+        "gameState": {
+          "roundWind": "east",
+          "seatWind": "south",
+          "doraIndicators": [
+            "3s"
+          ],
+          "uradoraIndicators": [
+            "1m"
+          ],
+          "isRiichi": true,
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          }
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "kanchan",
+            "pair": {
+              "tiles": [
+                "9s",
+                "9s"
+              ],
+              "isFinalWait": false
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "3m",
+                  "4m",
+                  "5m"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": true
+              },
+              {
+                "tiles": [
+                  "6m",
+                  "7m",
+                  "8m"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "8p",
+                  "8p",
+                  "8p"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "1s",
+                  "2s",
+                  "3s"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "4m",
+              "from": "west"
+            },
+            "yaku": [
+              {
+                "name": "riichi",
+                "han": 1
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "kanchan wait",
+                "value": 2
+              },
+              {
+                "reason": "closed triplet of simples",
+                "value": 4
+              },
+              {
+                "reason": "closed ron",
+                "value": 10
+              }
+            ],
+            "gameState": {
+              "roundWind": "east",
+              "seatWind": "south",
+              "doraIndicators": [
+                "3s"
+              ],
+              "uradoraIndicators": [
+                "1m"
+              ],
+              "isRiichi": true,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0,
+            "basicPoints": 320,
+            "seatPayments": [
+              {
+                "seat": "west",
+                "value": 1300
+              }
+            ],
+            "totalWinnings": 1300,
+            "isTsumo": false,
+            "rawFu": 36,
+            "fu": 40,
+            "han": 1
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "4m"
+          ],
+          "sideCount": 1
+        }
+      }
+    },
+    {
+      "name": "multiple-interpretations",
+      "note": "TWO valid readings, sorted best-first. canonical is handInterpretations[0]. Never assume length 1.",
+      "source": {
+        "via": "hand-authored"
+      },
+      "handInput": {
+        "closedTiles": [
+          "1m",
+          "1m",
+          "1m",
+          "2m",
+          "2m",
+          "2m",
+          "3m",
+          "3m",
+          "3m",
+          "5p",
+          "6p",
+          "7p",
+          "9s"
+        ],
+        "openMelds": [],
+        "winningTile": {
+          "tile": "9s",
+          "isTsumo": true
+        },
+        "gameState": {
+          "roundWind": "east",
+          "seatWind": "south",
+          "doraIndicators": [],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          }
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "tanki",
+            "pair": {
+              "tiles": [
+                "9s",
+                "9s"
+              ],
+              "isFinalWait": true
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "1m",
+                  "1m",
+                  "1m"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "2m",
+                  "2m",
+                  "2m"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "3m",
+                  "3m",
+                  "3m"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "5p",
+                  "6p",
+                  "7p"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "9s",
+              "isTsumo": true
+            },
+            "gameState": {
+              "roundWind": "east",
+              "seatWind": "south",
+              "doraIndicators": [],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "basicPoints": 1280,
+            "seatPayments": [
+              {
+                "seat": "east",
+                "value": 2600
+              },
+              {
+                "seat": "west",
+                "value": 1300
+              },
+              {
+                "seat": "north",
+                "value": 1300
+              }
+            ],
+            "totalWinnings": 5200,
+            "isTsumo": false,
+            "yaku": [
+              {
+                "name": "menzen-tsumo",
+                "han": 1
+              },
+              {
+                "name": "sanankou",
+                "han": 2
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "tanki wait",
+                "value": 2
+              },
+              {
+                "reason": "closed triplet of terminals/honors",
+                "value": 8
+              },
+              {
+                "reason": "closed triplet of simples",
+                "value": 4
+              },
+              {
+                "reason": "closed triplet of simples",
+                "value": 4
+              },
+              {
+                "reason": "tsumo",
+                "value": 2
+              }
+            ],
+            "rawFu": 40,
+            "fu": 40,
+            "han": 3,
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0
+          },
+          {
+            "isStandardHand": true,
+            "waitType": "tanki",
+            "pair": {
+              "tiles": [
+                "9s",
+                "9s"
+              ],
+              "isFinalWait": true
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "1m",
+                  "2m",
+                  "3m"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "1m",
+                  "2m",
+                  "3m"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "1m",
+                  "2m",
+                  "3m"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "5p",
+                  "6p",
+                  "7p"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "9s",
+              "isTsumo": true
+            },
+            "gameState": {
+              "roundWind": "east",
+              "seatWind": "south",
+              "doraIndicators": [],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "basicPoints": 480,
+            "seatPayments": [
+              {
+                "seat": "east",
+                "value": 1000
+              },
+              {
+                "seat": "west",
+                "value": 500
+              },
+              {
+                "seat": "north",
+                "value": 500
+              }
+            ],
+            "totalWinnings": 2000,
+            "isTsumo": false,
+            "yaku": [
+              {
+                "name": "menzen-tsumo",
+                "han": 1
+              },
+              {
+                "name": "iipeiko",
+                "han": 1
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "tanki wait",
+                "value": 2
+              },
+              {
+                "reason": "tsumo",
+                "value": 2
+              }
+            ],
+            "rawFu": 24,
+            "fu": 30,
+            "han": 2,
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "9s"
+          ],
+          "sideCount": 1
+        }
+      }
+    },
+    {
+      "name": "open-melds",
+      "note": "Called chi/pon. Each meld has `from` = the seat it was called from, which decides which tile renders rotated.",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "closed": false,
+          "openMeldCount": 2
+        },
+        "seed": 1
+      },
+      "handInput": {
+        "closedTiles": [
+          "7p",
+          "7p",
+          "2s",
+          "3s",
+          "7s",
+          "8s",
+          "9s"
+        ],
+        "openMelds": [
+          {
+            "type": "run",
+            "tiles": [
+              "2m",
+              "3m",
+              "4m"
+            ],
+            "from": "west",
+            "calledIndex": 2
+          },
+          {
+            "type": "triplet",
+            "tiles": [
+              "6z",
+              "6z",
+              "6z"
+            ],
+            "from": "south",
+            "calledIndex": 0
+          }
+        ],
+        "winningTile": {
+          "tile": "1s",
+          "isTsumo": true
+        },
+        "gameState": {
+          "roundWind": "south",
+          "seatWind": "north",
+          "doraIndicators": [
+            "8m"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "ryanmen",
+            "pair": {
+              "tiles": [
+                "7p",
+                "7p"
+              ],
+              "isFinalWait": false
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "1s",
+                  "2s",
+                  "3s"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": true
+              },
+              {
+                "tiles": [
+                  "7s",
+                  "8s",
+                  "9s"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "2m",
+                  "3m",
+                  "4m"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "west",
+                "calledIndex": 2,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "6z",
+                  "6z",
+                  "6z"
+                ],
+                "type": "triplet",
+                "open": true,
+                "from": "south",
+                "calledIndex": 0,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "1s",
+              "isTsumo": true
+            },
+            "yaku": [
+              {
+                "name": "hatsu",
+                "han": 1
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "open triplet of terminals/honors",
+                "value": 4
+              },
+              {
+                "reason": "tsumo",
+                "value": 2
+              }
+            ],
+            "gameState": {
+              "roundWind": "south",
+              "seatWind": "north",
+              "doraIndicators": [
+                "8m"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0,
+            "basicPoints": 240,
+            "seatPayments": [
+              {
+                "seat": "east",
+                "value": 500
+              },
+              {
+                "seat": "south",
+                "value": 300
+              },
+              {
+                "seat": "west",
+                "value": 300
+              }
+            ],
+            "totalWinnings": 1100,
+            "isTsumo": false,
+            "rawFu": 26,
+            "fu": 30,
+            "han": 1
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "1s",
+            "4s"
+          ],
+          "sideCount": 2
+        }
+      }
+    },
+    {
+      "name": "concealed-kan-ankan",
+      "note": "ANKAN. Appears in openMelds but is CONCEALED. Its `from` is meaningless — key off type, not from. Renders 2 face-down bracketing 2 face-up.",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "closed": true,
+          "kanCount": 1,
+          "doraIndicatorCount": 2
+        },
+        "seed": 1
+      },
+      "handInput": {
+        "closedTiles": [
+          "5m",
+          "5m",
+          "5m",
+          "1p",
+          "1p",
+          "1p",
+          "8p",
+          "8p",
+          "3z",
+          "3z"
+        ],
+        "openMelds": [
+          {
+            "type": "ankan",
+            "tiles": [
+              "3m",
+              "3m",
+              "3m",
+              "3m"
+            ]
+          }
+        ],
+        "winningTile": {
+          "tile": "8p",
+          "from": "south"
+        },
+        "gameState": {
+          "roundWind": "east",
+          "seatWind": "west",
+          "doraIndicators": [
+            "8s",
+            "5s"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "shanpon",
+            "pair": {
+              "tiles": [
+                "3z",
+                "3z"
+              ],
+              "isFinalWait": false
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "5m",
+                  "5m",
+                  "5m"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "1p",
+                  "1p",
+                  "1p"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "8p",
+                  "8p",
+                  "8p"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": true
+              },
+              {
+                "tiles": [
+                  "3m",
+                  "3m",
+                  "3m",
+                  "3m"
+                ],
+                "type": "ankan",
+                "open": false,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "8p",
+              "from": "south"
+            },
+            "gameState": {
+              "roundWind": "east",
+              "seatWind": "west",
+              "doraIndicators": [
+                "8s",
+                "5s"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "basicPoints": 2000,
+            "seatPayments": [
+              {
+                "seat": "south",
+                "value": 8000
+              }
+            ],
+            "totalWinnings": 8000,
+            "isTsumo": false,
+            "yaku": [
+              {
+                "name": "sanankou",
+                "han": 2
+              },
+              {
+                "name": "toitoi",
+                "han": 2
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "yakuhai pair",
+                "value": 2
+              },
+              {
+                "reason": "closed triplet of simples",
+                "value": 4
+              },
+              {
+                "reason": "closed triplet of terminals/honors",
+                "value": 8
+              },
+              {
+                "reason": "open triplet of simples",
+                "value": 2
+              },
+              {
+                "reason": "closed kan of simples",
+                "value": 16
+              },
+              {
+                "reason": "closed ron",
+                "value": 10
+              }
+            ],
+            "rawFu": 62,
+            "fu": 70,
+            "han": 4,
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "8p",
+            "3z"
+          ],
+          "sideCount": 2
+        }
+      }
+    },
+    {
+      "name": "called-kan-daiminkan",
+      "note": "DAIMINKAN — genuinely called. `from` is real here.",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "closed": false,
+          "kanCount": 1,
+          "doraIndicatorCount": 2,
+          "yaku": [
+            "tanyao"
+          ],
+          "yakuPolicy": "atLeast"
+        },
+        "seed": 4
+      },
+      "handInput": {
+        "closedTiles": [
+          "4m",
+          "2p",
+          "3p",
+          "4p"
+        ],
+        "openMelds": [
+          {
+            "type": "triplet",
+            "tiles": [
+              "8p",
+              "8p",
+              "8p"
+            ],
+            "from": "north",
+            "calledIndex": 1
+          },
+          {
+            "type": "triplet",
+            "tiles": [
+              "2p",
+              "2p",
+              "2p"
+            ],
+            "from": "south",
+            "calledIndex": 0
+          },
+          {
+            "type": "daiminkan",
+            "tiles": [
+              "4s",
+              "4s",
+              "4s",
+              "4s"
+            ],
+            "from": "west",
+            "calledIndex": 3
+          }
+        ],
+        "winningTile": {
+          "tile": "4m",
+          "isTsumo": true
+        },
+        "gameState": {
+          "roundWind": "south",
+          "seatWind": "east",
+          "doraIndicators": [
+            "5s",
+            "2m"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "tanki",
+            "pair": {
+              "tiles": [
+                "4m",
+                "4m"
+              ],
+              "isFinalWait": true
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "2p",
+                  "3p",
+                  "4p"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "8p",
+                  "8p",
+                  "8p"
+                ],
+                "type": "triplet",
+                "open": true,
+                "from": "north",
+                "calledIndex": 1,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "2p",
+                  "2p",
+                  "2p"
+                ],
+                "type": "triplet",
+                "open": true,
+                "from": "south",
+                "calledIndex": 0,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "4s",
+                  "4s",
+                  "4s",
+                  "4s"
+                ],
+                "type": "daiminkan",
+                "open": true,
+                "from": "west",
+                "calledIndex": 3,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "4m",
+              "isTsumo": true
+            },
+            "gameState": {
+              "roundWind": "south",
+              "seatWind": "east",
+              "doraIndicators": [
+                "5s",
+                "2m"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "basicPoints": 320,
+            "seatPayments": [
+              {
+                "seat": "south",
+                "value": 700
+              },
+              {
+                "seat": "west",
+                "value": 700
+              },
+              {
+                "seat": "north",
+                "value": 700
+              }
+            ],
+            "totalWinnings": 2100,
+            "isTsumo": false,
+            "yaku": [
+              {
+                "name": "tanyao",
+                "han": 1
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "tanki wait",
+                "value": 2
+              },
+              {
+                "reason": "open triplet of simples",
+                "value": 2
+              },
+              {
+                "reason": "open triplet of simples",
+                "value": 2
+              },
+              {
+                "reason": "open kan of simples",
+                "value": 8
+              },
+              {
+                "reason": "tsumo",
+                "value": 2
+              }
+            ],
+            "rawFu": 36,
+            "fu": 40,
+            "han": 1,
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "4m"
+          ],
+          "sideCount": 1
+        }
+      }
+    },
+    {
+      "name": "added-kan-shouminkan",
+      "note": "SHOUMINKAN — pon later upgraded to kan. Third distinct kan rendering; also the one that can be robbed (chankan).",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "closed": false,
+          "doraIndicatorCount": 2,
+          "yaku": [
+            "tanyao"
+          ],
+          "yakuPolicy": "atLeast",
+          "requiredGroups": [
+            {
+              "tiles": "4s4s4s4s",
+              "meldType": "shouminkan"
+            }
+          ]
+        },
+        "seed": 1
+      },
+      "handInput": {
+        "closedTiles": [
+          "5m",
+          "5m",
+          "5m",
+          "7m",
+          "6s",
+          "7s",
+          "8s"
+        ],
+        "openMelds": [
+          {
+            "type": "run",
+            "tiles": [
+              "6m",
+              "7m",
+              "8m"
+            ],
+            "from": "north",
+            "calledIndex": 0
+          },
+          {
+            "type": "shouminkan",
+            "tiles": [
+              "4s",
+              "4s",
+              "4s",
+              "4s"
+            ],
+            "from": "north",
+            "calledIndex": 1
+          }
+        ],
+        "winningTile": {
+          "tile": "6m",
+          "isTsumo": true
+        },
+        "gameState": {
+          "roundWind": "south",
+          "seatWind": "east",
+          "doraIndicators": [
+            "1z",
+            "4z"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "kanchan",
+            "pair": {
+              "tiles": [
+                "5m",
+                "5m"
+              ],
+              "isFinalWait": false
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "5m",
+                  "6m",
+                  "7m"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": true
+              },
+              {
+                "tiles": [
+                  "6s",
+                  "7s",
+                  "8s"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "6m",
+                  "7m",
+                  "8m"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "north",
+                "calledIndex": 0,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "4s",
+                  "4s",
+                  "4s",
+                  "4s"
+                ],
+                "type": "shouminkan",
+                "open": true,
+                "from": "north",
+                "calledIndex": 1,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "6m",
+              "isTsumo": true
+            },
+            "yaku": [
+              {
+                "name": "tanyao",
+                "han": 1
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "kanchan wait",
+                "value": 2
+              },
+              {
+                "reason": "open kan of simples",
+                "value": 8
+              },
+              {
+                "reason": "tsumo",
+                "value": 2
+              }
+            ],
+            "gameState": {
+              "roundWind": "south",
+              "seatWind": "east",
+              "doraIndicators": [
+                "1z",
+                "4z"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0,
+            "basicPoints": 320,
+            "seatPayments": [
+              {
+                "seat": "south",
+                "value": 700
+              },
+              {
+                "seat": "west",
+                "value": 700
+              },
+              {
+                "seat": "north",
+                "value": 700
+              }
+            ],
+            "totalWinnings": 2100,
+            "isTsumo": false,
+            "rawFu": 32,
+            "fu": 40,
+            "han": 1
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "6m",
+            "7m"
+          ],
+          "sideCount": 2
+        }
+      }
+    },
+    {
+      "name": "red-fives-akadora",
+      "note": "Aka dora. Red five is tile \"0m\"/\"0p\"/\"0s\", NOT \"5m\". Renderer MUST special-case rank 0 or it will draw the wrong tile.",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "akaDora": 2
+        },
+        "seed": 1
+      },
+      "handInput": {
+        "closedTiles": [
+          "3m",
+          "3p",
+          "3p",
+          "3p",
+          "0p",
+          "5p",
+          "5p",
+          "5p",
+          "6p",
+          "7p"
+        ],
+        "openMelds": [
+          {
+            "type": "run",
+            "tiles": [
+              "3s",
+              "4s",
+              "0s"
+            ],
+            "from": "east",
+            "calledIndex": 1
+          }
+        ],
+        "winningTile": {
+          "tile": "3m",
+          "from": "east"
+        },
+        "gameState": {
+          "roundWind": "south",
+          "seatWind": "south",
+          "doraIndicators": [
+            "6z"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "tanki",
+            "pair": {
+              "tiles": [
+                "3m",
+                "3m"
+              ],
+              "isFinalWait": true
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "3p",
+                  "3p",
+                  "3p"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "0p",
+                  "5p",
+                  "5p"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "5p",
+                  "6p",
+                  "7p"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "3s",
+                  "4s",
+                  "0s"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "east",
+                "calledIndex": 1,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "3m",
+              "from": "east"
+            },
+            "gameState": {
+              "roundWind": "south",
+              "seatWind": "south",
+              "doraIndicators": [
+                "6z"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "basicPoints": 960,
+            "seatPayments": [
+              {
+                "seat": "east",
+                "value": 3900
+              }
+            ],
+            "totalWinnings": 3900,
+            "isTsumo": false,
+            "yaku": [
+              {
+                "name": "tanyao",
+                "han": 1
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "tanki wait",
+                "value": 2
+              },
+              {
+                "reason": "closed triplet of simples",
+                "value": 4
+              },
+              {
+                "reason": "closed triplet of simples",
+                "value": 4
+              }
+            ],
+            "rawFu": 30,
+            "fu": 30,
+            "han": 3,
+            "dora": 0,
+            "akadora": 2,
+            "uradora": 0
+          },
+          {
+            "isStandardHand": true,
+            "waitType": "tanki",
+            "pair": {
+              "tiles": [
+                "3m",
+                "3m"
+              ],
+              "isFinalWait": true
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "3p",
+                  "3p",
+                  "3p"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "0p",
+                  "6p",
+                  "7p"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "5p",
+                  "5p",
+                  "5p"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "3s",
+                  "4s",
+                  "0s"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "east",
+                "calledIndex": 1,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "3m",
+              "from": "east"
+            },
+            "gameState": {
+              "roundWind": "south",
+              "seatWind": "south",
+              "doraIndicators": [
+                "6z"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "basicPoints": 960,
+            "seatPayments": [
+              {
+                "seat": "east",
+                "value": 3900
+              }
+            ],
+            "totalWinnings": 3900,
+            "isTsumo": false,
+            "yaku": [
+              {
+                "name": "tanyao",
+                "han": 1
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "tanki wait",
+                "value": 2
+              },
+              {
+                "reason": "closed triplet of simples",
+                "value": 4
+              },
+              {
+                "reason": "closed triplet of simples",
+                "value": 4
+              }
+            ],
+            "rawFu": 30,
+            "fu": 30,
+            "han": 3,
+            "dora": 0,
+            "akadora": 2,
+            "uradora": 0
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "3m"
+          ],
+          "sideCount": 1
+        }
+      }
+    },
+    {
+      "name": "dealer-tsumo",
+      "note": "Dealer tsumo: three equal seatPayments (\"X all\"). winningTile has isTsumo:true and NO `from`.",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "winMethod": "tsumo",
+          "seatWind": "east"
+        },
+        "seed": 1
+      },
+      "handInput": {
+        "closedTiles": [
+          "2m",
+          "3m",
+          "4m",
+          "6m",
+          "7m",
+          "8m",
+          "8m",
+          "8m",
+          "2p",
+          "3p"
+        ],
+        "openMelds": [
+          {
+            "type": "run",
+            "tiles": [
+              "2m",
+              "3m",
+              "4m"
+            ],
+            "from": "north",
+            "calledIndex": 0
+          }
+        ],
+        "winningTile": {
+          "tile": "4p",
+          "isTsumo": true
+        },
+        "gameState": {
+          "roundWind": "south",
+          "seatWind": "east",
+          "doraIndicators": [
+            "7z"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "ryanmen",
+            "pair": {
+              "tiles": [
+                "8m",
+                "8m"
+              ],
+              "isFinalWait": false
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "2m",
+                  "3m",
+                  "4m"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "6m",
+                  "7m",
+                  "8m"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "2p",
+                  "3p",
+                  "4p"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": true
+              },
+              {
+                "tiles": [
+                  "2m",
+                  "3m",
+                  "4m"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "north",
+                "calledIndex": 0,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "4p",
+              "isTsumo": true
+            },
+            "yaku": [
+              {
+                "name": "tanyao",
+                "han": 1
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "tsumo",
+                "value": 2
+              }
+            ],
+            "gameState": {
+              "roundWind": "south",
+              "seatWind": "east",
+              "doraIndicators": [
+                "7z"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0,
+            "basicPoints": 240,
+            "seatPayments": [
+              {
+                "seat": "south",
+                "value": 500
+              },
+              {
+                "seat": "west",
+                "value": 500
+              },
+              {
+                "seat": "north",
+                "value": 500
+              }
+            ],
+            "totalWinnings": 1500,
+            "isTsumo": false,
+            "rawFu": 22,
+            "fu": 30,
+            "han": 1
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "1p",
+            "4p"
+          ],
+          "sideCount": 2
+        }
+      }
+    },
+    {
+      "name": "non-dealer-tsumo",
+      "note": "Non-dealer tsumo: three seatPayments, dealer pays double. Announced \"X-Y\".",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "winMethod": "tsumo",
+          "seatWind": "south"
+        },
+        "seed": 1
+      },
+      "handInput": {
+        "closedTiles": [
+          "2m",
+          "3m",
+          "4m",
+          "6m",
+          "7m",
+          "8m",
+          "8m",
+          "8m",
+          "2p",
+          "3p"
+        ],
+        "openMelds": [
+          {
+            "type": "run",
+            "tiles": [
+              "2m",
+              "3m",
+              "4m"
+            ],
+            "from": "east",
+            "calledIndex": 0
+          }
+        ],
+        "winningTile": {
+          "tile": "4p",
+          "isTsumo": true
+        },
+        "gameState": {
+          "roundWind": "south",
+          "seatWind": "south",
+          "doraIndicators": [
+            "7z"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "ryanmen",
+            "pair": {
+              "tiles": [
+                "8m",
+                "8m"
+              ],
+              "isFinalWait": false
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "2m",
+                  "3m",
+                  "4m"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "6m",
+                  "7m",
+                  "8m"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "2p",
+                  "3p",
+                  "4p"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": true
+              },
+              {
+                "tiles": [
+                  "2m",
+                  "3m",
+                  "4m"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "east",
+                "calledIndex": 0,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "4p",
+              "isTsumo": true
+            },
+            "yaku": [
+              {
+                "name": "tanyao",
+                "han": 1
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "tsumo",
+                "value": 2
+              }
+            ],
+            "gameState": {
+              "roundWind": "south",
+              "seatWind": "south",
+              "doraIndicators": [
+                "7z"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0,
+            "basicPoints": 240,
+            "seatPayments": [
+              {
+                "seat": "east",
+                "value": 500
+              },
+              {
+                "seat": "west",
+                "value": 300
+              },
+              {
+                "seat": "north",
+                "value": 300
+              }
+            ],
+            "totalWinnings": 1100,
+            "isTsumo": false,
+            "rawFu": 22,
+            "fu": 30,
+            "han": 1
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "1p",
+            "4p"
+          ],
+          "sideCount": 2
+        }
+      }
+    },
+    {
+      "name": "chiitoitsu",
+      "note": "NON-STANDARD: interpretation has `tiles`, and NO `groups`/`pair`. Flat 25 fu, never rounded.",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "handShape": "chiitoitsu"
+        },
+        "seed": 1
+      },
+      "handInput": {
+        "closedTiles": [
+          "5m",
+          "5m",
+          "4p",
+          "4p",
+          "6p",
+          "6p",
+          "8p",
+          "8p",
+          "8s",
+          "1z",
+          "1z",
+          "7z",
+          "7z"
+        ],
+        "openMelds": [],
+        "winningTile": {
+          "tile": "8s",
+          "from": "east"
+        },
+        "gameState": {
+          "roundWind": "south",
+          "seatWind": "north",
+          "doraIndicators": [
+            "6p"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": false,
+            "tiles": [
+              "5m",
+              "5m",
+              "4p",
+              "4p",
+              "6p",
+              "6p",
+              "8p",
+              "8p",
+              "8s",
+              "8s",
+              "1z",
+              "1z",
+              "7z",
+              "7z"
+            ],
+            "winningTile": {
+              "tile": "8s",
+              "from": "east"
+            },
+            "waitType": "tanki",
+            "gameState": {
+              "roundWind": "south",
+              "seatWind": "north",
+              "doraIndicators": [
+                "6p"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "yaku": [
+              {
+                "name": "chiitoitsu",
+                "han": 2
+              }
+            ],
+            "basicPoints": 400,
+            "seatPayments": [
+              {
+                "seat": "east",
+                "value": 1600
+              }
+            ],
+            "totalWinnings": 1600,
+            "isTsumo": false,
+            "fuList": [
+              {
+                "reason": "chiitoitsu",
+                "value": 25
+              }
+            ],
+            "rawFu": 25,
+            "fu": 25,
+            "han": 2,
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "8s"
+          ],
+          "sideCount": 1
+        }
+      }
+    },
+    {
+      "name": "kokushi-yakuman",
+      "note": "NON-STANDARD yakuman. han is 0 — the score comes from `limit`. waitType is kokushi-specific.",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "handShape": "kokushi"
+        },
+        "seed": 1
+      },
+      "handInput": {
+        "closedTiles": [
+          "1m",
+          "9m",
+          "1p",
+          "9p",
+          "1s",
+          "9s",
+          "1z",
+          "2z",
+          "2z",
+          "3z",
+          "5z",
+          "6z",
+          "7z"
+        ],
+        "openMelds": [],
+        "winningTile": {
+          "tile": "4z",
+          "isTsumo": true
+        },
+        "gameState": {
+          "roundWind": "south",
+          "seatWind": "south",
+          "doraIndicators": [
+            "2p"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": false,
+            "tiles": [
+              "1m",
+              "9m",
+              "1p",
+              "9p",
+              "1s",
+              "9s",
+              "1z",
+              "2z",
+              "2z",
+              "3z",
+              "4z",
+              "5z",
+              "6z",
+              "7z"
+            ],
+            "winningTile": {
+              "tile": "4z",
+              "isTsumo": true
+            },
+            "waitType": "kokushi-single",
+            "gameState": {
+              "roundWind": "south",
+              "seatWind": "south",
+              "doraIndicators": [
+                "2p"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "yaku": [
+              {
+                "name": "kokushi-musou",
+                "han": 0,
+                "limit": "yakuman"
+              }
+            ],
+            "basicPoints": 8000,
+            "seatPayments": [
+              {
+                "seat": "east",
+                "value": 16000
+              },
+              {
+                "seat": "west",
+                "value": 8000
+              },
+              {
+                "seat": "north",
+                "value": 8000
+              }
+            ],
+            "totalWinnings": 32000,
+            "isTsumo": false,
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "double wind pair",
+                "value": 4
+              },
+              {
+                "reason": "tanki wait",
+                "value": 2
+              }
+            ],
+            "rawFu": 26,
+            "fu": 30,
+            "han": 0,
+            "limit": "yakuman",
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "4z"
+          ],
+          "sideCount": 1
+        }
+      }
+    },
+    {
+      "name": "chi-called-middle-tile",
+      "note": "Chi where calledIndex is NOT 0. A renderer that hardcodes tiles[0] as the called tile fails here and passes everywhere else.",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "requiredGroups": [
+            {
+              "tiles": "234m",
+              "called": true,
+              "calledTile": "3m"
+            }
+          ],
+          "yaku": [
+            "tanyao"
+          ],
+          "yakuPolicy": "atLeast"
+        },
+        "seed": 1
+      },
+      "handInput": {
+        "closedTiles": [
+          "2m",
+          "2m",
+          "3s",
+          "5s",
+          "6s",
+          "7s",
+          "8s"
+        ],
+        "openMelds": [
+          {
+            "type": "run",
+            "tiles": [
+              "2m",
+              "3m",
+              "4m"
+            ],
+            "from": "north",
+            "calledIndex": 2
+          },
+          {
+            "type": "run",
+            "tiles": [
+              "2m",
+              "3m",
+              "4m"
+            ],
+            "from": "north",
+            "calledIndex": 1
+          }
+        ],
+        "winningTile": {
+          "tile": "4s",
+          "isTsumo": true
+        },
+        "gameState": {
+          "roundWind": "south",
+          "seatWind": "east",
+          "doraIndicators": [
+            "3p"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "kanchan",
+            "pair": {
+              "tiles": [
+                "2m",
+                "2m"
+              ],
+              "isFinalWait": false
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "3s",
+                  "4s",
+                  "5s"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": true
+              },
+              {
+                "tiles": [
+                  "6s",
+                  "7s",
+                  "8s"
+                ],
+                "type": "run",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "2m",
+                  "3m",
+                  "4m"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "north",
+                "calledIndex": 2,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "2m",
+                  "3m",
+                  "4m"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "north",
+                "calledIndex": 1,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "4s",
+              "isTsumo": true
+            },
+            "yaku": [
+              {
+                "name": "tanyao",
+                "han": 1
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "kanchan wait",
+                "value": 2
+              },
+              {
+                "reason": "tsumo",
+                "value": 2
+              }
+            ],
+            "gameState": {
+              "roundWind": "south",
+              "seatWind": "east",
+              "doraIndicators": [
+                "3p"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0,
+            "basicPoints": 240,
+            "seatPayments": [
+              {
+                "seat": "south",
+                "value": 500
+              },
+              {
+                "seat": "west",
+                "value": 500
+              },
+              {
+                "seat": "north",
+                "value": 500
+              }
+            ],
+            "totalWinnings": 1500,
+            "isTsumo": false,
+            "rawFu": 24,
+            "fu": 30,
+            "han": 1
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "4s"
+          ],
+          "sideCount": 1
+        }
+      }
+    },
+    {
+      "name": "honitsu-honors",
+      "note": "Honor tiles 1z-7z with one suit. Exercises honor rendering.",
+      "source": {
+        "via": "riichi-hand-generator",
+        "spec": {
+          "yaku": [
+            "honitsu"
+          ],
+          "yakuPolicy": "atLeast"
+        },
+        "seed": 1
+      },
+      "handInput": {
+        "closedTiles": [
+          "5s",
+          "5s",
+          "5s",
+          "2z"
+        ],
+        "openMelds": [
+          {
+            "type": "run",
+            "tiles": [
+              "5s",
+              "6s",
+              "7s"
+            ],
+            "from": "north",
+            "calledIndex": 0
+          },
+          {
+            "type": "run",
+            "tiles": [
+              "1s",
+              "2s",
+              "3s"
+            ],
+            "from": "north",
+            "calledIndex": 2
+          },
+          {
+            "type": "run",
+            "tiles": [
+              "1s",
+              "2s",
+              "3s"
+            ],
+            "from": "north",
+            "calledIndex": 2
+          }
+        ],
+        "winningTile": {
+          "tile": "2z",
+          "from": "south"
+        },
+        "gameState": {
+          "roundWind": "east",
+          "seatWind": "east",
+          "doraIndicators": [
+            "5p"
+          ],
+          "uradoraIndicators": [],
+          "isRiichi": false,
+          "honbaCount": 0,
+          "ruleset": {
+            "openTanyao": true,
+            "doubleWindPairFu": 4,
+            "openPinfuMinimumFu": 30,
+            "kiriageMangan": false,
+            "kazoeYakuman": true,
+            "kansaiChiitoitsu": false,
+            "doubleYakuman": {
+              "daisuushii": false,
+              "kokushi13Wait": false,
+              "suuankouTanki": false,
+              "junseiChuuren": false
+            },
+            "akaDora": {
+              "manzu": 1,
+              "pinzu": 1,
+              "souzu": 1
+            }
+          },
+          "isDoubleRiichi": false,
+          "isIppatsu": false,
+          "isHaitei": false,
+          "isHoutei": false,
+          "isRinshan": false,
+          "isChankan": false,
+          "isTenhou": false,
+          "isChiihou": false
+        }
+      },
+      "analysis": {
+        "valid": true,
+        "errors": [],
+        "handInterpretations": [
+          {
+            "isStandardHand": true,
+            "waitType": "tanki",
+            "pair": {
+              "tiles": [
+                "2z",
+                "2z"
+              ],
+              "isFinalWait": true
+            },
+            "groups": [
+              {
+                "tiles": [
+                  "5s",
+                  "5s",
+                  "5s"
+                ],
+                "type": "triplet",
+                "open": false,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "5s",
+                  "6s",
+                  "7s"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "north",
+                "calledIndex": 0,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "1s",
+                  "2s",
+                  "3s"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "north",
+                "calledIndex": 2,
+                "isFinalWait": false
+              },
+              {
+                "tiles": [
+                  "1s",
+                  "2s",
+                  "3s"
+                ],
+                "type": "run",
+                "open": true,
+                "from": "north",
+                "calledIndex": 2,
+                "isFinalWait": false
+              }
+            ],
+            "winningTile": {
+              "tile": "2z",
+              "from": "south"
+            },
+            "gameState": {
+              "roundWind": "east",
+              "seatWind": "east",
+              "doraIndicators": [
+                "5p"
+              ],
+              "uradoraIndicators": [],
+              "isRiichi": false,
+              "isDoubleRiichi": false,
+              "isIppatsu": false,
+              "isHaitei": false,
+              "isHoutei": false,
+              "isRinshan": false,
+              "isChankan": false,
+              "isTenhou": false,
+              "isChiihou": false,
+              "honbaCount": 0,
+              "ruleset": {
+                "openTanyao": true,
+                "doubleWindPairFu": 4,
+                "openPinfuMinimumFu": 30,
+                "kiriageMangan": false,
+                "kazoeYakuman": true,
+                "kansaiChiitoitsu": false,
+                "doubleYakuman": {
+                  "daisuushii": false,
+                  "kokushi13Wait": false,
+                  "suuankouTanki": false,
+                  "junseiChuuren": false
+                },
+                "akaDora": {
+                  "manzu": 1,
+                  "pinzu": 1,
+                  "souzu": 1
+                }
+              }
+            },
+            "basicPoints": 480,
+            "seatPayments": [
+              {
+                "seat": "south",
+                "value": 2900
+              }
+            ],
+            "totalWinnings": 2900,
+            "isTsumo": false,
+            "yaku": [
+              {
+                "name": "honitsu",
+                "han": 2
+              }
+            ],
+            "fuList": [
+              {
+                "reason": "base",
+                "value": 20
+              },
+              {
+                "reason": "tanki wait",
+                "value": 2
+              },
+              {
+                "reason": "closed triplet of simples",
+                "value": 4
+              }
+            ],
+            "rawFu": 26,
+            "fu": 30,
+            "han": 2,
+            "dora": 0,
+            "akadora": 0,
+            "uradora": 0
+          }
+        ],
+        "finalWait": {
+          "tiles": [
+            "2z"
+          ],
+          "sideCount": 1
+        }
+      }
+    }
+  ]
+}

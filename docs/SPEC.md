@@ -586,7 +586,7 @@ import { calculate, createGameState } from "riichi-score";
 
 const result = calculate({
   closedTiles: ["1m", "2m", "3m", ...],
-  openMelds:   [{ type: "set", tiles: ["6z","6z","6z"], from: "north" }],
+  openMelds:   [{ type: "triplet", tiles: ["6z","6z","6z"], from: "north", calledIndex: 0 }],
   winningTile: { tile: "7z", from: "north" },   // or { tile, isTsumo: true }
   gameState:   createGameState({ roundWind, seatWind, doraIndicators, ... }),
 });
